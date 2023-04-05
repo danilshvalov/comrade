@@ -77,7 +77,7 @@ struct OverviewState {
 class PdfViewOpenGLWidget : public QOpenGLWidget,
                             protected QOpenGLExtraFunctions {
   public:
-    enum class OverviewSide { bottom = 0, top = 1, left = 2, right = 3 };
+    enum class OverviewSide { bottom, top, left, right };
 
     struct OverviewResizeData {
         fz_rect original_rect;
@@ -90,7 +90,7 @@ class PdfViewOpenGLWidget : public QOpenGLWidget,
         NormalizedWindowPos original_normal_mouse_pos;
     };
 
-    enum ColorPalette { Normal, Dark, Custom };
+    enum class ColorPalette { Normal, Dark, Custom };
 
   private:
     static OpenGLSharedResources shared_gl_objects;
