@@ -35,13 +35,19 @@ extern float KEYBOARD_SELECT_BACKGROUND_COLOR[4];
 extern float KEYBOARD_SELECT_TEXT_COLOR[4];
 extern bool ALPHABETIC_LINK_TAGS;
 
-GLfloat g_quad_vertex[] = {-1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f};
+const GLfloat g_quad_vertex[] = {
+    -1.0f, -1.0f, 1.0f, -1.0f, -1.0f, 1.0f, 1.0f, 1.0f,
+};
 
-GLfloat g_quad_uvs[] = {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f};
+const GLfloat g_quad_uvs[] = {
+    0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f,
+};
 
-GLfloat g_quad_uvs_rotated[] = {0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f};
+const GLfloat g_quad_uvs_rotated[] = {
+    0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+};
 
-GLfloat rotation_uvs[4][8] = {
+const GLfloat rotation_uvs[4][8] = {
     {0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f},
     {0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 0.0f},
     {1.0f, 1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 0.0f},
@@ -1712,7 +1718,7 @@ void PdfViewOpenGLWidget::set_custom_color_mode(bool mode) {
 }
 
 void PdfViewOpenGLWidget::toggle_custom_color_mode() {
-    set_custom_color_mode(!(this->color_mode == ColorPalette::Custom));
+    set_custom_color_mode(this->color_mode != ColorPalette::Custom);
 }
 
 void PdfViewOpenGLWidget::bind_program() {
@@ -1827,7 +1833,6 @@ void PdfViewOpenGLWidget::use_stencil_to_write(bool eq) {
 void PdfViewOpenGLWidget::disable_stencil() { glDisable(GL_STENCIL_TEST); }
 
 void PdfViewOpenGLWidget::render_transparent_background() {
-
     float bar_data[] = {-1, -1, 1, -1, -1, 1, 1, 1};
 
     glDisable(GL_CULL_FACE);
@@ -1835,10 +1840,9 @@ void PdfViewOpenGLWidget::render_transparent_background() {
 
     float background_color[4] = {1.0f, 1.0f, 1.0f, 1 - FASTREAD_OPACITY};
 
-    if (this->color_mode == ColorPalette::Normal) {
-    } else if (this->color_mode == ColorPalette::Dark) {
+    if (this->color_mode == ColorPalette::Dark) {
         background_color[0] = background_color[1] = background_color[2] = 0;
-    } else {
+    } else if (this->color_mode != ColorPalette::Normal) {
         background_color[0] = CUSTOM_BACKGROUND_COLOR[0];
         background_color[1] = CUSTOM_BACKGROUND_COLOR[1];
         background_color[2] = CUSTOM_BACKGROUND_COLOR[2];
@@ -1870,12 +1874,11 @@ void PdfViewOpenGLWidget::draw_stencil_rects(
 ) {
 
     std::vector<float> window_rects;
-    for (auto rect : rects) {
+    for (const auto& rect : rects) {
         fz_rect window_rect;
         if (is_window_rect) {
             window_rect = rect;
         } else {
-
             window_rect = document_view->document_to_window_rect(page, rect);
         }
         float triangle1[6] = {window_rect.x0, window_rect.y0, window_rect.x0,
@@ -1909,7 +1912,6 @@ void PdfViewOpenGLWidget::get_overview_size(float* width, float* height) {
 }
 
 void PdfViewOpenGLWidget::setup_text_painter(QPainter* painter) {
-
     int bgcolor[4];
     int textcolor[4];
 
@@ -1973,22 +1975,15 @@ void PdfViewOpenGLWidget::set_typing_rect(
 }
 
 Document* PdfViewOpenGLWidget::get_current_overview_document() {
-    if (overview_page) {
-        if (overview_page.value().doc) {
-            return overview_page->doc;
-        } else {
-            return document_view->get_document();
-        }
-    } else {
-        return document_view->get_document();
+    if (overview_page && overview_page->doc) {
+        return overview_page->doc;
     }
+    return document_view->get_document();
 }
 
 NormalizedWindowPos PdfViewOpenGLWidget::document_to_overview_pos(
     DocumentPos pos
 ) {
-    NormalizedWindowPos res = {0, 0};
-
     if (!overview_page) {
         // TODO: maybe throw an exception?
         return {0, 0};
@@ -2016,17 +2011,23 @@ NormalizedWindowPos PdfViewOpenGLWidget::document_to_overview_pos(
 fz_rect PdfViewOpenGLWidget::document_to_overview_rect(
     int page, fz_rect document_rect
 ) {
-    fz_rect res;
-    DocumentPos top_left = {page, document_rect.x0, document_rect.y0};
-    DocumentPos bottom_right = {page, document_rect.x1, document_rect.y1};
-    NormalizedWindowPos top_left_pos = document_to_overview_pos(top_left);
-    NormalizedWindowPos bottom_right_pos =
-        document_to_overview_pos(bottom_right);
-    res.x0 = top_left_pos.x;
-    res.y0 = top_left_pos.y;
-    res.x1 = bottom_right_pos.x;
-    res.y1 = bottom_right_pos.y;
-    return res;
+    NormalizedWindowPos top_left = document_to_overview_pos(DocumentPos{
+        page,
+        document_rect.x0,
+        document_rect.y0,
+    });
+    NormalizedWindowPos bottom_right = document_to_overview_pos(DocumentPos{
+        page,
+        document_rect.x1,
+        document_rect.y1,
+    });
+
+    return {
+        .x0 = top_left.x,
+        .y0 = top_left.y,
+        .x1 = bottom_right.x,
+        .y1 = bottom_right.y,
+    };
 }
 
 std::vector<int> PdfViewOpenGLWidget::get_visible_search_results(
@@ -2060,7 +2061,7 @@ std::vector<int> PdfViewOpenGLWidget::get_visible_search_results(
     res.push_back(index);
     if (search_results.size() > 0) {
         int next = next_index(index);
-        while ((next != index) && is_page_visible(next)) {
+        while (next != index && is_page_visible(next)) {
             res.push_back(next);
             next = next_index(next);
         }
@@ -2095,8 +2096,7 @@ int PdfViewOpenGLWidget::find_search_index_for_visible_page(
     int page, int breakpoint
 ) {
     // array is sorted, only one binary search
-    if ((breakpoint == search_results.size() - 1) ||
-        (search_results.size() == 1)) {
+    if (breakpoint == search_results.size() - 1 || search_results.size() == 1) {
         return find_search_result_for_page_range(page, 0, breakpoint);
     } else {
         int index = find_search_result_for_page_range(page, 0, breakpoint);
