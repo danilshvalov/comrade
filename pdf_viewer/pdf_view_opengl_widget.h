@@ -14,7 +14,7 @@
 
 #include <qapplication.h>
 #include <qpushbutton.h>
-#include <qopenglwidget.h>
+#include <QOpenGLWidget>
 #include <qopenglextrafunctions.h>
 #include <qopenglfunctions.h>
 #include <qopengl.h>
@@ -34,10 +34,6 @@
 #include <qlabel.h>
 #include <qtextedit.h>
 #include <qfilesystemwatcher.h>
-
-#ifndef SIOYEK_QT6
-#include <qdesktopwidget.h>
-#endif
 
 #include <qpainter.h>
 

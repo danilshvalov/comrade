@@ -88,12 +88,7 @@ bool HierarchialSortFilterProxyModel::filterAcceptsRow(
     int source_row, const QModelIndex& source_parent
 ) const {
     // custom behaviour :
-#ifdef SIOYEK_QT6
-    if (filterRegularExpression().pattern().size() == 0)
-#else
-    if (filterRegExp().isEmpty() == false)
-#endif
-    {
+    if (filterRegularExpression().pattern().size() == 0) {
         // get source-model index for current row
         QModelIndex source_index = sourceModel()->index(
             source_row, this->filterKeyColumn(), source_parent
@@ -103,11 +98,7 @@ bool HierarchialSortFilterProxyModel::filterAcceptsRow(
             QString key =
                 sourceModel()->data(source_index, filterRole()).toString();
 
-#ifdef SIOYEK_QT6
             bool parent_contains = key.contains(filterRegularExpression());
-#else
-            bool parent_contains = key.contains(filterRegExp());
-#endif
 
             if (parent_contains)
                 return true;
@@ -187,6 +178,7 @@ bool MySortFilterProxyModel::lessThan(
         return QSortFilterProxyModel::lessThan(left, right);
     }
 }
+
 MySortFilterProxyModel::MySortFilterProxyModel() {
     if (FUZZY_SEARCHING) {
         setDynamicSortFilter(true);

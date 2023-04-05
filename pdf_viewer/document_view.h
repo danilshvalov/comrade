@@ -10,7 +10,7 @@
 
 #include <qapplication.h>
 #include <qpushbutton.h>
-#include <qopenglwidget.h>
+#include <QOpenGLWidget>
 #include <qopenglextrafunctions.h>
 #include <qopenglfunctions.h>
 #include <qopengl.h>

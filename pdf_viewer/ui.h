@@ -9,7 +9,7 @@
 #include <qsizepolicy.h>
 #include <qapplication.h>
 #include <qpushbutton.h>
-#include <qopenglwidget.h>
+#include <QOpenGLWidget>
 #include <qopenglextrafunctions.h>
 #include <qopenglfunctions.h>
 #include <qopengl.h>
@@ -19,7 +19,7 @@
 #include <qtreeview.h>
 #include <qsortfilterproxymodel.h>
 #include <qabstractitemmodel.h>
-#include <qopenglshaderprogram.h>
+#include <QOpenGLShaderProgram>
 #include <qtimer.h>
 #include <qdatetime.h>
 #include <qstackedwidget.h>
@@ -53,8 +53,6 @@ class HierarchialSortFilterProxyModel : public QSortFilterProxyModel {
   protected:
     bool
     filterAcceptsRow(int source_row, const QModelIndex& source_parent) const;
-    // public:
-    //	mutable int count = 0;
 };
 
 class ConfigFileChangeListener {
@@ -144,11 +142,11 @@ class BaseSelectorWidget : public QWidget {
     virtual QAbstractItemView* get_view() { return abstract_item_view; }
 
     QLineEdit* line_edit = nullptr;
-    // QSortFilterProxyModel* proxy_model = nullptr;
     MySortFilterProxyModel* proxy_model = nullptr;
     ViewType* abstract_item_view;
 
     virtual void on_select(const QModelIndex& value) = 0;
+
     virtual void on_delete(
         const QModelIndex& source_index, const QModelIndex& selected_index
     ) {}
@@ -180,14 +178,12 @@ class BaseSelectorWidget : public QWidget {
 
     bool eventFilter(QObject* obj, QEvent* event) override {
         if (obj == line_edit) {
-#ifdef SIOYEK_QT6
             if (event->type() == QEvent::KeyRelease) {
                 QKeyEvent* key_event = static_cast<QKeyEvent*>(event);
                 if (key_event->key() == Qt::Key_Delete) {
                     handle_delete();
                 }
             }
-#endif
             if (event->type() == QEvent::KeyPress) {
                 QKeyEvent* key_event = static_cast<QKeyEvent*>(event);
                 bool is_control_pressed =
@@ -200,11 +196,7 @@ class BaseSelectorWidget : public QWidget {
                     key_event->key() == Qt::Key_Up ||
                     key_event->key() == Qt::Key_Left ||
                     key_event->key() == Qt::Key_Right) {
-#ifdef SIOYEK_QT6
                     QKeyEvent* newEvent = key_event->clone();
-#else
-                    QKeyEvent* newEvent = new QKeyEvent(*key_event);
-#endif
                     QCoreApplication::postEvent(get_view(), newEvent);
                     // QCoreApplication::postEvent(tree_view, key_event);
                     return true;
@@ -330,15 +322,6 @@ class BaseSelectorWidget : public QWidget {
         }
     }
 
-#ifndef SIOYEK_QT6
-    void keyReleaseEvent(QKeyEvent* event) override {
-        if (event->key() == Qt::Key_Delete) {
-            handle_delete();
-        }
-        QWidget::keyReleaseEvent(event);
-    }
-#endif
-
     virtual void on_config_file_changed() {
         QString font_size_stylesheet = "";
         if (FONT_SIZE > 0) {
@@ -376,7 +359,7 @@ class FilteredTreeSelect
 
   protected:
   public:
-    QString get_view_stylesheet_type_name() { return "QTreeView"; }
+    QString get_view_stylesheet_type_name() override { return "QTreeView"; }
 
     FilteredTreeSelect(
         QStandardItemModel* item_model,
@@ -407,7 +390,7 @@ class FilteredTreeSelect
         tree_view->setCurrentIndex(index);
     }
 
-    void on_select(const QModelIndex& index) {
+    void on_select(const QModelIndex& index) override {
         this->hide();
         this->parentWidget()->setFocus();
         auto source_index = this->proxy_model->mapToSource(index);
@@ -432,7 +415,7 @@ class FilteredSelectTableWindowClass
 
   protected:
   public:
-    QString get_view_stylesheet_type_name() { return "QTableView"; }
+    QString get_view_stylesheet_type_name() override { return "QTableView"; }
 
     FilteredSelectTableWindowClass(
         std::vector<std::wstring> std_string_list,
@@ -510,7 +493,7 @@ class FilteredSelectTableWindowClass
         }
     }
 
-    virtual std::wstring get_selected_text() {
+    std::wstring get_selected_text() override {
         auto index = this->get_selected_index();
 
         if (index) {
@@ -532,7 +515,7 @@ class FilteredSelectTableWindowClass
         }
     }
 
-    void on_select(const QModelIndex& index) {
+    void on_select(const QModelIndex& index) override {
         this->hide();
         this->parentWidget()->setFocus();
         auto source_index = this->proxy_model->mapToSource(index);
@@ -551,7 +534,7 @@ class FilteredSelectWindowClass
 
   protected:
   public:
-    QString get_view_stylesheet_type_name() { return "QListView"; }
+    QString get_view_stylesheet_type_name() override { return "QListView"; }
 
     FilteredSelectWindowClass(
         std::vector<std::wstring> std_string_list,
@@ -586,7 +569,7 @@ class FilteredSelectWindowClass
         }
     }
 
-    void on_select(const QModelIndex& index) {
+    void on_select(const QModelIndex& index) override {
         this->hide();
         this->parentWidget()->setFocus();
         auto source_index = this->proxy_model->mapToSource(index);
@@ -650,9 +633,9 @@ class CommandSelector : public BaseSelectorWidget<
 
   protected:
   public:
-    QString get_view_stylesheet_type_name() { return "QTableView"; }
+    QString get_view_stylesheet_type_name() override { return "QTableView"; }
 
-    void on_select(const QModelIndex& index) {
+    void on_select(const QModelIndex& index) override {
         bool is_numeric = false;
         line_edit->text().toInt(&is_numeric);
         QString name = standard_item_model->data(index).toString();
@@ -694,7 +677,7 @@ class CommandSelector : public BaseSelectorWidget<
         table_view->verticalHeader()->hide();
     }
 
-    virtual bool on_text_change(const QString& text) {
+    virtual bool on_text_change(const QString& text) override {
 
         std::vector<std::string> matching_element_names;
         std::vector<int> scores;
@@ -762,7 +745,7 @@ class FileSelector : public BaseSelectorWidget<
 
   protected:
   public:
-    QString get_view_stylesheet_type_name() { return "QListView"; }
+    QString get_view_stylesheet_type_name() override { return "QListView"; }
 
     FileSelector(
         std::function<void(std::wstring)> on_done,
@@ -789,7 +772,7 @@ class FileSelector : public BaseSelectorWidget<
         dynamic_cast<QListView*>(get_view())->setModel(list_model);
     }
 
-    virtual bool on_text_change(const QString& text) {
+    virtual bool on_text_change(const QString& text) override {
         QString root_path;
         QString partial_name;
         split_root_file(text, root_path, partial_name);
@@ -848,7 +831,7 @@ class FileSelector : public BaseSelectorWidget<
         return res;
     }
 
-    void on_select(const QModelIndex& index) {
+    void on_select(const QModelIndex& index) override {
         QString name = list_model->data(index).toString();
         QChar sep = QDir::separator();
         QString full_path = expand_home_dir(

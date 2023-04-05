@@ -15,9 +15,6 @@
 
 #include <QApplication>
 #include <QPushButton>
-#ifndef SIOYEK_QT6
-#include <QOpenGLWidget>
-#endif
 #include <QOpenGLExtraFunctions>
 #include <QOpenGLFunctions>
 #include <QWindow>
@@ -36,10 +33,6 @@
 #include <QLabel>
 #include <QTextEdit>
 #include <QFileSystemWatcher>
-
-#ifndef SIOYEK_QT6
-#include <QDesktopWidget>
-#endif
 
 #include <QFontDatabase>
 #include <QStandardItemModel>
@@ -485,6 +478,7 @@ void verify_paths() {
     std::wcout << L"shader_path: " << shader_path << L"\n";
     CHECK_DIR_EXIST(shader_path);
 }
+
 #undef CHECK_DIR_EXIST
 #undef CHECK_FILE_EXIST
 
@@ -569,7 +563,7 @@ MainWidget* handle_args(const QStringList& arguments) {
     std::optional<float> zoom_level;
 
     std::vector<std::wstring> aarguments;
-    for (int i = 0; i < arguments.size(); i++) {
+    for (size_t i = 0; i < arguments.size(); i++) {
         aarguments.push_back(arguments.at(i).toStdWString());
     }
 
@@ -586,13 +580,11 @@ MainWidget* handle_args(const QStringList& arguments) {
 
     if (parser->positionalArguments().size() > 0) {
         pdf_file_name = parser->positionalArguments().at(0).toStdWString();
-    } else {
-        if (windows[0]->doc() == nullptr) {
-            // when no file is specified, and no current file is open, use the
-            // last opened file or tutorial
-            pdf_file_name =
-                get_last_opened_file_name().value_or(tutorial_path.get_path());
-        }
+    } else if (windows[0]->doc() == nullptr) {
+        // when no file is specified, and no current file is open, use the
+        // last opened file or tutorial
+        pdf_file_name =
+            get_last_opened_file_name().value_or(tutorial_path.get_path());
     }
 
     std::optional<std::wstring> latex_file_name = {};
@@ -612,7 +604,6 @@ MainWidget* handle_args(const QStringList& arguments) {
     }
 
     if (parser->isSet("page")) {
-
         int page_int = parser->value("page").toInt();
         // 1 is the index for the first page (not 0)
         if (page_int > 0)
@@ -653,7 +644,6 @@ MainWidget* handle_args(const QStringList& arguments) {
         if (windows[0]->doc() == nullptr) {
             should_create_new_window = false;
         }
-
     } else {
         if (parser->isSet("new-window")) {
             should_create_new_window = true;
@@ -674,14 +664,12 @@ MainWidget* handle_args(const QStringList& arguments) {
         target_window = windows[0];
     }
 
-    if (parser->isSet("inverse-search")) {
-        if (target_window) {
-            target_window->set_inverse_search_command(
-                parser->value("inverse-search").toStdWString()
-            );
-            target_window->raise();
-            // target_window->activateWindow();
-        }
+    if (parser->isSet("inverse-search") && target_window) {
+        target_window->set_inverse_search_command(
+            parser->value("inverse-search").toStdWString()
+        );
+        target_window->raise();
+        // target_window->activateWindow();
     }
     if (parser->isSet("execute-command")) {
         QString command_string = parser->value("execute-command");

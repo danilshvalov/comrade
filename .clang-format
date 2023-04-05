@@ -9,3 +9,5 @@ PackConstructorInitializers: CurrentLine
 PointerAlignment: Left
 QualifierAlignment: Left
 SortIncludes: Never
+SeparateDefinitionBlocks: Always
+IndentCaseLabels: Yes

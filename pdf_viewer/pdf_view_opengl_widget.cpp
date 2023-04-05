@@ -360,6 +360,7 @@ void PdfViewOpenGLWidget::render_line_window(
     glDisableVertexAttribArray(1);
     glDisable(GL_BLEND);
 }
+
 void PdfViewOpenGLWidget::render_highlight_window(
     GLuint program, fz_rect window_rect, bool draw_border
 ) {
@@ -740,13 +741,9 @@ void PdfViewOpenGLWidget::render_page(int page_number) {
         0, 0, document_view->get_document()->get_page_width(page_number),
         document_view->get_document()->get_page_height(page_number)};
 
-#ifdef SIOYEK_QT6
     float device_pixel_ratio =
         static_cast<float>(QGuiApplication::primaryScreen()->devicePixelRatio()
         );
-#else
-    float device_pixel_ratio = QApplication::desktop()->devicePixelRatioF();
-#endif
 
     if (DISPLAY_RESOLUTION_SCALE > 0) {
         device_pixel_ratio *= DISPLAY_RESOLUTION_SCALE;
@@ -1465,6 +1462,7 @@ void PdfViewOpenGLWidget::register_on_link_edit_listener(
 ) {
     this->on_link_edit = listener;
 }
+
 void PdfViewOpenGLWidget::set_overview_page(
     std::optional<OverviewState> overview
 ) {
@@ -1495,11 +1493,7 @@ void PdfViewOpenGLWidget::draw_empty_helper_message(QPainter* painter) {
 
     QString message = "No portals yet";
     QFontMetrics fm(QApplication::font());
-#ifdef SIOYEK_QT6
     int message_width = fm.boundingRect(message).width();
-#else
-    int message_width = fm.width(message);
-#endif
     int message_height = fm.height();
 
     int view_width = document_view->get_view_width();
@@ -1633,6 +1627,7 @@ void PdfViewOpenGLWidget::get_overview_offsets(
     *offset_x = overview_offset_x;
     *offset_y = overview_offset_y;
 }
+
 void PdfViewOpenGLWidget::set_overview_offsets(float offset_x, float offset_y) {
     overview_offset_x = offset_x;
     overview_offset_y = offset_y;
@@ -1655,6 +1650,8 @@ float PdfViewOpenGLWidget::get_overview_side_pos(int index) {
     if (index == OverviewSide::right) {
         return overview_offset_x + overview_half_width;
     }
+    // TODO: add exception
+    return 0;
 }
 
 void PdfViewOpenGLWidget::set_overview_side_pos(
@@ -1947,6 +1944,7 @@ void PdfViewOpenGLWidget::set_selected_rectangle(fz_rect selected) {
 void PdfViewOpenGLWidget::clear_selected_rectangle() {
     selected_rectangle = {};
 }
+
 std::optional<fz_rect> PdfViewOpenGLWidget::get_selected_rectangle() {
     return selected_rectangle;
 }

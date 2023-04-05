@@ -332,6 +332,7 @@ bool is_stext_line_rtl(fz_stext_line* line) {
     }
     return ((rtl_count / total_count) > 0.5f);
 }
+
 bool is_stext_page_rtl(fz_stext_page* stext_page) {
 
     float rtl_count = 0.0f;
@@ -425,6 +426,7 @@ bool is_start_of_new_line(
     }
     return false;
 }
+
 bool is_start_of_new_word(
     fz_stext_char* prev_char, fz_stext_char* current_char
 ) {
@@ -714,6 +716,7 @@ bool is_consequtive(fz_rect rect1, fz_rect rect2) {
 
     return false;
 }
+
 fz_rect bound_rects(const std::vector<fz_rect>& rects) {
     // find the bounding box of some rects
 
@@ -742,6 +745,7 @@ fz_rect bound_rects(const std::vector<fz_rect>& rects) {
 
     return res;
 }
+
 void merge_selected_character_rects(
     const std::vector<fz_rect>& selected_character_rects,
     std::vector<fz_rect>& resulting_rects
@@ -1134,7 +1138,7 @@ void index_generic(
     }
 
     std::wregex index_dst_regex(
-        L"(^|\n)[A-Z][a-zA-Z]{2,}[ \t]+[0-9]+(\.[0-9]+)*"
+        L"(^|\n)[A-Z][a-zA-Z]{2,}[ \t]+[0-9]+(\\.[0-9]+)*"
     );
     // std::wregex index_dst_regex(L"(^|\n)[A-Z][a-zA-Z]{2,}[
     // \t]+[0-9]+(\-[0-9]+)*"); std::wregex index_src_regex(L"[a-zA-Z]{3,}[
@@ -1611,6 +1615,7 @@ bool has_arg(int argc, char** argv, std::string key) {
     }
     return false;
 }
+
 bool should_reuse_instance(int argc, char** argv) {
     for (int i = 0; i < argc; i++) {
         if (std::strcmp(argv[i], "--reuse-instance") == 0)
@@ -1780,8 +1785,8 @@ concatenate_path(const std::wstring& prefix, const std::wstring& suffix) {
 
 std::wstring get_canonical_path(const std::wstring& path) {
     QDir dir(QString::fromStdWString(path));
-    // return std::move(dir.canonicalPath().toStdWString());
-    return std::move(dir.absolutePath().toStdWString());
+    // return dir.canonicalPath().toStdWString();
+    return dir.absolutePath().toStdWString();
 }
 
 std::wstring add_redundant_dot_to_path(const std::wstring& path) {
@@ -1936,6 +1941,7 @@ int hex2int(int hex) {
         return (hex - 'a') + 10;
     }
 }
+
 float get_color_component_from_hex(std::wstring hexcolor) {
     hexcolor = lowercase(hexcolor);
 
@@ -2005,10 +2011,10 @@ std::vector<fz_quad> quads_from_rects(const std::vector<fz_rect>& rects) {
 std::wifstream open_wifstream(const std::wstring& file_name) {
 
 #ifdef Q_OS_WIN
-    return std::move(std::wifstream(file_name));
+    return std::wifstream(file_name);
 #else
     std::string encoded_file_name = utf8_encode(file_name);
-    return std::move(std::wifstream(encoded_file_name.c_str()));
+    return std::wifstream(encoded_file_name.c_str());
 #endif
 }
 

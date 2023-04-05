@@ -28,6 +28,7 @@ DEALINGS IN THE SOFTWARE.
 #define UTF8_FOR_CPP_CHECKED_H_2675DCD0_9480_4c0c_B92A_CC14C027B731
 
 #include "core.h"
+#include <iterator>
 #include <stdexcept>
 
 namespace utf8 {
@@ -40,7 +41,9 @@ class invalid_code_point : public exception {
 
   public:
     invalid_code_point(uint32_t cp) : cp(cp) {}
+
     virtual const char* what() const throw() { return "Invalid code point"; }
+
     uint32_t code_point() const { return cp; }
 };
 
@@ -49,7 +52,9 @@ class invalid_utf8 : public exception {
 
   public:
     invalid_utf8(uint8_t u) : u8(u) {}
+
     virtual const char* what() const throw() { return "Invalid UTF-8"; }
+
     uint8_t utf8_octet() const { return u8; }
 };
 
@@ -58,7 +63,9 @@ class invalid_utf16 : public exception {
 
   public:
     invalid_utf16(uint16_t u) : u16(u) {}
+
     virtual const char* what() const throw() { return "Invalid UTF-16"; }
+
     uint16_t utf16_word() const { return u16; }
 };
 
@@ -263,14 +270,20 @@ utf8to32(octet_iterator start, octet_iterator end, u32bit_iterator result) {
 
 // The iterator class
 template <typename octet_iterator>
-class iterator
-    : public std::iterator<std::bidirectional_iterator_tag, uint32_t> {
+class iterator {
     octet_iterator it;
     octet_iterator range_start;
     octet_iterator range_end;
 
   public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = uint32_t;
+    using pointer = value_type*;
+    using reference = value_type&;
+
     iterator() {}
+
     explicit iterator(
         const octet_iterator& octet_it,
         const octet_iterator& range_start,
@@ -282,12 +295,15 @@ class iterator
         if (it < range_start || it > range_end)
             throw std::out_of_range("Invalid utf-8 iterator position");
     }
+
     // the default "big three" are OK
     octet_iterator base() const { return it; }
-    uint32_t operator*() const {
+
+    value_type operator*() const {
         octet_iterator temp = it;
         return utf8::next(temp, range_end);
     }
+
     bool operator==(const iterator& rhs) const {
         if (range_start != rhs.range_start || range_end != rhs.range_end)
             throw std::logic_error(
@@ -295,20 +311,25 @@ class iterator
             );
         return (it == rhs.it);
     }
+
     bool operator!=(const iterator& rhs) const { return !(operator==(rhs)); }
+
     iterator& operator++() {
         utf8::next(it, range_end);
         return *this;
     }
+
     iterator operator++(int) {
         iterator temp = *this;
         utf8::next(it, range_end);
         return temp;
     }
+
     iterator& operator--() {
         utf8::prior(it, range_start);
         return *this;
     }
+
     iterator operator--(int) {
         iterator temp = *this;
         utf8::prior(it, range_start);

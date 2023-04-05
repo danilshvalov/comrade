@@ -28,6 +28,7 @@ DEALINGS IN THE SOFTWARE.
 #define UTF8_FOR_CPP_UNCHECKED_H_2675DCD0_9480_4c0c_B92A_CC14C027B731
 
 #include "core.h"
+#include <iterator>
 
 namespace utf8 {
 namespace unchecked {
@@ -171,34 +172,48 @@ utf8to32(octet_iterator start, octet_iterator end, u32bit_iterator result) {
 
 // The iterator class
 template <typename octet_iterator>
-class iterator
-    : public std::iterator<std::bidirectional_iterator_tag, uint32_t> {
+class iterator {
     octet_iterator it;
 
   public:
+    using iterator_category = std::bidirectional_iterator_tag;
+    using difference_type = std::ptrdiff_t;
+    using value_type = uint32_t;
+    using pointer = value_type*;
+    using reference = value_type&;
+
     iterator() {}
+
     explicit iterator(const octet_iterator& octet_it) : it(octet_it) {}
+
     // the default "big three" are OK
     octet_iterator base() const { return it; }
-    uint32_t operator*() const {
+
+    value_type operator*() const {
         octet_iterator temp = it;
         return utf8::unchecked::next(temp);
     }
+
     bool operator==(const iterator& rhs) const { return (it == rhs.it); }
+
     bool operator!=(const iterator& rhs) const { return !(operator==(rhs)); }
+
     iterator& operator++() {
         ::std::advance(it, utf8::internal::sequence_length(it));
         return *this;
     }
+
     iterator operator++(int) {
         iterator temp = *this;
         ::std::advance(it, utf8::internal::sequence_length(it));
         return temp;
     }
+
     iterator& operator--() {
         utf8::unchecked::prior(it);
         return *this;
     }
+
     iterator operator--(int) {
         iterator temp = *this;
         utf8::unchecked::prior(it);

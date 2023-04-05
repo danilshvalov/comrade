@@ -15,10 +15,6 @@
 #include <qboxlayout.h>
 #include <qdatetime.h>
 
-#ifndef SIOYEK_QT6
-#include <qdesktopwidget.h>
-#endif
-
 #include <QKeyEvent>
 #include <qlabel.h>
 #include <qlineedit.h>
@@ -342,6 +338,7 @@ void MainWidget::persist() {
         last_path_file.close();
     }
 }
+
 void MainWidget::closeEvent(QCloseEvent* close_event) { handle_close_event(); }
 
 MainWidget::MainWidget(MainWidget* other)
@@ -382,17 +379,10 @@ MainWidget::MainWidget(
 
     inverse_search_command = INVERSE_SEARCH_COMMAND;
     if (DISPLAY_RESOLUTION_SCALE <= 0) {
-#ifdef SIOYEK_QT6
         pdf_renderer = new PdfRenderer(
             4, should_quit_ptr, mupdf_context,
             QGuiApplication::primaryScreen()->devicePixelRatio()
         );
-#else
-        pdf_renderer = new PdfRenderer(
-            4, should_quit_ptr, mupdf_context,
-            QApplication::desktop()->devicePixelRatioF()
-        );
-#endif
     } else {
         pdf_renderer = new PdfRenderer(
             4, should_quit_ptr, mupdf_context, DISPLAY_RESOLUTION_SCALE
@@ -1787,6 +1777,7 @@ void MainWidget::handle_click(WindowPos click_pos) {
         handle_link_click(link.value());
     }
 }
+
 bool MainWidget::find_location_of_text_under_pointer(
     WindowPos pointer_pos,
     int* out_page,
@@ -2025,25 +2016,15 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
     bool is_visual_mark_mode =
         opengl_widget->get_should_draw_vertical_line() && visual_scroll_mode;
 
-#ifdef SIOYEK_QT6
     int x = wevent->position().x();
     int y = wevent->position().y();
-#else
-    int x = wevent->pos().x();
-    int y = wevent->pos().y();
-#endif
 
     WindowPos mouse_window_pos = {x, y};
     auto [normal_x, normal_y] =
         main_document_view->window_to_normalized_window_pos(mouse_window_pos);
 
-#ifdef SIOYEK_QT6
     int num_repeats = abs(wevent->angleDelta().y() / 120);
     float num_repeats_f = abs(wevent->angleDelta().y() / 120.0);
-#else
-    int num_repeats = abs(wevent->delta() / 120);
-    float num_repeats_f = abs(wevent->delta() / 120.0);
-#endif
 
     if (num_repeats == 0) {
         num_repeats = 1;
@@ -2581,13 +2562,8 @@ void MainWidget::execute_command(
 
     qtext.arg(qfile_path);
 
-#ifdef SIOYEK_QT6
     QStringList command_parts_ =
         qtext.split(QRegularExpression("\\s+"), Qt::SkipEmptyParts);
-#else
-    QStringList command_parts_ =
-        qtext.split(QRegExp("\\s+"), QString::SkipEmptyParts);
-#endif
 
     QStringList command_parts;
     while (command_parts_.size() > 0) {
@@ -2741,6 +2717,7 @@ void MainWidget::execute_command(
         run_command(command_name.toStdWString(), command_args, wait);
     }
 }
+
 void MainWidget::handle_paper_name_on_pointer(
     std::wstring paper_name, bool is_shift_pressed
 ) {
@@ -2756,6 +2733,7 @@ void MainWidget::handle_paper_name_on_pointer(
         }
     }
 }
+
 void MainWidget::move_vertical(float amount) {
     if (!smooth_scroll_mode) {
         move_document(0, amount);
@@ -2813,6 +2791,7 @@ std::optional<std::string> MainWidget::get_last_opened_file_checksum() {
 
     return {};
 }
+
 void MainWidget::get_window_params_for_one_window_mode(
     int* main_window_size, int* main_window_move
 ) {
@@ -2822,14 +2801,9 @@ void MainWidget::get_window_params_for_one_window_mode(
         main_window_move[0] = SINGLE_MAIN_WINDOW_MOVE[0];
         main_window_move[1] = SINGLE_MAIN_WINDOW_MOVE[1];
     } else {
-#ifdef SIOYEK_QT6
         int window_width = QGuiApplication::primaryScreen()->geometry().width();
         int window_height =
             QGuiApplication::primaryScreen()->geometry().height();
-#else
-        int window_width = QApplication::desktop()->screenGeometry(0).width();
-        int window_height = QApplication::desktop()->screenGeometry(0).height();
-#endif
 
         main_window_size[0] = window_width;
         main_window_size[1] = window_height;
@@ -2837,6 +2811,7 @@ void MainWidget::get_window_params_for_one_window_mode(
         main_window_move[1] = 0;
     }
 }
+
 void MainWidget::get_window_params_for_two_window_mode(
     int* main_window_size,
     int* main_window_move,
@@ -2853,25 +2828,14 @@ void MainWidget::get_window_params_for_two_window_mode(
         helper_window_move[0] = HELPER_WINDOW_MOVE[0];
         helper_window_move[1] = HELPER_WINDOW_MOVE[1];
     } else {
-#ifdef SIOYEK_QT6
         int num_screens = QGuiApplication::screens().size();
-#else
-        int num_screens = QApplication::desktop()->numScreens();
-#endif
         int main_window_width = get_current_monitor_width();
         int main_window_height = get_current_monitor_height();
         if (num_screens > 1) {
-#ifdef SIOYEK_QT6
             int second_window_width =
                 QGuiApplication::screens().at(1)->geometry().width();
             int second_window_height =
                 QGuiApplication::screens().at(1)->geometry().height();
-#else
-            int second_window_width =
-                QApplication::desktop()->screenGeometry(1).width();
-            int second_window_height =
-                QApplication::desktop()->screenGeometry(1).height();
-#endif
             main_window_size[0] = main_window_width;
             main_window_size[1] = main_window_height;
             main_window_move[0] = 0;
@@ -3154,6 +3118,7 @@ void MainWidget::on_new_paper_added(const std::wstring& file_path) {
         invalidate_render();
     }
 }
+
 void MainWidget::handle_link_click(const PdfLink& link) {
 
     if (link.uri.substr(0, 4).compare("http") == 0) {
@@ -3219,6 +3184,7 @@ std::wstring MainWidget::get_serialized_configuration_string() {
             .toStdWString();
     return overview_config_string + get_window_configuration_string();
 }
+
 std::wstring MainWidget::get_window_configuration_string() {
 
     QString config_string_multi =
@@ -3412,11 +3378,7 @@ int MainWidget::get_current_monitor_width() {
     if (this->window()->windowHandle() != nullptr) {
         return this->window()->windowHandle()->screen()->geometry().width();
     } else {
-#ifdef SIOYEK_QT6
         return QGuiApplication::primaryScreen()->geometry().width();
-#else
-        return QApplication::desktop()->screenGeometry(0).width();
-#endif
     }
 }
 
@@ -3424,11 +3386,7 @@ int MainWidget::get_current_monitor_height() {
     if (this->window()->windowHandle() != nullptr) {
         return this->window()->windowHandle()->screen()->geometry().height();
     } else {
-#ifdef SIOYEK_QT6
         return QGuiApplication::primaryScreen()->geometry().height();
-#else
-        return QApplication::desktop()->screenGeometry(0).height();
-#endif
     }
 }
 
@@ -3931,33 +3889,41 @@ void MainWidget::goto_mark(char symbol) {
 }
 
 void MainWidget::advance_command(std::unique_ptr<Command> new_command) {
-    if (new_command) {
-        if (!new_command->next_requirement(this).has_value()) {
-            new_command->run(this);
-            pending_command_instance = nullptr;
-        } else {
-            pending_command_instance = std::move(new_command);
+    if (!new_command) {
+        return;
+    }
 
-            Requirement next_requirement =
-                pending_command_instance->next_requirement(this).value();
-            if (next_requirement.type == RequirementType::Text) {
-                show_textbar(utf8_decode(next_requirement.name), true);
-            } else if (next_requirement.type == RequirementType::Symbol) {
-            } else if (next_requirement.type == RequirementType::File) {
-                std::wstring file_name = select_command_file_name(
-                    pending_command_instance->get_name()
-                );
-                if (file_name.size() > 0) {
-                    pending_command_instance->set_file_requirement(file_name);
-                    advance_command(std::move(pending_command_instance));
-                }
-            } else if (next_requirement.type == RequirementType::Rect) {
-                set_rect_select_mode(true);
+    const auto requirement = new_command->next_requirement(this);
+    if (!requirement) {
+        new_command->run(this);
+        pending_command_instance = nullptr;
+        return;
+    }
+
+    pending_command_instance = std::move(new_command);
+
+    switch (requirement->type) {
+        case RequirementType::Text:
+            show_textbar(utf8_decode(requirement->name), true);
+            break;
+        case RequirementType::File: {
+            std::wstring file_name =
+                select_command_file_name(pending_command_instance->get_name());
+            if (file_name.size() > 0) {
+                pending_command_instance->set_file_requirement(file_name);
+                advance_command(std::move(pending_command_instance));
             }
-            if (pending_command_instance) {
-                pending_command_instance->pre_perform(this);
-            }
+            break;
         }
+        case RequirementType::Rect:
+            set_rect_select_mode(true);
+            break;
+        default:
+            break;
+    }
+
+    if (pending_command_instance) {
+        pending_command_instance->pre_perform(this);
     }
 }
 
@@ -4383,8 +4349,8 @@ void MainWidget::handle_new_window() {
 std::optional<std::pair<int, fz_link*>>
 MainWidget::get_selected_link(const std::wstring& text) {
     std::vector<std::pair<int, fz_link*>> visible_page_links;
-    if (ALPHABETIC_LINK_TAGS || is_string_numeric(text)) {
 
+    if (ALPHABETIC_LINK_TAGS || is_string_numeric(text)) {
         int link_index = 0;
 
         if (ALPHABETIC_LINK_TAGS) {
@@ -4400,6 +4366,8 @@ MainWidget::get_selected_link(const std::wstring& text) {
         }
         return {};
     }
+
+    return std::nullopt;
 }
 
 void MainWidget::handle_overview_link(const std::wstring& text) {
@@ -4451,7 +4419,6 @@ void MainWidget::handle_portal_to_link(const std::wstring& text) {
 }
 
 void MainWidget::handle_open_link(const std::wstring& text, bool copy) {
-
     auto selected_link_ = get_selected_link(text);
     if (selected_link_) {
         auto [selected_page, selected_link] = selected_link_.value();

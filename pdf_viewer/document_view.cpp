@@ -20,6 +20,7 @@ DocumentView::DocumentView(
       config_manager(config_manager),
       document_manager(document_manager),
       checksummer(checksummer) {}
+
 DocumentView::~DocumentView() {}
 
 DocumentView::DocumentView(
@@ -86,6 +87,7 @@ void DocumentView::set_book_state(OpenedBookState state) {
     set_offsets(state.offset_x, state.offset_y);
     set_zoom_level(state.zoom_level, true);
 }
+
 void DocumentView::set_offsets(float new_offset_x, float new_offset_y) {
     if (current_document == nullptr)
         return;
@@ -144,7 +146,6 @@ std::optional<Portal> DocumentView::find_closest_portal(bool limit) {
 }
 
 std::optional<BookMark> DocumentView::find_closest_bookmark() {
-
     if (current_document) {
         int bookmark_index = current_document->find_closest_bookmark_index(
             current_document->get_bookmarks(), offset_y
@@ -226,7 +227,8 @@ void DocumentView::set_offset_y(float new_offset_y) {
 }
 
 // void DocumentView::render_highlight_window( GLuint program, fz_rect
-// window_rect) { 	float quad_vertex_data[] = { 		window_rect.x0, window_rect.y1,
+// window_rect) { 	float quad_vertex_data[] = { 		window_rect.x0,
+// window_rect.y1,
 //		window_rect.x1, window_rect.y1,
 //		window_rect.x0, window_rect.y0,
 //		window_rect.x1, window_rect.y0
@@ -237,19 +239,19 @@ void DocumentView::set_offset_y(float new_offset_y) {
 //	glEnableVertexAttribArray(0);
 //	glEnableVertexAttribArray(1);
 //	glBufferData(GL_ARRAY_BUFFER, sizeof(quad_vertex_data),
-//quad_vertex_data, GL_DYNAMIC_DRAW); 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+// quad_vertex_data, GL_DYNAMIC_DRAW); 	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
 //	glDisable(GL_BLEND);
 // }
 
 // void DocumentView::render_highlight_absolute( GLuint program, fz_rect
 // absolute_document_rect) { 	fz_rect window_rect =
-//absolute_to_window_rect(absolute_document_rect);
+// absolute_to_window_rect(absolute_document_rect);
 //	render_highlight_window(program, window_rect);
 // }
 //
 // void DocumentView::render_highlight_document( GLuint program, int page,
 // fz_rect doc_rect) { 	fz_rect window_rect = document_to_window_rect(page,
-//doc_rect); 	render_highlight_window(program, window_rect);
+// doc_rect); 	render_highlight_window(program, window_rect);
 // }
 
 std::optional<PdfLink> DocumentView::get_link_in_pos(WindowPos pos) {
@@ -340,6 +342,7 @@ void DocumentView::absolute_to_window_pos(
     *window_x = (absolute_x + offset_x) / half_width;
     *window_y = (-absolute_y + offset_y) / half_height;
 }
+
 fz_rect DocumentView::absolute_to_window_rect(fz_rect doc_rect) {
     fz_rect res;
     absolute_to_window_pos(doc_rect.x0, doc_rect.y0, &res.x0, &res.y0);
@@ -349,18 +352,19 @@ fz_rect DocumentView::absolute_to_window_rect(fz_rect doc_rect) {
 }
 
 NormalizedWindowPos DocumentView::document_to_window_pos(DocumentPos doc_pos) {
-
-    if (current_document) {
-        WindowPos window_pos = document_to_window_pos_in_pixels(doc_pos);
-        double halfwidth = static_cast<double>(view_width) / 2;
-        double halfheight = static_cast<double>(view_height) / 2;
-
-        float window_x =
-            static_cast<float>((window_pos.x - halfwidth) / halfwidth);
-        float window_y =
-            static_cast<float>((window_pos.y - halfheight) / halfheight);
-        return {window_x, -window_y};
+    if (!current_document) {
+        // TODO: maybe throw an exception
+        return {0, 0};
     }
+
+    WindowPos window_pos = document_to_window_pos_in_pixels(doc_pos);
+    double halfwidth = static_cast<double>(view_width) / 2;
+    double halfheight = static_cast<double>(view_height) / 2;
+
+    float window_x = static_cast<float>((window_pos.x - halfwidth) / halfwidth);
+    float window_y =
+        static_cast<float>((window_pos.y - halfheight) / halfheight);
+    return {window_x, -window_y};
 }
 
 WindowPos DocumentView::document_to_window_pos_in_pixels(DocumentPos doc_pos) {
@@ -472,6 +476,7 @@ void DocumentView::goto_mark(char symbol) {
         }
     }
 }
+
 void DocumentView::goto_end() {
     if (current_document) {
         int last_page_index = current_document->num_pages() - 1;
@@ -547,6 +552,7 @@ float DocumentView::zoom_in(float zoom_factor) {
 
     return set_zoom_level(new_zoom_level, true);
 }
+
 float DocumentView::zoom_out(float zoom_factor) {
     return set_zoom_level(zoom_level / zoom_factor, true);
 }
@@ -578,6 +584,7 @@ float DocumentView::zoom_out_cursor(WindowPos mouse_pos, float zoom_factor) {
     move_absolute(-prev_doc_x + new_doc_x, prev_doc_y - new_doc_y);
     return res;
 }
+
 void DocumentView::move_absolute(float dx, float dy) {
     set_offsets(offset_x + dx, offset_y + dy);
 }
@@ -587,6 +594,7 @@ void DocumentView::move(float dx, float dy) {
     int abs_dy = (dy / zoom_level);
     move_absolute(abs_dx, abs_dy);
 }
+
 void DocumentView::get_absolute_delta_from_doc_delta(
     float dx, float dy, float* abs_dx, float* abs_dy
 ) {
@@ -626,14 +634,14 @@ int DocumentView::get_center_page_number() {
 //	}
 //
 //	int target_index = mod(current_search_result_index + offset,
-//search_results.size()); 	current_search_result_index = target_index;
+// search_results.size()); 	current_search_result_index = target_index;
 //
 //	int target_page = search_results[target_index].page;
 //
 //	fz_rect rect = search_results[target_index].rect;
 //
 //	float new_offset_y = rect.y0 +
-//current_document->get_accum_page_height(target_page);
+// current_document->get_accum_page_height(target_page);
 //
 //	set_offset_y(new_offset_y);
 //	search_results_mutex.unlock();
@@ -661,7 +669,7 @@ void DocumentView::get_visible_pages(
     //	float page_end = page_begin + page_heights[i];
 
     //	if (intersects(window_y_range_begin, window_y_range_end, page_begin,
-    //page_end)) { 		visible_pages.push_back(i);
+    // page_end)) { 		visible_pages.push_back(i);
     //	}
     //	page_begin = page_end;
     //}
@@ -958,6 +966,7 @@ void DocumentView::get_page_chapter_index(
         }
     }
 }
+
 std::vector<int> DocumentView::get_current_chapter_recursive_index() {
     int curr_page = get_center_page_number();
     std::vector<TocNode*> nodes = current_document->get_toc();

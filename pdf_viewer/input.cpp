@@ -185,6 +185,7 @@ class GotoBookmarkGlobalCommand : public Command {
     bool pushes_state() { return true; }
 
     std::string get_name() { return "goto_bookmark_g"; }
+
     bool requires_document() { return false; }
 };
 
@@ -203,6 +204,7 @@ class GotoHighlightGlobalCommand : public Command {
     bool pushes_state() { return true; }
 
     std::string get_name() { return "goto_highlight_g"; }
+
     bool requires_document() { return false; }
 };
 
@@ -224,6 +226,7 @@ class ToggleWindowConfigurationCommand : public Command {
     void perform(MainWidget* widget) { widget->toggle_window_configuration(); }
 
     std::string get_name() { return "toggle_window_configuration"; }
+
     bool requires_document() { return false; }
 };
 
@@ -232,6 +235,7 @@ class NextStateCommand : public Command {
     void perform(MainWidget* widget) { widget->next_state(); }
 
     std::string get_name() { return "next_state"; }
+
     bool requires_document() { return false; }
 };
 
@@ -240,6 +244,7 @@ class PrevStateCommand : public Command {
     void perform(MainWidget* widget) { widget->prev_state(); }
 
     std::string get_name() { return "prev_state"; }
+
     bool requires_document() { return false; }
 };
 
@@ -263,6 +268,7 @@ class CommandCommand : public Command {
     }
 
     std::string get_name() { return "command"; }
+
     bool requires_document() { return false; }
 };
 
@@ -314,6 +320,7 @@ class MoveLeftCommand : public Command {
         int rp = num_repeats == 0 ? 1 : num_repeats;
         widget->handle_horizontal_move(-rp);
     }
+
     std::string get_name() { return "move_left"; }
 };
 
@@ -322,6 +329,7 @@ class MoveRightCommand : public Command {
         int rp = num_repeats == 0 ? 1 : num_repeats;
         widget->handle_horizontal_move(rp);
     }
+
     std::string get_name() { return "move_right"; }
 };
 
@@ -375,6 +383,7 @@ class NextPageCommand : public Command {
     void perform(MainWidget* widget) {
         widget->main_document_view->move_pages(1 + num_repeats);
     }
+
     std::string get_name() { return "next_page"; }
 };
 
@@ -618,6 +627,7 @@ class GotoEndCommand : public Command {
 
 class ToggleFullscreenCommand : public Command {
     void perform(MainWidget* widget) { widget->toggle_fullscreen(); }
+
     std::string get_name() { return "toggle_fullscreen"; }
 
     bool requires_document() { return false; }
@@ -625,6 +635,7 @@ class ToggleFullscreenCommand : public Command {
 
 class ToggleOneWindowCommand : public Command {
     void perform(MainWidget* widget) { widget->toggle_two_window_mode(); }
+
     std::string get_name() { return "toggle_one_window"; }
 
     bool requires_document() { return false; }
@@ -634,6 +645,7 @@ class ToggleHighlightCommand : public Command {
     void perform(MainWidget* widget) {
         widget->opengl_widget->toggle_highlight_links();
     }
+
     std::string get_name() { return "toggle_highlight"; }
 
     bool requires_document() { return false; }
@@ -641,6 +653,7 @@ class ToggleHighlightCommand : public Command {
 
 class ToggleSynctexCommand : public Command {
     void perform(MainWidget* widget) { widget->toggle_synctex_mode(); }
+
     std::string get_name() { return "toggle_synctex"; }
 
     bool requires_document() { return false; }
@@ -648,6 +661,7 @@ class ToggleSynctexCommand : public Command {
 
 class TurnOnSynctexCommand : public Command {
     void perform(MainWidget* widget) { widget->set_synctex_mode(true); }
+
     std::string get_name() { return "turn_on_synctex"; }
 
     bool requires_document() { return false; }
@@ -657,6 +671,7 @@ class ToggleShowLastCommand : public Command {
     void perform(MainWidget* widget) {
         widget->should_show_last_command = !widget->should_show_last_command;
     }
+
     std::string get_name() { return "toggle_show_last_command"; }
 };
 
@@ -681,6 +696,7 @@ class OpenSelectedUrlCommand : public Command {
     void perform(MainWidget* widget) {
         open_web_url((widget->selected_text).c_str());
     }
+
     std::string get_name() { return "open_selected_url"; }
 };
 
@@ -1465,6 +1481,7 @@ class DonateCommand : public Command {
     }
 
     std::string get_name() { return "donate"; }
+
     bool requires_document() { return false; }
 };
 
@@ -1504,6 +1521,7 @@ class NoopCommand : public Command {
     void perform(MainWidget* widget) {}
 
     std::string get_name() { return "noop"; }
+
     bool requires_document() { return false; }
 };
 
@@ -1515,6 +1533,7 @@ class ImportCommand : public Command {
     }
 
     std::string get_name() { return "import"; }
+
     bool requires_document() { return false; }
 };
 
@@ -1526,6 +1545,7 @@ class ExportCommand : public Command {
     }
 
     std::string get_name() { return "export"; }
+
     bool requires_document() { return false; }
 };
 
@@ -1575,6 +1595,7 @@ class ExecuteCommand : public TextCommand {
     void perform(MainWidget* widget) { widget->execute_command(text.value()); }
 
     std::string get_name() { return "execute"; }
+
     bool requires_document() { return false; }
 };
 
@@ -1599,6 +1620,7 @@ class CopyWindowSizeConfigCommand : public Command {
     }
 
     std::string get_name() { return "copy_window_size_config"; }
+
     bool requires_document() { return false; }
 };
 
@@ -1691,21 +1713,29 @@ class LazyCommand : public Command {
     void set_text_requirement(std::wstring value) {
         get_command()->set_text_requirement(value);
     }
+
     void set_symbol_requirement(char value) {
         get_command()->set_symbol_requirement(value);
     }
+
     void set_file_requirement(std::wstring value) {
         get_command()->set_file_requirement(value);
     }
+
     void set_rect_requirement(fz_rect value) {
         get_command()->set_rect_requirement(value);
     }
+
     void set_num_repeats(int nr) { get_command()->set_num_repeats(nr); }
+
     std::vector<char> special_symbols() {
         return get_command()->special_symbols();
     }
+
     void pre_perform(MainWidget* widget) { get_command()->pre_perform(widget); }
+
     bool pushes_state() { return get_command()->pushes_state(); }
+
     bool requires_document() { return get_command()->requires_document(); }
 
     virtual void perform(MainWidget* w) {
@@ -2374,6 +2404,7 @@ InputParseTreeNode parse_token(std::wstring token) {
 
     return res;
 }
+
 void get_tokens(std::wstring line, std::vector<std::wstring>& tokens) {
     std::wstring stack;
 
@@ -2842,6 +2873,7 @@ std::string InputHandler::get_key_string_from_tree_node_sequence(
     }
     return res;
 }
+
 std::vector<Path> InputHandler::get_all_user_keys_paths() {
     std::vector<Path> res;
 
@@ -2857,9 +2889,13 @@ std::vector<Path> InputHandler::get_all_user_keys_paths() {
 std::optional<Requirement> Command::next_requirement(MainWidget* widget) {
     return {};
 }
+
 void Command::set_text_requirement(std::wstring value) {}
+
 void Command::set_symbol_requirement(char value) {}
+
 void Command::set_file_requirement(std::wstring value) {}
+
 void Command::set_rect_requirement(fz_rect value) {}
 
 bool Command::pushes_state() { return false; }

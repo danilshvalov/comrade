@@ -44,9 +44,7 @@ std::wstring Path::get_path() const {
 #endif
 }
 
-std::string Path::get_path_utf8() const {
-    return std::move(utf8_encode(get_path()));
-}
+std::string Path::get_path_utf8() const { return utf8_encode(get_path()); }
 
 void Path::create_directories() {
     QDir().mkpath(QString::fromStdWString(canon_path));
@@ -104,7 +102,7 @@ void copy_file(Path src, Path dst) {
 //	//sane_path_dir.cdUp();
 //
 //	//return
-//concatenate_path(concatenate_path(sane_path_dir.canonicalPath().toStdWString(),
-//L"."), sa
+// concatenate_path(concatenate_path(sane_path_dir.canonicalPath().toStdWString(),
+// L"."), sa
 //	//return sane_path.parent_path() / "." / sane_path.filename();
 //}
