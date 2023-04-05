@@ -227,10 +227,10 @@ void MainWidget::mouseMoveEvent(QMouseEvent* mouse_event) {
         // overview_resize_data.value().original_mouse_pos.second;
         fvec2 offset_diff =
             fvec2(normal_mpos) -
-            fvec2(overview_resize_data.value().original_normal_mouse_pos);
+            fvec2(overview_resize_data->original_normal_mouse_pos);
         opengl_widget->set_overview_side_pos(
-            overview_resize_data.value().side_index,
-            overview_resize_data.value().original_rect, offset_diff
+            overview_resize_data->side_index,
+            overview_resize_data->original_rect, offset_diff
         );
         validate_render();
         return;
@@ -3005,8 +3005,9 @@ void MainWidget::highlight_words() {
     opengl_widget->set_should_highlight_words(true);
 }
 
-std::vector<fz_rect>
-MainWidget::get_flat_words(std::vector<std::vector<fz_rect>>* flat_word_chars) {
+std::vector<fz_rect> MainWidget::get_flat_words(
+    std::vector<std::vector<fz_rect>>* flat_word_chars
+) {
     int page = get_current_page_number();
     auto res = main_document_view->get_document()->get_page_flat_words(page);
     if (flat_word_chars != nullptr) {
@@ -3040,8 +3041,9 @@ std::optional<fz_irect> MainWidget::get_tag_window_rect(
     return {};
 }
 
-std::optional<fz_rect>
-MainWidget::get_tag_rect(std::string tag, std::vector<fz_rect>* word_chars) {
+std::optional<fz_rect> MainWidget::get_tag_rect(
+    std::string tag, std::vector<fz_rect>* word_chars
+) {
 
     int page = get_current_page_number();
     std::vector<std::vector<fz_rect>> all_word_chars;
@@ -4346,8 +4348,9 @@ void MainWidget::handle_new_window() {
     windows.push_back(new_widget);
 }
 
-std::optional<std::pair<int, fz_link*>>
-MainWidget::get_selected_link(const std::wstring& text) {
+std::optional<std::pair<int, fz_link*>> MainWidget::get_selected_link(
+    const std::wstring& text
+) {
     std::vector<std::pair<int, fz_link*>> visible_page_links;
 
     if (ALPHABETIC_LINK_TAGS || is_string_numeric(text)) {

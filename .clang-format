@@ -11,3 +11,4 @@ QualifierAlignment: Left
 SortIncludes: Never
 SeparateDefinitionBlocks: Always
 IndentCaseLabels: Yes
+PenaltyReturnTypeOnItsOwnLine: 1000

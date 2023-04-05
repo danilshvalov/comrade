@@ -77,7 +77,7 @@ struct OverviewState {
 class PdfViewOpenGLWidget : public QOpenGLWidget,
                             protected QOpenGLExtraFunctions {
   public:
-    enum OverviewSide { bottom = 0, top = 1, left = 2, right = 3 };
+    enum class OverviewSide { bottom = 0, top = 1, left = 2, right = 3 };
 
     struct OverviewResizeData {
         fz_rect original_rect;
@@ -200,8 +200,9 @@ class PdfViewOpenGLWidget : public QOpenGLWidget,
     void handle_escape();
 
     void toggle_highlight_links();
-    void
-    set_highlight_links(bool should_highlight_links, bool should_show_numbers);
+    void set_highlight_links(
+        bool should_highlight_links, bool should_show_numbers
+    );
     void toggle_highlight_words();
     void set_highlight_words(std::vector<std::pair<fz_rect, int>>& rects);
     void set_should_highlight_words(bool should_highlight);
@@ -254,8 +255,10 @@ class PdfViewOpenGLWidget : public QOpenGLWidget,
     void get_overview_offsets(float* offset_x, float* offset_y);
     void get_overview_size(float* width, float* height);
 
-    float get_overview_side_pos(int index);
-    void set_overview_side_pos(int index, fz_rect original_rect, fvec2 diff);
+    float get_overview_side_pos(OverviewSide side);
+    void set_overview_side_pos(
+        OverviewSide side, fz_rect original_rect, fvec2 diff
+    );
     void set_overview_rect(fz_rect rect);
 
     void set_overview_offsets(float offset_x, float offset_y);
@@ -280,8 +283,9 @@ class PdfViewOpenGLWidget : public QOpenGLWidget,
 
     std::optional<fz_rect> get_selected_rectangle();
 
-    void
-    set_typing_rect(int page, fz_rect rect, std::optional<fz_rect> wrong_rect);
+    void set_typing_rect(
+        int page, fz_rect rect, std::optional<fz_rect> wrong_rect
+    );
 
     Document* get_current_overview_document();
     NormalizedWindowPos document_to_overview_pos(DocumentPos pos);
@@ -290,8 +294,9 @@ class PdfViewOpenGLWidget : public QOpenGLWidget,
     );
     int find_search_index_for_visible_pages(std::vector<int>& visible_pages);
     int find_search_index_for_visible_page(int page, int breakpoint);
-    int
-    find_search_result_for_page_range(int page, int range_begin, int range_end);
+    int find_search_result_for_page_range(
+        int page, int range_begin, int range_end
+    );
     int find_search_results_breakpoint();
     int find_search_results_breakpoint_helper(int begin_index, int end_index);
     void get_custom_color_transform_matrix(float matrix_data[16]);
