@@ -38,22 +38,23 @@ authorization from the copyright holder.
 
 ## Acknowledgments:
 
-The author received useful remarks from the __pdfTeX__ developers, especially Hahn The Thanh,
-and significant help from __XeTeX__ developer Jonathan Kew.
+The author received useful remarks from the __pdfTeX__ developers, especially
+Hahn The Thanh, and significant help from __XeTeX__ developer Jonathan Kew.
 
 ## Nota Bene:
 
-If you include or use a significant part of the __SyncTeX__ package into a software,
-I would appreciate to be listed as contributor and see "__SyncTeX__" highlighted.
+If you include or use a significant part of the __SyncTeX__ package into a
+software, I would appreciate to be listed as contributor and see "__SyncTeX__"
+highlighted.
 */
 
 #ifndef __SYNCTEX_VERSION__
-#   define __SYNCTEX_VERSION__
+#define __SYNCTEX_VERSION__
 
-#   define SYNCTEX_VERSION_MAJOR 1
+#define SYNCTEX_VERSION_MAJOR 1
 
-#   define SYNCTEX_VERSION_STRING "1.21"
+#define SYNCTEX_VERSION_STRING "1.21"
 
-#   define SYNCTEX_CLI_VERSION_STRING "1.5"
+#define SYNCTEX_CLI_VERSION_STRING "1.5"
 
 #endif

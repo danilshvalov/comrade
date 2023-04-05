@@ -4,22 +4,20 @@
 #include <QtCore>
 #include <QTimer>
 
-namespace
-{
-    QString generateKeyHash(const QString& key, const QString& salt)
-    {
-        QByteArray data;
-        data.append(key.toUtf8());
-        data.append(salt.toUtf8());
-        data = QCryptographicHash::hash(data, QCryptographicHash::Sha1).toHex();
-        return data;
-    }
+namespace {
+QString generateKeyHash(const QString& key, const QString& salt) {
+    QByteArray data;
+    data.append(key.toUtf8());
+    data.append(salt.toUtf8());
+    data = QCryptographicHash::hash(data, QCryptographicHash::Sha1).toHex();
+    return data;
 }
+} // namespace
 
-RunGuard::RunGuard(const QString &key) : QObject{},
-    key(key),
-    memoryKey(generateKeyHash(key, "_sharedMemKey"))
-{
+RunGuard::RunGuard(const QString& key)
+    : QObject{},
+      key(key),
+      memoryKey(generateKeyHash(key, "_sharedMemKey")) {
     // By explicitly attaching it and then deleting it we make sure that the
     // memory is deleted even after the process has crashed on Unix.
     memory = new QSharedMemory{memoryKey};
@@ -40,13 +38,16 @@ RunGuard::RunGuard(const QString &key) : QObject{},
         qDebug() << "Shared memory created: this is the primary application.";
         isPrimary = true;
     } else {
-        qDebug() << "Shared memory already exists: this is a secondary application.";
+        qDebug(
+        ) << "Shared memory already exists: this is a secondary application.";
         qDebug() << "Secondary application attaching to shared memory block...";
         if (!memory->attach()) {
-            qCritical() << "Secondary application cannot attach to shared memory block.";
+            qCritical(
+            ) << "Secondary application cannot attach to shared memory block.";
             QCoreApplication::exit();
         }
-        qDebug() << "Secondary application successfully attached to shared memory block.";
+        qDebug() << "Secondary application successfully attached to shared "
+                    "memory block.";
     }
 
     memory->lock();
@@ -61,14 +62,15 @@ RunGuard::RunGuard(const QString &key) : QObject{},
             qCritical() << "Cannot start IPC server.";
             QCoreApplication::exit();
         }
-        QObject::connect(server, &QLocalServer::newConnection,
-            this, &RunGuard::onNewConnection);
+        QObject::connect(
+            server, &QLocalServer::newConnection, this,
+            &RunGuard::onNewConnection
+        );
     }
     memory->unlock();
 }
 
-RunGuard::~RunGuard()
-{
+RunGuard::~RunGuard() {
     memory->lock();
     if (server) {
         server->close();
@@ -78,37 +80,26 @@ RunGuard::~RunGuard()
     memory->unlock();
 }
 
-bool RunGuard::isPrimary()
-{
-    return server != nullptr;
+bool RunGuard::isPrimary() { return server != nullptr; }
+
+bool RunGuard::isSecondary() { return server == nullptr; }
+
+void RunGuard::onNewConnection() {
+    QLocalSocket* socket = server->nextPendingConnection();
+    QObject::connect(socket, &QLocalSocket::disconnected, this, [socket]() {
+        socket->deleteLater();
+    });
+    QObject::connect(socket, &QLocalSocket::readyRead, this, [socket, this]() {
+        readMessage(socket);
+    });
 }
 
-bool RunGuard::isSecondary()
-{
-    return server == nullptr;
-}
-
-void RunGuard::onNewConnection()
-{
-   QLocalSocket *socket = server->nextPendingConnection();
-   QObject::connect(socket, &QLocalSocket::disconnected, this,
-       [socket]() {
-           socket->deleteLater();
-       }
-   );
-   QObject::connect(socket, &QLocalSocket::readyRead, this, [socket, this]() {
-       readMessage(socket);
-   });
-}
-
-void RunGuard::readMessage(QLocalSocket *socket)
-{
-    QByteArray data = socket -> readAll();
+void RunGuard::readMessage(QLocalSocket* socket) {
+    QByteArray data = socket->readAll();
     emit messageReceived(data);
 }
 
-void RunGuard::sendMessage(const QByteArray &message)
-{
+void RunGuard::sendMessage(const QByteArray& message) {
     QLocalSocket socket;
     socket.connectToServer(key, QLocalSocket::WriteOnly);
     socket.waitForConnected();
@@ -116,7 +107,8 @@ void RunGuard::sendMessage(const QByteArray &message)
         if (socket.state() == QLocalSocket::ConnectedState) {
             socket.write(message);
             if (socket.waitForBytesWritten()) {
-                qCritical() << "Secondary application sent message to IPC server.";
+                qCritical()
+                    << "Secondary application sent message to IPC server.";
             }
         }
     } else {
