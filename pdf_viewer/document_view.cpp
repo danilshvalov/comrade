@@ -1,5 +1,7 @@
 #include "document_view.h"
+
 #include <cmath>
+#include <algorithm>
 
 extern float MOVE_SCREEN_PERCENTAGE;
 extern float FIT_TO_PAGE_WIDTH_RATIO;
@@ -100,20 +102,9 @@ void DocumentView::set_offsets(float new_offset_x, float new_offset_y) {
         current_document->get_accum_page_height(num_pages - 1) +
         current_document->get_page_height(num_pages - 1);
     float min_y_offset = 0;
-    float min_x_offset = get_min_valid_x();
-    float max_x_offset = get_max_valid_x();
 
-    if (new_offset_y > max_y_offset)
-        new_offset_y = max_y_offset;
-    if (new_offset_y < min_y_offset)
-        new_offset_y = min_y_offset;
-    if (new_offset_x > max_x_offset)
-        new_offset_x = max_x_offset;
-    if (new_offset_x < min_x_offset)
-        new_offset_x = min_x_offset;
-
-    offset_x = new_offset_x;
-    offset_y = new_offset_y;
+    offset_x = std::clamp(new_offset_x, get_min_valid_x(), get_max_valid_x());
+    offset_y = std::clamp(new_offset_y, min_y_offset, max_y_offset);
 }
 
 Document* DocumentView::get_document() { return current_document; }
@@ -371,11 +362,11 @@ WindowPos DocumentView::document_to_window_pos_in_pixels(DocumentPos doc_pos) {
     AbsoluteDocumentPos abspos =
         current_document->document_to_absolute_pos(doc_pos);
     WindowPos window_pos;
-    window_pos.y = (abspos.y - offset_y) * zoom_level + view_height / 2;
+    window_pos.y = (abspos.y - offset_y) * zoom_level + view_height / 2.0f;
     window_pos.x = (abspos.x + offset_x -
                     current_document->get_page_width(doc_pos.page) / 2) *
                        zoom_level +
-                   view_width / 2;
+                   view_width / 2.0f;
     return window_pos;
 }
 
@@ -441,23 +432,25 @@ fz_rect DocumentView::document_to_window_rect_pixel_perfect(
 DocumentPos DocumentView::window_to_document_pos(WindowPos window_pos) {
     if (current_document) {
         return current_document->absolute_to_page_pos(
-            {(window_pos.x - view_width / 2) / zoom_level - offset_x,
-             (window_pos.y - view_height / 2) / zoom_level + offset_y}
+            {(window_pos.x - view_width / 2.0f) / zoom_level - offset_x,
+             (window_pos.y - view_height / 2.0f) / zoom_level + offset_y}
         );
     } else {
         return {-1, 0, 0};
     }
 }
 
-AbsoluteDocumentPos
-DocumentView::window_to_absolute_document_pos(WindowPos window_pos) {
-    float doc_x = (window_pos.x - view_width / 2) / zoom_level - offset_x;
-    float doc_y = (window_pos.y - view_height / 2) / zoom_level + offset_y;
+AbsoluteDocumentPos DocumentView::window_to_absolute_document_pos(
+    WindowPos window_pos
+) {
+    float doc_x = (window_pos.x - view_width / 2.0f) / zoom_level - offset_x;
+    float doc_y = (window_pos.y - view_height / 2.0f) / zoom_level + offset_y;
     return {doc_x, doc_y};
 }
 
-NormalizedWindowPos
-DocumentView::window_to_normalized_window_pos(WindowPos window_pos) {
+NormalizedWindowPos DocumentView::window_to_normalized_window_pos(
+    WindowPos window_pos
+) {
     float normal_x =
         2 * (static_cast<float>(window_pos.x) - view_width / 2.0f) / view_width;
     float normal_y = 2 *
@@ -766,7 +759,7 @@ void DocumentView::open_document(
                 // automatically adjust width
                 fit_to_page_width();
                 is_auto_resize_mode = true;
-                set_offset_y(view_height / 2 / zoom_level);
+                set_offset_y(view_height / 2.0f / zoom_level);
             }
         }
     }
@@ -1100,13 +1093,13 @@ void DocumentView::set_page_offset(int new_offset) {
 float DocumentView::get_max_valid_x() {
     float page_width =
         current_document->get_page_width(get_center_page_number());
-    return std::abs(-view_width / zoom_level / 2 + page_width / 2);
+    return std::max(0.0f, page_width - view_width / zoom_level * 0.85f) / 2;
 }
 
 float DocumentView::get_min_valid_x() {
     float page_width =
         current_document->get_page_width(get_center_page_number());
-    return -std::abs(-view_width / zoom_level / 2 + page_width / 2);
+    return -std::max(0.0f, page_width - view_width / zoom_level * 0.85f) / 2;
 }
 
 void DocumentView::rotate() {

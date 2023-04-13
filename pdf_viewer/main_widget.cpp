@@ -850,11 +850,10 @@ void MainWidget::keyReleaseEvent(QKeyEvent* kevent) { key_event(true, kevent); }
 void MainWidget::validate_render() {
     if (smooth_scroll_mode) {
         if (main_document_view_has_document()) {
-            float secs =
-                static_cast<float>(
-                    -QTime::currentTime().msecsTo(last_speed_update_time)
-                ) /
-                1000.0f;
+            float secs = static_cast<float>(-QTime::currentTime().msecsTo(
+                             last_speed_update_time
+                         )) /
+                         1000.0f;
 
             if (secs > 0.1f) {
                 secs = 0.0f;
@@ -1605,8 +1604,8 @@ void MainWidget::handle_left_click(
         is_selecting = false;
         is_dragging = false;
 
-        bool was_overview_mode =
-            overview_move_data.has_value() || overview_resize_data.has_value();
+        bool was_overview_mode = overview_move_data.has_value() ||
+                                 overview_resize_data.has_value();
 
         overview_move_data = {};
         overview_resize_data = {};
@@ -2017,8 +2016,8 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
 
     bool is_shift_pressed =
         QApplication::queryKeyboardModifiers().testFlag(Qt::ShiftModifier);
-    bool is_visual_mark_mode =
-        opengl_widget->get_should_draw_vertical_line() && visual_scroll_mode;
+    bool is_visual_mark_mode = opengl_widget->get_should_draw_vertical_line() &&
+                               visual_scroll_mode;
 
     int x = wevent->position().x();
     int y = wevent->position().y();
