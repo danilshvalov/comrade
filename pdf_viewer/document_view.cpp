@@ -2,6 +2,7 @@
 
 #include <cmath>
 #include <algorithm>
+#include <optional>
 
 extern float MOVE_SCREEN_PERCENTAGE;
 extern float FIT_TO_PAGE_WIDTH_RATIO;
@@ -121,50 +122,47 @@ Document* DocumentView::get_document() { return current_document; }
 // }
 
 std::optional<Portal> DocumentView::find_closest_portal(bool limit) {
-    if (current_document) {
-        auto res = current_document->find_closest_portal(offset_y);
-        if (res) {
-            if (!limit) {
-                return res;
-            } else {
-                if (std::abs(res.value().src_offset_y - offset_y) < 500.0f) {
-                    return res;
-                }
-            }
-        }
+    if (!current_document) {
+        return std::nullopt;
     }
-    return {};
+
+    auto closest = current_document->find_closest_portal(offset_y);
+    if (closest &&
+        (!limit || std::abs(closest->src_offset_y - offset_y) < 500.0f)) {
+        return closest;
+    }
+    return std::nullopt;
 }
 
 std::optional<BookMark> DocumentView::find_closest_bookmark() {
-    if (current_document) {
-        int bookmark_index = current_document->find_closest_bookmark_index(
-            current_document->get_bookmarks(), offset_y
-        );
-        const std::vector<BookMark>& bookmarks =
-            current_document->get_bookmarks();
-        if ((bookmark_index >= 0) && (bookmark_index < bookmarks.size())) {
-            if (std::abs(bookmarks[bookmark_index].y_offset - offset_y) <
-                1000.0f) {
-                return bookmarks[bookmark_index];
-            }
-        }
+    if (!current_document) {
+        return std::nullopt;
     }
-    return {};
+
+    const auto& bookmarks = current_document->get_bookmarks();
+    int bookmark_index =
+        current_document->find_closest_bookmark_index(bookmarks, offset_y);
+    if (bookmark_index >= 0 && bookmark_index < bookmarks.size() &&
+        std::abs(bookmarks[bookmark_index].y_offset - offset_y) < 1000.0f) {
+        return bookmarks[bookmark_index];
+    }
+    return std::nullopt;
 }
 
 void DocumentView::goto_link(Portal* link) {
-    if (link) {
-        if (get_document() &&
-            get_document()->get_checksum() == link->dst.document_checksum) {
+    if (!link) {
+        return;
+    }
+
+    auto document = get_document();
+    if (document && document->get_checksum() == link->dst.document_checksum) {
+        set_opened_book_state(link->dst.book_state);
+    } else {
+        auto destination_path =
+            checksummer->get_path(link->dst.document_checksum);
+        if (destination_path) {
+            open_document(destination_path.value(), nullptr);
             set_opened_book_state(link->dst.book_state);
-        } else {
-            auto destination_path =
-                checksummer->get_path(link->dst.document_checksum);
-            if (destination_path) {
-                open_document(destination_path.value(), nullptr);
-                set_opened_book_state(link->dst.book_state);
-            }
         }
     }
 }
