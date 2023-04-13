@@ -49,34 +49,32 @@
  * https://stackoverflow.com/questions/5006547/qt-best-practice-for-a-single-instance-app-protection
  * https://github.com/itay-grudev/SingleApplication
  */
-class RunGuard : public QObject
-{
+class RunGuard : public QObject {
     Q_OBJECT
 
-public:
-    explicit RunGuard(const QString &key);
+  public:
+    explicit RunGuard(const QString& key);
     ~RunGuard();
 
     bool isPrimary();
     bool isSecondary();
-    void sendMessage(const QByteArray &message);
+    void sendMessage(const QByteArray& message);
 
-signals:
-    void messageReceived(const QByteArray &message);
+  signals:
+    void messageReceived(const QByteArray& message);
 
-private slots:
+  private slots:
     void onNewConnection();
 
-private:
-
+  private:
     const QString key;
     const QString sharedMemLockKey;
     const QString memoryKey;
 
-    QSharedMemory *memory;
-    QLocalServer *server = nullptr;
+    QSharedMemory* memory;
+    QLocalServer* server = nullptr;
 
-    void readMessage(QLocalSocket *socket);
+    void readMessage(QLocalSocket* socket);
 };
 
 #endif // SINGLE_INSTANCE_GUARD_H
