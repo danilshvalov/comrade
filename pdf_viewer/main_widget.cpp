@@ -45,7 +45,6 @@
 #include "config.h"
 #include "utf8.h"
 #include "synctex/synctex_parser.h"
-#include "path.h"
 
 #include "main_widget.h"
 
@@ -62,14 +61,14 @@ extern float VISUAL_MARK_NEXT_PAGE_THRESHOLD;
 extern float SMALL_PIXMAP_SCALE;
 extern std::wstring EXECUTE_COMMANDS[26];
 extern int STATUS_BAR_FONT_SIZE;
-extern Path default_config_path;
-extern Path default_keys_path;
-extern std::vector<Path> user_config_paths;
-extern std::vector<Path> user_keys_paths;
-extern Path database_file_path;
-extern Path tutorial_path;
-extern Path last_opened_file_address_path;
-extern Path auto_config_path;
+extern fs::path default_config_path;
+extern fs::path default_keys_path;
+extern std::vector<fs::path> user_config_paths;
+extern std::vector<fs::path> user_keys_paths;
+extern fs::path database_file_path;
+extern fs::path tutorial_path;
+extern fs::path last_opened_file_address_path;
+extern fs::path auto_config_path;
 extern std::wstring ITEM_LIST_PREFIX;
 extern std::wstring SEARCH_URLS[26];
 extern std::wstring MIDDLE_CLICK_SEARCH_ENGINE;
@@ -96,8 +95,8 @@ extern std::wstring SHIFT_RIGHT_CLICK_COMMAND;
 extern std::wstring CONTROL_RIGHT_CLICK_COMMAND;
 extern std::wstring ALT_CLICK_COMMAND;
 extern std::wstring ALT_RIGHT_CLICK_COMMAND;
-extern Path local_database_file_path;
-extern Path global_database_file_path;
+extern fs::path local_database_file_path;
+extern fs::path global_database_file_path;
 extern std::map<std::wstring, std::wstring> ADDITIONAL_COMMANDS;
 extern std::map<std::wstring, std::wstring> ADDITIONAL_MACROS;
 extern bool HIGHLIGHT_MIDDLE_CLICK;
@@ -328,9 +327,7 @@ void MainWidget::persist() {
     // write the address of the current document in a file so that the next time
     // we launch the application, we open this document
     if (main_document_view->get_document()) {
-        std::ofstream last_path_file(
-            last_opened_file_address_path.get_path_utf8()
-        );
+        std::ofstream last_path_file(last_opened_file_address_path);
 
         std::string encoded_file_name_str =
             utf8_encode(main_document_view->get_document()->get_path());
@@ -619,7 +616,9 @@ std::wstring MainWidget::get_status_string() {
 
     if (SHOW_DOCUMENT_NAME_IN_STATUSBAR) {
         std::optional<std::wstring> file_name =
-            Path(main_document_view->get_document()->get_path()).filename();
+            fs::path(main_document_view->get_document()->get_path())
+                .filename()
+                .generic_wstring();
         if (file_name) {
             status_string.replace(
                 "%{document_name}",
@@ -1040,16 +1039,19 @@ void MainWidget::toggle_mouse_drag_mode() {
 }
 
 void MainWidget::do_synctex_forward_search(
-    const Path& pdf_file_path, const Path& latex_file_path, int line, int column
+    const fs::path& pdf_file_path,
+    const fs::path& latex_file_path,
+    int line,
+    int column
 ) {
 
     std::wstring latex_file_path_with_redundant_dot =
-        add_redundant_dot_to_path(latex_file_path.get_path());
+        add_redundant_dot_to_path(latex_file_path.generic_wstring());
 
-    std::string latex_file_string = latex_file_path.get_path_utf8();
+    std::string latex_file_string = latex_file_path.generic_string();
     std::string latex_file_with_redundant_dot_string =
         utf8_encode(latex_file_path_with_redundant_dot);
-    std::string pdf_file_string = pdf_file_path.get_path_utf8();
+    std::string pdf_file_string = pdf_file_path.generic_string();
 
     synctex_scanner_p scanner = synctex_scanner_new_with_output_file(
         pdf_file_string.c_str(), nullptr, 1
@@ -1100,8 +1102,8 @@ void MainWidget::do_synctex_forward_search(
         if (target_page != -1) {
 
             if ((main_document_view->get_document() == nullptr) ||
-                (pdf_file_path.get_path() !=
-                 main_document_view->get_document()->get_path())) {
+                (pdf_file_path != main_document_view->get_document()->get_path()
+                )) {
 
                 open_document(pdf_file_path);
             }
@@ -1177,13 +1179,13 @@ void MainWidget::open_document_with_hash(
 ) {
     std::optional<std::wstring> maybe_path = checksummer->get_path(path);
     if (maybe_path) {
-        Path path(maybe_path.value());
+        fs::path path(maybe_path.value());
         open_document(path, offset_x, offset_y, zoom_level);
     }
 }
 
 void MainWidget::open_document(
-    const Path& path,
+    const fs::path& path,
     std::optional<float> offset_x,
     std::optional<float> offset_y,
     std::optional<float> zoom_level
@@ -1204,21 +1206,23 @@ void MainWidget::open_document(
         main_window_width, main_window_height
     );
     main_document_view->open_document(
-        path.get_path(), &this->is_render_invalidated
+        path.generic_wstring(), &this->is_render_invalidated
     );
     bool has_document = main_document_view_has_document();
 
     if (has_document) {
         // setWindowTitle(QString::fromStdWString(path.get_path()));
-        if (path.filename().has_value()) {
-            setWindowTitle(QString::fromStdWString(path.filename().value()));
+        if (!path.filename().empty()) {
+            setWindowTitle(
+                QString::fromStdWString(path.filename().generic_wstring())
+            );
         } else {
-            setWindowTitle(QString::fromStdWString(path.get_path()));
+            setWindowTitle(QString::fromStdWString(path.generic_wstring()));
         }
     }
 
-    if ((path.get_path().size() > 0) && (!has_document)) {
-        show_error_message(L"Could not open file: " + path.get_path());
+    if (!path.empty() && !has_document) {
+        show_error_message(L"Could not open file: " + path.generic_wstring());
     }
 
     if (offset_x) {
@@ -1247,7 +1251,7 @@ void MainWidget::open_document(
 }
 
 void MainWidget::open_document_at_location(
-    const Path& path_,
+    const fs::path& path_,
     int page,
     std::optional<float> x_loc,
     std::optional<float> y_loc,
@@ -1257,7 +1261,7 @@ void MainWidget::open_document_at_location(
     if (main_document_view) {
         main_document_view->persist();
     }
-    std::wstring path = path_.get_path();
+    std::wstring path = path_.generic_wstring();
 
     open_document(path, &this->is_render_invalidated, true, {}, true);
     bool has_document = main_document_view_has_document();
@@ -2669,11 +2673,15 @@ void MainWidget::execute_command(
             );
             command_parts[i].replace(
                 "%{local_database}",
-                QString::fromStdWString(local_database_file_path.get_path())
+                QString::fromStdWString(
+                    local_database_file_path.generic_wstring()
+                )
             );
             command_parts[i].replace(
                 "%{shared_database}",
-                QString::fromStdWString(global_database_file_path.get_path())
+                QString::fromStdWString(
+                    global_database_file_path.generic_wstring()
+                )
             );
 
             int selected_rect_page = -1;
@@ -2950,7 +2958,8 @@ void MainWidget::open_document(
         force_load_dimensions
     );
 
-    std::optional<std::wstring> filename = Path(doc_path).filename();
+    std::optional<std::wstring> filename =
+        fs::path(doc_path).filename().generic_wstring();
     if (filename) {
         setWindowTitle(QString::fromStdWString(filename.value()));
     }
@@ -3134,8 +3143,8 @@ void MainWidget::handle_link_click(const PdfLink& link) {
         auto parts = path_uri.split('#');
         std::wstring path_part = parts.at(0).toStdWString();
         auto docpath = doc()->get_path();
-        Path linked_file_path =
-            Path(doc()->get_path()).file_parent().slash(path_part);
+        fs::path linked_file_path =
+            fs::path(doc()->get_path()).parent_path() / path_part;
         int page = 0;
         if (parts.size() > 0) {
             std::string page_string = parts.at(1).toStdString();
@@ -3161,7 +3170,7 @@ void MainWidget::handle_link_click(const PdfLink& link) {
 }
 
 void MainWidget::save_auto_config() {
-    std::wofstream outfile(auto_config_path.get_path_utf8());
+    std::wofstream outfile(auto_config_path);
     outfile << get_serialized_configuration_string();
     outfile.close();
 }
@@ -4089,7 +4098,7 @@ void MainWidget::handle_goto_bookmark_global() {
         if (path) {
             BookMark bm = desc_bm_pair.second;
             std::wstring file_name =
-                Path(path.value()).filename().value_or(L"");
+                fs::path(path.value()).filename().generic_wstring();
             descs.push_back(ITEM_LIST_PREFIX + L" " + bm.description);
             file_names.push_back(truncate_string(file_name, 50));
             book_states.push_back({path.value(), bm.y_offset});
@@ -4196,7 +4205,7 @@ void MainWidget::handle_goto_highlight_global() {
             Highlight hl = desc_hl_pair.second;
 
             std::wstring file_name =
-                Path(path.value()).filename().value_or(L"");
+                fs::path(path.value()).filename().generic_wstring();
 
             std::wstring highlight_type_string = L"a";
             highlight_type_string[0] = hl.type;
@@ -4301,7 +4310,7 @@ void MainWidget::handle_open_prev_doc() {
                 opened_docs_names.push_back(path.value_or(L"<ERROR>"));
             } else {
                 opened_docs_names.push_back(
-                    Path(path.value()).filename().value_or(L"<ERROR>")
+                    fs::path(path.value()).filename().generic_wstring()
                 );
             }
             opened_docs_hashes.push_back(utf8_encode(doc_hash_));
@@ -4441,10 +4450,10 @@ void MainWidget::handle_open_link(const std::wstring& text, bool copy) {
 }
 
 void MainWidget::handle_keys_user_all() {
-    std::vector<Path> keys_paths = input_handler->get_all_user_keys_paths();
+    std::vector<fs::path> keys_paths = input_handler->get_all_user_keys_paths();
     std::vector<std::wstring> keys_paths_wstring;
-    for (auto path : keys_paths) {
-        keys_paths_wstring.push_back(path.get_path());
+    for (const auto& path : keys_paths) {
+        keys_paths_wstring.push_back(path.generic_wstring());
     }
 
     set_current_widget(new FilteredSelectWindowClass<std::wstring>(
@@ -4460,10 +4469,11 @@ void MainWidget::handle_keys_user_all() {
 }
 
 void MainWidget::handle_prefs_user_all() {
-    std::vector<Path> prefs_paths = config_manager->get_all_user_config_files();
+    std::vector<fs::path> prefs_paths =
+        config_manager->get_all_user_config_files();
     std::vector<std::wstring> prefs_paths_wstring;
     for (auto path : prefs_paths) {
-        prefs_paths_wstring.push_back(path.get_path());
+        prefs_paths_wstring.push_back(path.generic_wstring());
     }
 
     set_current_widget(new FilteredSelectWindowClass<std::wstring>(

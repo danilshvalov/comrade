@@ -59,7 +59,6 @@
 #include "config.h"
 #include "utf8.h"
 #include "main_widget.h"
-#include "path.h"
 #include "RunGuard.h"
 #include "checksum.h"
 #include "OpenWithApplication.h"
@@ -235,17 +234,17 @@ bool AUTOCENTER_VISUAL_SCROLL = false;
 bool ALPHABETIC_LINK_TAGS = false;
 bool VIMTEX_WSL_FIX = false;
 
-Path default_config_path(L"");
-Path default_keys_path(L"");
-std::vector<Path> user_config_paths = {};
-std::vector<Path> user_keys_paths = {};
-Path database_file_path(L"");
-Path local_database_file_path(L"");
-Path global_database_file_path(L"");
-Path tutorial_path(L"");
-Path last_opened_file_address_path(L"");
-Path shader_path(L"");
-Path auto_config_path(L"");
+fs::path default_config_path(L"");
+fs::path default_keys_path(L"");
+std::vector<fs::path> user_config_paths = {};
+std::vector<fs::path> user_keys_paths = {};
+fs::path database_file_path(L"");
+fs::path local_database_file_path(L"");
+fs::path global_database_file_path(L"");
+fs::path tutorial_path(L"");
+fs::path last_opened_file_address_path(L"");
+fs::path shader_path(L"");
+fs::path auto_config_path(L"");
 
 std::wstring SHIFT_CLICK_COMMAND = L"overview_under_cursor";
 std::wstring CONTROL_CLICK_COMMAND = L"smart_jump_under_cursor";
@@ -291,9 +290,10 @@ QStringList convert_arguments(QStringList input_args) {
 
         if (is_path_argument) {
             std::wstring path_wstring = strip_uri(path.toStdWString());
-            Path path_object(path_wstring);
-            output_args.push_back(QString::fromStdWString(path_object.get_path()
-            ));
+            fs::path path_object(path_wstring);
+            output_args.push_back(
+                QString::fromStdWString(path_object.generic_wstring())
+            );
             input_args.pop_front();
         }
     }
@@ -306,148 +306,148 @@ QStringList convert_arguments(QStringList input_args) {
 
 void configure_paths() {
 
-    Path parent_path(QCoreApplication::applicationDirPath().toStdWString());
-    std::string exe_path =
-        utf8_encode(QCoreApplication::applicationFilePath().toStdWString());
+    fs::path parent_path(QCoreApplication::applicationDirPath().toStdWString());
+    std::string exe_path = utf8_encode(
+        QCoreApplication::applicationFilePath().toStdWString()
+    );
 
-    shader_path = parent_path.slash(L"shaders");
+    shader_path = parent_path / "shaders";
 
 #ifdef Q_OS_MACOS
-    Path mac_home_path(QDir::homePath().toStdWString());
-    Path mac_standard_config_path =
-        mac_home_path.slash(L".config").slash(L"sioyek");
-    user_keys_paths.push_back(mac_standard_config_path.slash(L"keys_user.config"
-    ));
-    user_config_paths.push_back(
-        mac_standard_config_path.slash(L"prefs_user.config")
-    );
+    fs::path mac_home_path(QDir::homePath().toStdWString());
+    fs::path mac_standard_config_path = mac_home_path / ".config" / "sioyek";
+    user_keys_paths.push_back(mac_standard_config_path / "keys_user.config");
+    user_config_paths.push_back(mac_standard_config_path / "prefs_user.config");
 #endif
 
 #ifdef Q_OS_LINUX
-    QStringList all_config_paths =
-        QStandardPaths::standardLocations(QStandardPaths::AppConfigLocation);
+    QStringList all_config_paths = QStandardPaths::standardLocations(
+        QStandardPaths::AppConfigLocation
+    );
     for (int i = all_config_paths.size() - 1; i >= 0; i--) {
-        user_config_paths.push_back(Path(all_config_paths.at(i).toStdWString())
-                                        .slash(L"prefs_user.config"));
-        user_keys_paths.push_back(Path(all_config_paths.at(i).toStdWString())
-                                      .slash(L"keys_user.config"));
+        user_config_paths.push_back(
+            fs::path(all_config_paths.at(i).toStdWString()) /
+            "prefs_user.config"
+        );
+        user_keys_paths.push_back(
+            fs::path(all_config_paths.at(i).toStdWString()) / "keys_user.config"
+        );
     }
 
 #ifdef LINUX_STANDARD_PATHS
-    Path home_path(QDir::homePath().toStdWString());
-    Path standard_data_path =
-        home_path.slash(L".local").slash(L"share").slash(L"sioyek");
-    Path standard_config_path = Path(L"/etc/sioyek");
-    Path read_only_data_path = Path(L"/usr/share/sioyek");
-    standard_data_path.create_directories();
+    fs::path home_path(QDir::homePath().toStdWString());
+    fs::path standard_data_path = home_path / ".local" / "share" / "sioyek";
+    fs::path standard_config_path = "/etc/sioyek";
+    fs::path read_only_data_path = "/usr/share/sioyek";
+    fs::create_directories(standard_data_path);
 
-    default_config_path = standard_config_path.slash(L"prefs.config");
-    default_keys_path = standard_config_path.slash(L"keys.config");
+    default_config_path = standard_config_path / "prefs.config";
+    default_keys_path = standard_config_path / "keys.config";
 
-    database_file_path = standard_data_path.slash(L"test.db");
-    local_database_file_path = standard_data_path.slash(L"local.db");
-    global_database_file_path = standard_data_path.slash(L"shared.db");
-    tutorial_path = read_only_data_path.slash(L"tutorial.pdf");
-    last_opened_file_address_path =
-        standard_data_path.slash(L"last_document_path.txt");
-    shader_path = read_only_data_path.slash(L"shaders");
+    database_file_path = standard_data_path / "test.db";
+    local_database_file_path = standard_data_path / "local.db";
+    global_database_file_path = standard_data_path / "shared.db";
+    tutorial_path = read_only_data_path / "tutorial.pdf";
+    last_opened_file_address_path = standard_data_path /
+                                    "last_document_path.txt";
+    shader_path = read_only_data_path / "shaders";
 #else
     char* APPDIR = std::getenv("XDG_CONFIG_HOME");
-    Path linux_home_path(QDir::homePath().toStdWString());
+    fs::path linux_home_path = QDir::homePath().toStdWString();
 
     if (!APPDIR) {
         APPDIR = std::getenv("HOME");
     }
 
-    Path standard_data_path = Path(utf8_decode(APPDIR));
-    standard_data_path =
-        standard_data_path.slash(L".local").slash(L"share").slash(L"Sioyek");
-    standard_data_path.create_directories();
+    fs::path standard_data_path = utf8_decode(APPDIR);
+    standard_data_path = standard_data_path / ".local" / "share" / "Sioyek";
+    fs::create_directories(standard_data_path);
 
-    default_config_path = parent_path.slash(L"prefs.config");
-    // user_config_path = standard_data_path.slash(L"prefs_user.config");
-    user_config_paths.push_back(standard_data_path.slash(L"prefs_user.config"));
-    default_keys_path = parent_path.slash(L"keys.config");
-    user_keys_paths.push_back(standard_data_path.slash(L"keys_user.config"));
-    database_file_path = standard_data_path.slash(L"test.db");
-    local_database_file_path = standard_data_path.slash(L"local.db");
-    global_database_file_path = standard_data_path.slash(L"shared.db");
-    tutorial_path = standard_data_path.slash(L"tutorial.pdf");
-    last_opened_file_address_path =
-        standard_data_path.slash(L"last_document_path.txt");
+    default_config_path = parent_path / "prefs.config";
+    user_config_paths.push_back(standard_data_path / "prefs_user.config");
+    default_keys_path = parent_path / "keys.config";
+    user_keys_paths.push_back(standard_data_path / "keys_user.config");
+    database_file_path = standard_data_path / "test.db";
+    local_database_file_path = standard_data_path / "local.db";
+    global_database_file_path = standard_data_path / "shared.db";
+    tutorial_path = standard_data_path / "tutorial.pdf";
+    last_opened_file_address_path = standard_data_path /
+                                    "last_document_path.txt";
 
-    Path linux_standard_config_path =
-        linux_home_path.slash(L".config").slash(L"sioyek");
+    fs::path linux_standard_config_path = linux_home_path / ".config" /
+                                          "sioyek";
     // user_keys_paths.push_back(mac_standard_config_path.slash(L"keys_user.config"));
     // user_config_paths.push_back(mac_standard_config_path.slash(L"prefs_user.config"));
-    user_keys_paths.push_back(
-        linux_standard_config_path.slash(L"keys_user.config")
-    );
+    user_keys_paths.push_back(linux_standard_config_path / "keys_user.config");
     user_config_paths.push_back(
-        linux_standard_config_path.slash(L"prefs_user.config")
+        linux_standard_config_path / "prefs_user.config"
     );
 
-    if (!tutorial_path.file_exists()) {
-        copy_file(parent_path.slash(L"tutorial.pdf"), tutorial_path);
+    if (!fs::exists(tutorial_path)) {
+        copy_file(parent_path / "tutorial.pdf", tutorial_path);
     }
 #endif
 #else // windows
 #ifdef NDEBUG
     // install_app(exe_path.c_str());
 #endif
-    Path standard_data_path(
+    fs::path standard_data_path(
         QStandardPaths::standardLocations(QStandardPaths::AppDataLocation)
             .at(0)
             .toStdWString()
     );
-    QStringList all_config_paths =
-        QStandardPaths::standardLocations(QStandardPaths::AppConfigLocation);
+    QStringList all_config_paths = QStandardPaths::standardLocations(
+        QStandardPaths::AppConfigLocation
+    );
 
-    standard_data_path.create_directories();
+    fs::create_directories(standard_data_path);
 
-    default_config_path = parent_path.slash(L"prefs.config");
-    default_keys_path = parent_path.slash(L"keys.config");
-    tutorial_path = parent_path.slash(L"tutorial.pdf");
+    default_config_path = parent_path / "prefs.config";
+    default_keys_path = parent_path / "keys.config";
+    tutorial_path = parent_path / "tutorial.pdf";
 
 #ifdef NON_PORTABLE
-    user_config_paths.push_back(standard_data_path.slash(L"prefs_user.config"));
-    user_keys_paths.push_back(standard_data_path.slash(L"keys_user.config"));
+    user_config_paths.push_back(standard_data_path / "prefs_user.config");
+    user_keys_paths.push_back(standard_data_path / "keys_user.config");
     for (int i = all_config_paths.size() - 1; i > 0; i--) {
-        user_config_paths.push_back(Path(all_config_paths.at(i).toStdWString())
-                                        .slash(L"prefs_user.config"));
-        user_keys_paths.push_back(Path(all_config_paths.at(i).toStdWString())
-                                      .slash(L"keys_user.config"));
+        user_config_paths.push_back(
+            fs::path(all_config_paths.at(i).toStdWString()) /
+            "prefs_user.config"
+        );
+        user_keys_paths.push_back(
+            fs::path(all_config_paths.at(i).toStdWString()) / "keys_user.config"
+        );
     }
-    database_file_path = standard_data_path.slash(L"test.db");
-    local_database_file_path = standard_data_path.slash(L"local.db");
-    global_database_file_path = standard_data_path.slash(L"shared.db");
-    last_opened_file_address_path =
-        standard_data_path.slash(L"last_document_path.txt");
+    database_file_path = standard_data_path / "test.db";
+    local_database_file_path = standard_data_path / "local.db";
+    global_database_file_path = standard_data_path / "shared.db";
+    last_opened_file_address_path = standard_data_path /
+                                    "last_document_path.txt";
 #else
-    user_config_paths.push_back(parent_path.slash(L"prefs_user.config"));
-    user_keys_paths.push_back(parent_path.slash(L"keys_user.config"));
-    database_file_path = parent_path.slash(L"test.db");
-    local_database_file_path = parent_path.slash(L"local.db");
-    global_database_file_path = parent_path.slash(L"shared.db");
-    last_opened_file_address_path =
-        parent_path.slash(L"last_document_path.txt");
+    user_config_paths.push_back(parent_path / "prefs_user.config");
+    user_keys_paths.push_back(parent_path / "keys_user.config");
+    database_file_path = parent_path / "test.db";
+    local_database_file_path = parent_path / "local.db";
+    global_database_file_path = parent_path / "shared.db";
+    last_opened_file_address_path = parent_path / "last_document_path.txt";
 #endif
 
 #endif
-    auto_config_path = standard_data_path.slash(L"auto.config");
+    auto_config_path = standard_data_path / "auto.config";
     // user_config_paths.insert(user_config_paths.begin(), auto_config_path);
 }
 
 void verify_config_paths() {
+    // TODO: remove macros
 #define CHECK_DIR_EXIST(path)                                                  \
     do {                                                                       \
-        if (!(path).dir_exists())                                              \
+        if (!fs::exists(path))                                                 \
             std::wcout << L"Error: " << #path << ": " << path                  \
                        << L" doesn't exist!\n";                                \
     } while (false)
 #define CHECK_FILE_EXIST(path)                                                 \
     do {                                                                       \
-        if (!(path).file_exists())                                             \
+        if (!fs::exists(path))                                                 \
             std::wcout << L"Error: " << #path << ": " << path                  \
                        << L" doesn't exist!\n";                                \
     } while (false)
@@ -496,16 +496,18 @@ void unlock_mutex(void* user, int lock) {
 
 void add_paths_to_file_system_watcher(
     QFileSystemWatcher& watcher,
-    const Path& default_path,
-    const std::vector<Path>& user_paths
+    const fs::path& default_path,
+    const std::vector<fs::path>& user_paths
 ) {
-    if (QFile::exists(QString::fromStdWString(default_path.get_path()))) {
-        watcher.addPath(QString::fromStdWString(default_path.get_path()));
+    if (fs::exists(default_path)) {
+        watcher.addPath(QString::fromStdWString(default_path.generic_wstring())
+        );
     }
 
-    for (auto user_path : user_paths) {
-        if (QFile::exists(QString::fromStdWString(user_path.get_path()))) {
-            watcher.addPath(QString::fromStdWString(user_path.get_path()));
+    for (const auto& user_path : user_paths) {
+        if (fs::exists(user_path)) {
+            watcher.addPath(QString::fromStdWString(user_path.generic_wstring())
+            );
         }
     }
 }
@@ -539,8 +541,7 @@ MainWidget* get_window_with_opened_file_path(const std::wstring& file_path) {
 
 std::optional<std::wstring> get_last_opened_file_name() {
     std::string file_path_;
-    std::ifstream last_state_file(last_opened_file_address_path.get_path_utf8()
-    );
+    std::ifstream last_state_file(last_opened_file_address_path);
     std::getline(last_state_file, file_path_);
     last_state_file.close();
 
@@ -583,8 +584,9 @@ MainWidget* handle_args(const QStringList& arguments) {
     } else if (windows[0]->doc() == nullptr) {
         // when no file is specified, and no current file is open, use the
         // last opened file or tutorial
-        pdf_file_name =
-            get_last_opened_file_name().value_or(tutorial_path.get_path());
+        pdf_file_name = get_last_opened_file_name().value_or(
+            tutorial_path.generic_wstring()
+        );
     }
 
     std::optional<std::wstring> latex_file_name = {};
@@ -698,11 +700,12 @@ MainWidget* handle_args(const QStringList& arguments) {
         } else {
             if (windows.size() > 1) {
                 if (windows[windows.size() - 2]->doc()) {
-                    pdf_file_name =
-                        windows[windows.size() - 2]->doc()->get_path();
+                    pdf_file_name = windows[windows.size() - 2]
+                                        ->doc()
+                                        ->get_path();
                 }
             } else {
-                pdf_file_name = tutorial_path.get_path();
+                pdf_file_name = tutorial_path.generic_wstring();
             }
         }
     }
@@ -768,11 +771,13 @@ int main(int argc, char* args[]) {
     if (SHARED_DATABASE_PATH.size() > 0) {
         global_database_file_path = SHARED_DATABASE_PATH;
     }
-    char* shared_database_path_arg =
-        get_argv_value(argc, args, "--shared-database-path");
+    char* shared_database_path_arg = get_argv_value(
+        argc, args, "--shared-database-path"
+    );
     if (shared_database_path_arg) {
-        global_database_file_path =
-            utf8_decode(std::string(shared_database_path_arg));
+        global_database_file_path = utf8_decode(
+            std::string(shared_database_path_arg)
+        );
     }
 
     verify_paths();
@@ -796,20 +801,21 @@ int main(int argc, char* args[]) {
     delete parser;
 
     DatabaseManager db_manager;
-    if (local_database_file_path.file_exists() &&
-        global_database_file_path.file_exists()) {
+    if (fs::exists(local_database_file_path) &&
+        fs::exists(global_database_file_path)) {
         db_manager.open(
-            local_database_file_path.get_path(),
-            global_database_file_path.get_path()
+            local_database_file_path.generic_wstring(),
+            global_database_file_path.generic_wstring()
         );
     } else {
         db_manager.open(
-            database_file_path.get_path(), database_file_path.get_path()
+            database_file_path.generic_wstring(),
+            database_file_path.generic_wstring()
         );
     }
     db_manager.ensure_database_compatibility(
-        local_database_file_path.get_path(),
-        global_database_file_path.get_path()
+        local_database_file_path.generic_wstring(),
+        global_database_file_path.generic_wstring()
     );
 
     fz_locks_context locks;
@@ -817,8 +823,9 @@ int main(int argc, char* args[]) {
     locks.lock = lock_mutex;
     locks.unlock = unlock_mutex;
 
-    fz_context* mupdf_context =
-        fz_new_context(nullptr, &locks, FZ_STORE_DEFAULT);
+    fz_context* mupdf_context = fz_new_context(
+        nullptr, &locks, FZ_STORE_DEFAULT
+    );
 
     if (!mupdf_context) {
         std::cerr << "could not create mupdf context" << std::endl;
@@ -911,7 +918,7 @@ int main(int argc, char* args[]) {
     // with"
     QObject::connect(
         &app, &OpenWithApplication::file_ready,
-        [&main_widget](const QString& file_name) {
+        [](const QString& file_name) {
             handle_args(
                 QStringList()
                 << QCoreApplication::applicationFilePath() << file_name

@@ -18,10 +18,10 @@ extern std::map<std::wstring, std::wstring> ADDITIONAL_MACROS;
 extern std::wstring SEARCH_URLS[26];
 extern bool ALPHABETIC_LINK_TAGS;
 
-extern Path default_config_path;
-extern Path default_keys_path;
-extern std::vector<Path> user_config_paths;
-extern std::vector<Path> user_keys_paths;
+extern fs::path default_config_path;
+extern fs::path default_keys_path;
+extern std::vector<fs::path> user_config_paths;
+extern std::vector<fs::path> user_keys_paths;
 
 class SymbolCommand : public Command {
   protected:
@@ -128,8 +128,9 @@ class ChapterSearchCommand : public TextCommand {
     }
 
     void pre_perform(MainWidget* widget) {
-        std::optional<std::pair<int, int>> chapter_range =
-            widget->main_document_view->get_current_page_range();
+        std::optional<std::pair<int, int>>
+            chapter_range = widget->main_document_view->get_current_page_range(
+            );
         if (chapter_range) {
             std::stringstream search_range_string;
             search_range_string << "<" << chapter_range.value().first << ","
@@ -258,8 +259,8 @@ class AddHighlightCommand : public SymbolCommand {
 class CommandCommand : public Command {
 
     void perform(MainWidget* widget) {
-        QStringList command_names =
-            widget->command_manager->get_all_command_names();
+        QStringList command_names = widget->command_manager
+                                        ->get_all_command_names();
         widget->set_current_widget(new CommandSelector(
             &widget->on_command_done, widget, command_names,
             widget->input_handler->get_command_key_mappings()
@@ -501,8 +502,8 @@ class DeleteHighlightCommand : public Command {
 
 class GotoPortalCommand : public Command {
     void perform(MainWidget* widget) {
-        std::optional<Portal> link =
-            widget->main_document_view->find_closest_portal();
+        std::optional<Portal> link = widget->main_document_view
+                                         ->find_closest_portal();
         if (link) {
             widget->open_document(link->dst);
         }
@@ -515,8 +516,8 @@ class GotoPortalCommand : public Command {
 
 class EditPortalCommand : public Command {
     void perform(MainWidget* widget) {
-        std::optional<Portal> link =
-            widget->main_document_view->find_closest_portal();
+        std::optional<Portal> link = widget->main_document_view
+                                         ->find_closest_portal();
         if (link) {
             widget->link_to_edit = link;
             widget->open_document(link->dst);
@@ -559,8 +560,9 @@ class OpenDocumentEmbeddedCommand : public Command {
 
 class OpenDocumentEmbeddedFromCurrentPathCommand : public Command {
     void perform(MainWidget* widget) {
-        std::wstring last_file_name =
-            widget->get_current_file_name().value_or(L"");
+        std::wstring last_file_name = widget->get_current_file_name().value_or(
+            L""
+        );
 
         widget->set_current_widget(new FileSelector(
             [widget](std::wstring doc_path) {
@@ -922,8 +924,9 @@ class KeyboardSelectCommand : public TextCommand {
 class KeyboardOverviewCommand : public TextCommand {
 
     void perform(MainWidget* widget) {
-        std::optional<fz_irect> rect_ =
-            widget->get_tag_window_rect(utf8_encode(text.value()));
+        std::optional<fz_irect> rect_ = widget->get_tag_window_rect(
+            utf8_encode(text.value())
+        );
         if (rect_) {
             fz_irect rect = rect_.value();
             widget->overview_under_pos(
@@ -943,8 +946,9 @@ class KeyboardOverviewCommand : public TextCommand {
 class KeyboardSmartjumpCommand : public TextCommand {
 
     void perform(MainWidget* widget) {
-        std::optional<fz_irect> rect_ =
-            widget->get_tag_window_rect(utf8_encode(text.value()));
+        std::optional<fz_irect> rect_ = widget->get_tag_window_rect(
+            utf8_encode(text.value())
+        );
         if (rect_) {
             fz_irect rect = rect_.value();
             widget->smart_jump_under_pos(
@@ -966,7 +970,7 @@ class KeyboardSmartjumpCommand : public TextCommand {
 class KeysCommand : public Command {
 
     void perform(MainWidget* widget) {
-        open_file(default_keys_path.get_path());
+        open_file(default_keys_path.generic_wstring());
     }
 
     std::string get_name() { return "keys"; }
@@ -977,10 +981,11 @@ class KeysCommand : public Command {
 class KeysUserCommand : public Command {
 
     void perform(MainWidget* widget) {
-        std::optional<Path> key_file_path =
-            widget->input_handler->get_or_create_user_keys_path();
+        std::optional<fs::path>
+            key_file_path = widget->input_handler->get_or_create_user_keys_path(
+            );
         if (key_file_path) {
-            open_file(key_file_path.value().get_path());
+            open_file(key_file_path.value().generic_wstring());
         }
     }
 
@@ -1001,7 +1006,7 @@ class KeysUserAllCommand : public Command {
 class PrefsCommand : public Command {
 
     void perform(MainWidget* widget) {
-        open_file(default_config_path.get_path());
+        open_file(default_config_path.generic_wstring());
     }
 
     std::string get_name() { return "prefs"; }
@@ -1012,10 +1017,11 @@ class PrefsCommand : public Command {
 class PrefsUserCommand : public Command {
 
     void perform(MainWidget* widget) {
-        std::optional<Path> pref_file_path =
-            widget->config_manager->get_or_create_user_config_file();
+        std::optional<fs::path>
+            pref_file_path = widget->config_manager
+                                 ->get_or_create_user_config_file();
         if (pref_file_path) {
-            open_file(pref_file_path.value().get_path());
+            open_file(pref_file_path.value().generic_wstring());
         }
     }
 
@@ -1186,10 +1192,10 @@ class RotateCounterClockwiseCommand : public Command {
 class GotoNextHighlightCommand : public Command {
 
     void perform(MainWidget* widget) {
-        auto next_highlight =
-            widget->main_document_view->get_document()->get_next_highlight(
-                widget->main_document_view->get_offset_y()
-            );
+        auto next_highlight = widget->main_document_view->get_document()
+                                  ->get_next_highlight(
+                                      widget->main_document_view->get_offset_y()
+                                  );
         if (next_highlight.has_value()) {
             widget->long_jump_to_destination(
                 next_highlight.value().selection_begin.y
@@ -1204,10 +1210,10 @@ class GotoPrevHighlightCommand : public Command {
 
     void perform(MainWidget* widget) {
 
-        auto prev_highlight =
-            widget->main_document_view->get_document()->get_prev_highlight(
-                widget->main_document_view->get_offset_y()
-            );
+        auto prev_highlight = widget->main_document_view->get_document()
+                                  ->get_prev_highlight(
+                                      widget->main_document_view->get_offset_y()
+                                  );
         if (prev_highlight.has_value()) {
             widget->long_jump_to_destination(
                 prev_highlight.value().selection_begin.y
@@ -1221,11 +1227,12 @@ class GotoPrevHighlightCommand : public Command {
 class GotoNextHighlightOfTypeCommand : public Command {
 
     void perform(MainWidget* widget) {
-        auto next_highlight =
-            widget->main_document_view->get_document()->get_next_highlight(
-                widget->main_document_view->get_offset_y(),
-                widget->select_highlight_type
-            );
+        auto next_highlight = widget->main_document_view->get_document()
+                                  ->get_next_highlight(
+                                      widget->main_document_view->get_offset_y(
+                                      ),
+                                      widget->select_highlight_type
+                                  );
         if (next_highlight.has_value()) {
             widget->long_jump_to_destination(
                 next_highlight.value().selection_begin.y
@@ -1239,11 +1246,12 @@ class GotoNextHighlightOfTypeCommand : public Command {
 class GotoPrevHighlightOfTypeCommand : public Command {
 
     void perform(MainWidget* widget) {
-        auto prev_highlight =
-            widget->main_document_view->get_document()->get_prev_highlight(
-                widget->main_document_view->get_offset_y(),
-                widget->select_highlight_type
-            );
+        auto prev_highlight = widget->main_document_view->get_document()
+                                  ->get_prev_highlight(
+                                      widget->main_document_view->get_offset_y(
+                                      ),
+                                      widget->select_highlight_type
+                                  );
         if (prev_highlight.has_value()) {
             widget->long_jump_to_destination(
                 prev_highlight.value().selection_begin.y
@@ -1362,9 +1370,10 @@ class ToggleTittlebarCommand : public Command {
 class NextPreviewCommand : public Command {
     void perform(MainWidget* widget) {
         if (widget->smart_view_candidates.size() > 0) {
-            widget->index_into_candidates =
-                (widget->index_into_candidates + 1) %
-                widget->smart_view_candidates.size();
+            widget->index_into_candidates = (widget->index_into_candidates + 1
+                                            ) %
+                                            widget->smart_view_candidates.size(
+                                            );
             widget->set_overview_position(
                 widget->smart_view_candidates[widget->index_into_candidates]
                     .page,
@@ -1379,9 +1388,10 @@ class NextPreviewCommand : public Command {
 class PreviousPreviewCommand : public Command {
     void perform(MainWidget* widget) {
         if (widget->smart_view_candidates.size() > 0) {
-            widget->index_into_candidates =
-                mod(widget->index_into_candidates - 1,
-                    widget->smart_view_candidates.size());
+            widget->index_into_candidates = mod(
+                widget->index_into_candidates - 1,
+                widget->smart_view_candidates.size()
+            );
             widget->set_overview_position(
                 widget->smart_view_candidates[widget->index_into_candidates]
                     .page,
@@ -1669,8 +1679,9 @@ class LazyCommand : public Command {
         int index = command_text.find(L"(");
         if (index != -1) {
             command_name = utf8_encode(command_text.substr(0, index));
-            command_params =
-                command_text.substr(index + 1, command_text.size() - index - 2);
+            command_params = command_text.substr(
+                index + 1, command_text.size() - index - 2
+            );
         } else {
             command_name = utf8_encode(command_text);
         }
@@ -1680,8 +1691,8 @@ class LazyCommand : public Command {
         if (actual_command) {
             return actual_command.get();
         } else {
-            actual_command =
-                command_manager->get_command_with_name(command_name);
+            actual_command = command_manager->get_command_with_name(command_name
+            );
             if (!actual_command)
                 return &noop;
 
@@ -2476,8 +2487,8 @@ InputParseTreeNode* parse_lines(
                     new_node->defining_file_line = command_line_numbers[j];
                     new_node->defining_file_path = command_file_names[j];
                     parent_node->children.push_back(new_node);
-                    parent_node =
-                        parent_node->children[parent_node->children.size() - 1];
+                    parent_node = parent_node->children
+                                      [parent_node->children.size() - 1];
                 } else {
                     if (tokens[i] == L"sym") {
                         parent_node->requires_symbol = true;
@@ -2563,17 +2574,17 @@ std::vector<std::string> parse_command_name(const std::wstring& command_names) {
 }
 
 void get_keys_file_lines(
-    const Path& file_path,
+    const fs::path& file_path,
     std::vector<std::vector<std::string>>& command_names,
     std::vector<std::wstring>& command_keys,
     std::vector<std::wstring>& command_files,
     std::vector<int>& command_line_numbers
 ) {
 
-    std::ifstream infile = std::ifstream(utf8_encode(file_path.get_path()));
+    std::ifstream infile(file_path);
 
     int line_number = 0;
-    std::wstring default_path_name = file_path.get_path();
+    std::wstring default_path_name = file_path.generic_wstring();
     while (infile.good()) {
         line_number++;
         std::string line_;
@@ -2599,10 +2610,10 @@ void get_keys_file_lines(
 }
 
 InputParseTreeNode* parse_key_config_files(
-    const Path& default_path, const std::vector<Path>& user_paths
+    const fs::path& default_path, const std::vector<fs::path>& user_paths
 ) {
 
-    std::wifstream default_infile = open_wifstream(default_path.get_path());
+    std::wifstream default_infile(default_path);
 
     std::vector<std::vector<std::string>> command_names;
     std::vector<std::wstring> command_keys;
@@ -2626,8 +2637,8 @@ InputParseTreeNode* parse_key_config_files(
 }
 
 InputHandler::InputHandler(
-    const Path& default_path,
-    const std::vector<Path>& user_paths,
+    const fs::path& default_path,
+    const std::vector<fs::path>& user_paths,
     CommandManager* cm
 ) {
     command_manager = cm;
@@ -2636,7 +2647,8 @@ InputHandler::InputHandler(
 }
 
 void InputHandler::reload_config_files(
-    const Path& default_config_path, const std::vector<Path>& user_config_paths
+    const fs::path& default_config_path,
+    const std::vector<fs::path>& user_config_paths
 ) {
     delete_current_parse_tree(root);
     root = parse_key_config_files(default_config_path, user_config_paths);
@@ -2762,23 +2774,24 @@ bool InputParseTreeNode::matches(int key, bool shift, bool ctrl, bool alt) {
            (ctrl == this->control_modifier) && (alt == this->alt_modifier);
 }
 
-std::optional<Path> InputHandler::get_or_create_user_keys_path() {
+std::optional<fs::path> InputHandler::get_or_create_user_keys_path() {
     if (user_key_paths.size() == 0) {
         return {};
     }
 
     for (int i = user_key_paths.size() - 1; i >= 0; i--) {
-        if (user_key_paths[i].file_exists()) {
+        if (fs::exists(user_key_paths[i])) {
             return user_key_paths[i];
         }
     }
-    user_key_paths.back().file_parent().create_directories();
-    create_file_if_not_exists(user_key_paths.back().get_path());
+
+    fs::create_directories(user_key_paths.back().parent_path());
+    create_file_if_not_exists(user_key_paths.back().generic_wstring());
     return user_key_paths.back();
 }
 
-std::unordered_map<std::string, std::vector<std::string>>
-InputHandler::get_command_key_mappings() const {
+std::unordered_map<std::string, std::vector<std::string>> InputHandler::
+    get_command_key_mappings() const {
     std::unordered_map<std::string, std::vector<std::string>> res;
     std::vector<InputParseTreeNode*> prefix;
     add_command_key_mappings(root, res, prefix);
@@ -2853,8 +2866,9 @@ std::string InputHandler::get_key_string_from_tree_node_sequence(
             seq[i]->control_modifier) {
             res += "<";
         }
-        std::string current_key_command_name =
-            get_key_name_from_key_code(seq[i]->command);
+        std::string current_key_command_name = get_key_name_from_key_code(
+            seq[i]->command
+        );
 
         if (seq[i]->alt_modifier) {
             res += "A-";
@@ -2874,11 +2888,11 @@ std::string InputHandler::get_key_string_from_tree_node_sequence(
     return res;
 }
 
-std::vector<Path> InputHandler::get_all_user_keys_paths() {
-    std::vector<Path> res;
+std::vector<fs::path> InputHandler::get_all_user_keys_paths() {
+    std::vector<fs::path> res;
 
     for (int i = user_key_paths.size() - 1; i >= 0; i--) {
-        if (user_key_paths[i].file_exists()) {
+        if (fs::exists(user_key_paths[i])) {
             res.push_back(user_key_paths[i]);
         }
     }

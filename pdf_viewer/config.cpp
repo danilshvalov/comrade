@@ -240,8 +240,9 @@ bool ensure_between_0_and_1(const QStringList& parts) {
 template <int N>
 bool colorn_validator(const std::wstring& str) {
     QString qstr = QString::fromStdWString(str);
-    auto parts =
-        qstr.trimmed().split(' ', Qt::SplitBehaviorFlags::SkipEmptyParts);
+    auto parts = qstr.trimmed().split(
+        ' ', Qt::SplitBehaviorFlags::SkipEmptyParts
+    );
     if (parts.size() != N) {
         if (parts.size() == 1) {
             if (parts.at(0).at(0) == '#') {
@@ -259,36 +260,12 @@ bool colorn_validator(const std::wstring& str) {
     }
     return true;
 }
-// bool color_3_validator(const std::wstring& str) {
-//	QString qstr = QString::fromStdWString(str);
-//	auto parts = qstr.trimmed().split(' ',
-//Qt::SplitBehaviorFlags::SkipEmptyParts); 	if (parts.size() != 3) { 		std::wcout
-//<< L"Error: required 3 values for color, but got " << parts.size() << "\n";
-//		return false;
-//	}
-//	if (!ensure_between_0_and_1(parts)) {
-//		return false;
-//	}
-//	return true;
-// }
-//
-// bool color_4_validator(const std::wstring& str) {
-//	QString qstr = QString::fromStdWString(str);
-//	auto parts = qstr.trimmed().split(' ',
-//Qt::SplitBehaviorFlags::SkipEmptyParts); 	if (parts.size() != 4) { 		std::wcout
-//<< L"Error: required 4 values for color, but got " << parts.size() << "\n";
-//		return false;
-//	}
-//	if (!ensure_between_0_and_1(parts)) {
-//		return false;
-//	}
-//	return true;
-// }
 
 bool bool_validator(const std::wstring& str) {
     QString qstr = QString::fromStdWString(str);
-    auto parts =
-        qstr.trimmed().split(' ', Qt::SplitBehaviorFlags::SkipEmptyParts);
+    auto parts = qstr.trimmed().split(
+        ' ', Qt::SplitBehaviorFlags::SkipEmptyParts
+    );
     std::wstring msg = L"Bool values should be either 0 or 1, but got ";
     if (parts.size() != 1) {
         std::wcout << msg << str << L"\n";
@@ -303,9 +280,9 @@ bool bool_validator(const std::wstring& str) {
 }
 
 ConfigManager::ConfigManager(
-    const Path& default_path,
-    const Path& auto_path,
-    const std::vector<Path>& user_paths
+    const fs::path& default_path,
+    const fs::path& auto_path,
+    const std::vector<fs::path>& user_paths
 ) {
 
     user_config_paths = user_paths;
@@ -869,16 +846,16 @@ ConfigManager::ConfigManager(
 // }
 
 void ConfigManager::deserialize_file(
-    const Path& file_path, bool warn_if_not_exists
+    const fs::path& file_path, bool warn_if_not_exists
 ) {
 
     std::wstring line;
-    std::wifstream default_file = open_wifstream(file_path.get_path());
+    std::wifstream default_file(file_path);
     int line_number = 0;
 
     if (warn_if_not_exists && (!default_file.good())) {
-        std::wcout << "Error: Could not open config file "
-                   << file_path.get_path() << std::endl;
+        std::wcout << "Error: Could not open config file " << file_path
+                   << std::endl;
     }
 
     while (std::getline(default_file, line)) {
@@ -897,19 +874,6 @@ void ConfigManager::deserialize_file(
             std::getline(ss, path);
             path = strip_string(path);
             if (path.size() > 0) {
-                if (path[0] == '.') {
-                    auto parent_dir = QDir(QString::fromStdWString(
-                        file_path.file_parent().get_path()
-                    ));
-                    path = parent_dir
-                               .absoluteFilePath(QString::fromStdWString(path))
-                               .toStdWString();
-                }
-                if (path[0] == '~') {
-                    path = QDir::homePath().toStdWString() +
-                           path.substr(1, path.size() - 1);
-                }
-
                 deserialize_file(path, true);
             }
         } else if ((conf_name == L"new_command") || (conf_name == L"new_macro")) {
@@ -945,22 +909,23 @@ void ConfigManager::deserialize_file(
 
             if ((conf != nullptr) && (conf->validator != nullptr)) {
                 if (!conf->validator(config_value)) {
-                    std::wcout << L"Error in config file "
-                               << file_path.get_path() << L" at line "
-                               << line_number << L" : " << line << L"\n";
+                    std::wcout << L"Error in config file " << file_path
+                               << L" at line " << line_number << L" : " << line
+                               << L"\n";
                     continue;
                 }
             }
 
             if (conf) {
-                auto deserialization_result =
-                    conf->deserialize(config_value_stream, conf->value);
+                auto deserialization_result = conf->deserialize(
+                    config_value_stream, conf->value
+                );
                 if (deserialization_result != nullptr) {
                     conf->value = deserialization_result;
                 } else {
-                    std::wcout << L"Error in config file "
-                               << file_path.get_path() << L" at line "
-                               << line_number << L" : " << line << L"\n";
+                    std::wcout << L"Error in config file " << file_path
+                               << L" at line " << line_number << L" : " << line
+                               << L"\n";
                 }
             }
         }
@@ -969,9 +934,9 @@ void ConfigManager::deserialize_file(
 }
 
 void ConfigManager::deserialize(
-    const Path& default_file_path,
-    const Path& auto_path,
-    const std::vector<Path>& user_file_paths
+    const fs::path& default_file_path,
+    const fs::path& auto_path,
+    const std::vector<fs::path>& user_file_paths
 ) {
 
     ADDITIONAL_COMMANDS.clear();
@@ -984,25 +949,25 @@ void ConfigManager::deserialize(
     }
 }
 
-std::optional<Path> ConfigManager::get_or_create_user_config_file() {
+std::optional<fs::path> ConfigManager::get_or_create_user_config_file() {
     if (user_config_paths.size() == 0) {
         return {};
     }
 
     for (int i = user_config_paths.size() - 1; i >= 0; i--) {
-        if (user_config_paths[i].file_exists()) {
+        if (fs::exists(user_config_paths[i])) {
             return user_config_paths[i];
         }
     }
-    user_config_paths.back().file_parent().create_directories();
-    create_file_if_not_exists(user_config_paths.back().get_path());
+    fs::create_directories(user_config_paths.back().parent_path());
+    create_file_if_not_exists(user_config_paths.back().generic_wstring());
     return user_config_paths.back();
 }
 
-std::vector<Path> ConfigManager::get_all_user_config_files() {
-    std::vector<Path> res;
+std::vector<fs::path> ConfigManager::get_all_user_config_files() {
+    std::vector<fs::path> res;
     for (int i = user_config_paths.size() - 1; i >= 0; i--) {
-        if (user_config_paths[i].file_exists()) {
+        if (fs::exists(user_config_paths[i])) {
             res.push_back(user_config_paths[i]);
         }
     }
@@ -1017,8 +982,9 @@ void ConfigManager::deserialize_config(
 
     std::wstringstream config_value_stream(config_value);
     Config* conf = get_mut_config_with_name(utf8_decode(config_name));
-    auto deserialization_result =
-        conf->deserialize(config_value_stream, conf->value);
+    auto deserialization_result = conf->deserialize(
+        config_value_stream, conf->value
+    );
     if (deserialization_result != nullptr) {
         conf->value = deserialization_result;
     }

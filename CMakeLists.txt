@@ -31,7 +31,6 @@ add_executable(${TARGET_NAME}
     pdf_viewer/sqlite3.h
     pdf_viewer/sqlite3ext.h
     pdf_viewer/ui.h
-    pdf_viewer/path.h
     pdf_viewer/utf8.h
     pdf_viewer/utils.h
     pdf_viewer/utf8/checked.h
@@ -56,7 +55,6 @@ add_executable(${TARGET_NAME}
     pdf_viewer/coordinates.cpp
     pdf_viewer/sqlite3.c
     pdf_viewer/ui.cpp
-    pdf_viewer/path.cpp
     pdf_viewer/utils.cpp
     pdf_viewer/RunGuard.cpp
     pdf_viewer/OpenWithApplication.cpp

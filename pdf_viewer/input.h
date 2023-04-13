@@ -1,5 +1,7 @@
 #pragma once
 
+#include <QKeyEvent>
+
 #include <iostream>
 #include <vector>
 #include <string>
@@ -10,7 +12,6 @@
 #include <unordered_map>
 
 #include "utils.h"
-#include "path.h"
 #include "config.h"
 
 class MainWidget;
@@ -58,13 +59,13 @@ class CommandManager {
   public:
     CommandManager(ConfigManager* config_manager);
     std::unique_ptr<Command> get_command_with_name(std::string name);
-    std::unique_ptr<Command>
-    create_macro_command(std::string name, std::wstring macro_string);
+    std::unique_ptr<Command> create_macro_command(
+        std::string name, std::wstring macro_string
+    );
     QStringList get_all_command_names();
 };
 
 struct InputParseTreeNode {
-
     std::vector<InputParseTreeNode*> children;
     // char command;
     int command;
@@ -91,7 +92,7 @@ class InputHandler {
     InputParseTreeNode* current_node = nullptr;
     CommandManager* command_manager;
     std::string number_stack;
-    std::vector<Path> user_key_paths;
+    std::vector<fs::path> user_key_paths;
 
     std::string get_key_string_from_tree_node_sequence(
         const std::vector<InputParseTreeNode*> seq
@@ -109,12 +110,12 @@ class InputHandler {
     // char create_bookmark_symbol = 0;
 
     InputHandler(
-        const Path& default_path,
-        const std::vector<Path>& user_paths,
+        const fs::path& default_path,
+        const std::vector<fs::path>& user_paths,
         CommandManager* cm
     );
     void reload_config_files(
-        const Path& default_path, const std::vector<Path>& user_path
+        const fs::path& default_path, const std::vector<fs::path>& user_path
     );
     std::vector<std::unique_ptr<Command>> handle_key(
         QKeyEvent* key_event,
@@ -125,8 +126,8 @@ class InputHandler {
     );
     void delete_current_parse_tree(InputParseTreeNode* node_to_delete);
 
-    std::optional<Path> get_or_create_user_keys_path();
-    std::vector<Path> get_all_user_keys_paths();
+    std::optional<fs::path> get_or_create_user_keys_path();
+    std::vector<fs::path> get_all_user_keys_paths();
     std::unordered_map<std::string, std::vector<std::string>>
     get_command_key_mappings() const;
 };

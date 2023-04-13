@@ -38,7 +38,6 @@
 #include <qpainter.h>
 
 #include "document_view.h"
-#include "path.h"
 
 struct OpenGLSharedResources {
     GLuint vertex_buffer_object;
@@ -142,7 +141,9 @@ class PdfViewOpenGLWidget : public QOpenGLWidget,
 
     std::optional<fz_rect> selected_rectangle = {};
 
-    GLuint LoadShaders(Path vertex_file_path_, Path fragment_file_path_);
+    GLuint LoadShaders(
+        fs::path vertex_file_path_, fs::path fragment_file_path_
+    );
 
   protected:
     void initializeGL() override;

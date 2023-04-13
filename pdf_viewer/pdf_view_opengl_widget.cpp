@@ -1,9 +1,8 @@
 #include "pdf_view_opengl_widget.h"
-#include "path.h"
 #include <qcolor.h>
 #include <cmath>
 
-extern Path shader_path;
+extern fs::path shader_path;
 extern float GAMMA;
 extern float BACKGROUND_COLOR[3];
 extern float DARK_MODE_BACKGROUND_COLOR[3];
@@ -57,7 +56,7 @@ const GLfloat rotation_uvs[4][8] = {
 OpenGLSharedResources PdfViewOpenGLWidget::shared_gl_objects;
 
 GLuint PdfViewOpenGLWidget::LoadShaders(
-    Path vertex_file_path, Path fragment_file_path
+    fs::path vertex_file_path, fs::path fragment_file_path
 ) {
 
     // const wchar_t* vertex_file_path = vertex_file_path_.c_str();
@@ -70,8 +69,7 @@ GLuint PdfViewOpenGLWidget::LoadShaders(
     std::wstring VertexShaderCode;
     std::string vertex_shader_code_utf8;
 
-    std::wifstream VertexShaderStream =
-        open_wifstream(vertex_file_path.get_path());
+    std::wifstream VertexShaderStream(vertex_file_path);
     if (VertexShaderStream.is_open()) {
         std::wstringstream sstr;
         sstr << VertexShaderStream.rdbuf();
@@ -85,8 +83,7 @@ GLuint PdfViewOpenGLWidget::LoadShaders(
     std::wstring FragmentShaderCode;
     std::string fragment_shader_code_utf8;
 
-    std::wifstream FragmentShaderStream =
-        open_wifstream(fragment_file_path.get_path());
+    std::wifstream FragmentShaderStream(fragment_file_path);
     if (FragmentShaderStream.is_open()) {
         std::wstringstream sstr;
         sstr << FragmentShaderStream.rdbuf();
@@ -193,40 +190,34 @@ void PdfViewOpenGLWidget::initializeGL() {
         // concatenate_path(shader_path , L"vertical_bar_dark.fragment"));
 
         shared_gl_objects.rendered_program = LoadShaders(
-            shader_path.slash(L"simple.vertex"),
-            shader_path.slash(L"simple.fragment")
+            shader_path / "simple.vertex", shader_path / "simple.fragment"
         );
         shared_gl_objects.rendered_dark_program = LoadShaders(
-            shader_path.slash(L"simple.vertex"),
-            shader_path.slash(L"dark_mode.fragment")
+            shader_path / "simple.vertex", shader_path / "dark_mode.fragment"
         );
         shared_gl_objects.unrendered_program = LoadShaders(
-            shader_path.slash(L"simple.vertex"),
-            shader_path.slash(L"unrendered_page.fragment")
+            shader_path / "simple.vertex",
+            shader_path / "unrendered_page.fragment"
         );
         shared_gl_objects.highlight_program = LoadShaders(
-            shader_path.slash(L"simple.vertex"),
-            shader_path.slash(L"highlight.fragment")
+            shader_path / "simple.vertex", shader_path / "highlight.fragment"
         );
         shared_gl_objects.vertical_line_program = LoadShaders(
-            shader_path.slash(L"simple.vertex"),
-            shader_path.slash(L"vertical_bar.fragment")
+            shader_path / "simple.vertex", shader_path / "vertical_bar.fragment"
         );
         shared_gl_objects.vertical_line_dark_program = LoadShaders(
-            shader_path.slash(L"simple.vertex"),
-            shader_path.slash(L"vertical_bar_dark.fragment")
+            shader_path / "simple.vertex",
+            shader_path / "vertical_bar_dark.fragment"
         );
         shared_gl_objects.custom_color_program = LoadShaders(
-            shader_path.slash(L"simple.vertex"),
-            shader_path.slash(L"custom_colors.fragment")
+            shader_path / "simple.vertex",
+            shader_path / "custom_colors.fragment"
         );
         shared_gl_objects.separator_program = LoadShaders(
-            shader_path.slash(L"simple.vertex"),
-            shader_path.slash(L"separator.fragment")
+            shader_path / "simple.vertex", shader_path / "separator.fragment"
         );
         shared_gl_objects.stencil_program = LoadShaders(
-            shader_path.slash(L"stencil.vertex"),
-            shader_path.slash(L"stencil.fragment")
+            shader_path / "stencil.vertex", shader_path / "stencil.fragment"
         );
 
         shared_gl_objects.dark_mode_contrast_uniform_location =

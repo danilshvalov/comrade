@@ -25,7 +25,6 @@
 #include "pdf_renderer.h"
 #include "input.h"
 #include "pdf_view_opengl_widget.h"
-#include "path.h"
 #include "checksum.h"
 
 extern float VERTICAL_MOVE_AMOUNT;
@@ -258,14 +257,15 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     ~MainWidget();
 
     // void handle_command(NewCommand* command, int num_repeats);
-    void
-    handle_command_types(std::unique_ptr<Command> command, int num_repeats);
+    void handle_command_types(
+        std::unique_ptr<Command> command, int num_repeats
+    );
     void handle_pending_text_command(std::wstring text);
 
     void invalidate_render();
     void invalidate_ui();
     void open_document(
-        const Path& path,
+        const fs::path& path,
         std::optional<float> offset_x = {},
         std::optional<float> offset_y = {},
         std::optional<float> zoom_level = {}
@@ -277,7 +277,7 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
         std::optional<float> zoom_level = {}
     );
     void open_document_at_location(
-        const Path& path,
+        const fs::path& path,
         int page,
         std::optional<float> x_loc,
         std::optional<float> y_loc,
@@ -297,8 +297,8 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     void toggle_mouse_drag_mode();
     void toggle_dark_mode();
     void do_synctex_forward_search(
-        const Path& pdf_file_path,
-        const Path& latex_file_path,
+        const fs::path& pdf_file_path,
+        const fs::path& latex_file_path,
         int line,
         int column
     );
@@ -306,8 +306,8 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     void update_link_with_opened_book_state(
         Portal lnk, const OpenedBookState& new_state
     );
-    void
-    update_closest_link_with_opened_book_state(const OpenedBookState& new_state
+    void update_closest_link_with_opened_book_state(
+        const OpenedBookState& new_state
     );
     void set_current_widget(QWidget* new_widget);
     bool focus_on_visual_mark_pos(bool moving_down);
@@ -343,8 +343,9 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
         std::vector<std::vector<fz_rect>>* flat_word_chars = nullptr
     );
 
-    std::optional<fz_rect>
-    get_tag_rect(std::string tag, std::vector<fz_rect>* word_chars = nullptr);
+    std::optional<fz_rect> get_tag_rect(
+        std::string tag, std::vector<fz_rect>* word_chars = nullptr
+    );
     std::optional<fz_irect> get_tag_window_rect(
         std::string tag, std::vector<fz_irect>* char_rects = nullptr
     );
@@ -404,8 +405,9 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     void handle_delete_highlight_under_cursor();
     void synchronize_pending_link();
     void refresh_all_windows();
-    std::optional<std::pair<int, fz_link*>>
-    get_selected_link(const std::wstring& text);
+    std::optional<std::pair<int, fz_link*>> get_selected_link(
+        const std::wstring& text
+    );
 
     int num_visible_links();
 

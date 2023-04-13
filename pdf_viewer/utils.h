@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fstream>
+#include <filesystem>
 #include <functional>
 #include <iostream>
 #include <sstream>
@@ -20,6 +21,8 @@
 #include "book.h"
 #include "utf8.h"
 #include "coordinates.h"
+
+namespace fs = std::filesystem;
 
 #define LL_ITER(name, start) for (auto name = start; (name); name = name->next)
 
@@ -79,6 +82,7 @@ int argminf(const std::vector<T>& collection, std::function<float(T)> f) {
     }
     return min_index;
 }
+
 void rect_to_quad(fz_rect rect, float quad[8]);
 void copy_to_clipboard(const std::wstring& text, bool selection = false);
 void install_app(const char* argv0);
@@ -162,15 +166,16 @@ void find_regex_matches_in_stext_page(
 );
 bool is_string_numeric(const std::wstring& str);
 bool is_string_numeric_float(const std::wstring& str);
-void create_file_if_not_exists(const std::wstring& path);
+void create_file_if_not_exists(const fs::path& path);
 QByteArray serialize_string_array(const QStringList& string_list);
 QStringList deserialize_string_array(const QByteArray& byte_array);
 // Path add_redundant_dot_to_path(const Path& sane_path);
 bool should_reuse_instance(int argc, char** argv);
 bool should_new_instance(int argc, char** argv);
 QCommandLineParser* get_command_line_parser();
-std::wstring
-concatenate_path(const std::wstring& prefix, const std::wstring& suffix);
+std::wstring concatenate_path(
+    const std::wstring& prefix, const std::wstring& suffix
+);
 std::wstring get_canonical_path(const std::wstring& path);
 void split_path(std::wstring path, std::vector<std::wstring>& res);
 // std::wstring canonicalize_path(const std::wstring& path);
@@ -223,7 +228,6 @@ QString get_color_qml_string(float r, float g, float b);
 void copy_file(std::wstring src_path, std::wstring dst_path);
 fz_quad quad_from_rect(fz_rect r);
 std::vector<fz_quad> quads_from_rects(const std::vector<fz_rect>& rects);
-std::wifstream open_wifstream(const std::wstring& file_name);
 void get_flat_words_from_flat_chars(
     const std::vector<fz_stext_char*>& flat_chars,
     std::vector<fz_rect>& flat_word_rects,
@@ -240,8 +244,9 @@ int get_index_from_tag(const std::string& tag);
 std::wstring truncate_string(const std::wstring& inp, int size);
 std::wstring get_page_formatted_string(int page);
 fz_rect create_word_rect(const std::vector<fz_rect>& chars);
-std::vector<fz_rect>
-create_word_rects_multiline(const std::vector<fz_rect>& chars);
+std::vector<fz_rect> create_word_rects_multiline(
+    const std::vector<fz_rect>& chars
+);
 void get_flat_chars_from_block(
     fz_stext_block* block, std::vector<fz_stext_char*>& flat_chars
 );

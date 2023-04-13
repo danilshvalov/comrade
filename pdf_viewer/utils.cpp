@@ -2,6 +2,7 @@
 #include <cwctype>
 
 #include <cmath>
+#include <filesystem>
 #include <cassert>
 #include "utils.h"
 #include <optional>
@@ -26,6 +27,8 @@
 #include <qscreen.h>
 
 #include <mupdf/pdf.h>
+
+namespace fs = std::filesystem;
 
 extern std::wstring LIBGEN_ADDRESS;
 extern std::wstring GOOGLE_SCHOLAR_ADDRESS;
@@ -91,10 +94,12 @@ QStandardItem* get_item_tree_from_toc_helper(
 ) {
 
     for (const auto* child : children) {
-        QStandardItem* child_item =
-            new QStandardItem(QString::fromStdWString(child->title));
-        QStandardItem* page_item =
-            new QStandardItem("[ " + QString::number(child->page) + " ]");
+        QStandardItem* child_item = new QStandardItem(
+            QString::fromStdWString(child->title)
+        );
+        QStandardItem* page_item = new QStandardItem(
+            "[ " + QString::number(child->page) + " ]"
+        );
         child_item->setData(child->page);
         page_item->setTextAlignment(Qt::AlignVCenter | Qt::AlignRight);
 
@@ -384,8 +389,9 @@ void get_flat_chars_from_block(
 ) {
     if (block->type == FZ_STEXT_BLOCK_TEXT) {
         LL_ITER(line, block->u.t.first_line) {
-            std::vector<fz_stext_char*> reordered_chars =
-                reorder_stext_line(line);
+            std::vector<fz_stext_char*> reordered_chars = reorder_stext_line(
+                line
+            );
             for (auto ch : reordered_chars) {
                 flat_chars.push_back(ch);
             }
@@ -458,8 +464,9 @@ fz_rect create_word_rect(const std::vector<fz_rect>& chars) {
     return res;
 }
 
-std::vector<fz_rect>
-create_word_rects_multiline(const std::vector<fz_rect>& chars) {
+std::vector<fz_rect> create_word_rects_multiline(
+    const std::vector<fz_rect>& chars
+) {
     std::vector<fz_rect> res;
     std::vector<fz_rect> current_line_chars;
 
@@ -957,8 +964,9 @@ void search_custom_engine(
 ) {
 
     if (search_string.size() > 0) {
-        QString qurl_string =
-            QString::fromStdWString(custom_engine_url + search_string);
+        QString qurl_string = QString::fromStdWString(
+            custom_engine_url + search_string
+        );
         open_web_url(qurl_string);
     }
 }
@@ -979,10 +987,9 @@ void search_libgen(const std::wstring& search_string) {
 //	}
 // }
 //
-void create_file_if_not_exists(const std::wstring& path) {
-    std::string path_utf8 = utf8_encode(path);
-    if (!QFile::exists(QString::fromStdWString(path))) {
-        std::ofstream outfile(path_utf8);
+void create_file_if_not_exists(const fs::path& path) {
+    if (!fs::exists(path)) {
+        std::ofstream outfile(path);
         outfile << "";
         outfile.close();
     }
@@ -1196,8 +1203,9 @@ void index_equations(
                  flat_chars[start_index - 1], flat_chars[start_index]
              ))) {
 
-            std::wstring match_text =
-                match_texts[i].substr(1, match_texts[i].size() - 2);
+            std::wstring match_text = match_texts[i].substr(
+                1, match_texts[i].size() - 2
+            );
             IndexedData indexed_equation;
             indexed_equation.page = page_number;
             indexed_equation.text = match_text;
@@ -1480,8 +1488,9 @@ void get_line_begins_and_ends_from_histogram(
 
         for (size_t i = 0; i < res.size(); i++) {
             res[i] += static_cast<unsigned int>(additional_distance / 5.0f);
-            res_begins[i] -=
-                static_cast<unsigned int>(additional_distance / 5.0f);
+            res_begins[i] -= static_cast<unsigned int>(
+                additional_distance / 5.0f
+            );
         }
     }
 }
@@ -1496,8 +1505,9 @@ int find_best_vertical_line_location(fz_pixmap* pixmap, int doc_x, int doc_y) {
     std::vector<int> max_possible_widths;
 
     for (int candid_y = min_candid_y; candid_y <= max_candid_y; candid_y++) {
-        int current_width =
-            find_max_horizontal_line_length_at_pos(pixmap, doc_x, candid_y);
+        int current_width = find_max_horizontal_line_length_at_pos(
+            pixmap, doc_x, candid_y
+        );
         max_possible_widths.push_back(current_width);
     }
 
@@ -1764,8 +1774,9 @@ QCommandLineParser* get_command_line_parser() {
     return parser;
 }
 
-std::wstring
-concatenate_path(const std::wstring& prefix, const std::wstring& suffix) {
+std::wstring concatenate_path(
+    const std::wstring& prefix, const std::wstring& suffix
+) {
     std::wstring result = prefix;
 #ifdef Q_OS_WIN
     wchar_t separator = '\\';
@@ -1860,9 +1871,9 @@ void check_for_updates(QWidget* parent, std::string current_version) {
             std::vector<std::wstring> parts;
             split_path(utf8_decode(url_string), parts);
             if (parts.size() > 0) {
-                std::string version_string =
-                    utf8_encode(parts.back().substr(1, parts.back().size() - 1)
-                    );
+                std::string version_string = utf8_encode(
+                    parts.back().substr(1, parts.back().size() - 1)
+                );
 
                 if (version_string != current_version) {
                     int ret = QMessageBox::information(
@@ -1979,8 +1990,8 @@ void hexademical_to_normalized_color(
     }
 
     for (int i = 0; i < n_components; i++) {
-        *(color + i) =
-            get_color_component_from_hex(color_string.substr(i * 2, 2));
+        *(color + i
+        ) = get_color_component_from_hex(color_string.substr(i * 2, 2));
     }
 }
 
@@ -2006,16 +2017,6 @@ std::vector<fz_quad> quads_from_rects(const std::vector<fz_rect>& rects) {
         res.push_back(quad_from_rect(rect));
     }
     return res;
-}
-
-std::wifstream open_wifstream(const std::wstring& file_name) {
-
-#ifdef Q_OS_WIN
-    return std::wifstream(file_name);
-#else
-    std::string encoded_file_name = utf8_encode(file_name);
-    return std::wifstream(encoded_file_name.c_str());
-#endif
 }
 
 std::wstring truncate_string(const std::wstring& inp, int size) {
@@ -2112,8 +2113,8 @@ int find_best_merge_index_for_line_index(
     Range current_range_x = {line_rects[index].x0, line_rects[index].x1};
     float maximum_height = current_range.size();
     float maximum_width = current_range_x.size();
-    float min_cost =
-        current_range.size() * line_num_penalty(1) / current_range_x.size();
+    float min_cost = current_range.size() * line_num_penalty(1) /
+                     current_range_x.size();
     int min_index = index;
 
     for (size_t j = index + 1;
@@ -2132,14 +2133,18 @@ int find_best_merge_index_for_line_index(
             );
         }
 
-        current_range_x =
-            merge_range(current_range, {line_rects[j].x0, line_rects[j].x1});
+        current_range_x = merge_range(
+            current_range, {line_rects[j].x0, line_rects[j].x1}
+        );
 
-        float cost =
-            current_range.size() / (j - index + 1) +
-            line_num_penalty(j - index + 1) / current_range_x.size() +
-            height_increase_penalty(current_range.size() / maximum_height) +
-            width_increase_bonus(current_range_x.size() / maximum_width);
+        float cost = current_range.size() / (j - index + 1) +
+                     line_num_penalty(j - index + 1) / current_range_x.size() +
+                     height_increase_penalty(
+                         current_range.size() / maximum_height
+                     ) +
+                     width_increase_bonus(
+                         current_range_x.size() / maximum_width
+                     );
         if (cost < min_cost) {
             min_cost = cost;
             min_index = j;
@@ -2260,17 +2265,22 @@ void merge_lines(
             fz_rect current_rect = temp_rects[i];
             if ((std::abs(prev_rect.y0 - current_rect.y0) < 1.0f) ||
                 (std::abs(prev_rect.y1 - current_rect.y1) < 1.0f)) {
-                out_rects[out_rects.size() - 1].x0 =
-                    std::min(prev_rect.x0, current_rect.x0);
-                out_rects[out_rects.size() - 1].x1 =
-                    std::max(prev_rect.x1, current_rect.x1);
+                out_rects[out_rects.size() - 1].x0 = std::min(
+                    prev_rect.x0, current_rect.x0
+                );
+                out_rects[out_rects.size() - 1].x1 = std::max(
+                    prev_rect.x1, current_rect.x1
+                );
 
-                out_rects[out_rects.size() - 1].y0 =
-                    std::min(prev_rect.y0, current_rect.y0);
-                out_rects[out_rects.size() - 1].y1 =
-                    std::max(prev_rect.y1, current_rect.y1);
-                out_texts[out_texts.size() - 1] =
-                    out_texts[out_texts.size() - 1] + temp_texts[i];
+                out_rects[out_rects.size() - 1].y0 = std::min(
+                    prev_rect.y0, current_rect.y0
+                );
+                out_rects[out_rects.size() - 1].y1 = std::max(
+                    prev_rect.y1, current_rect.y1
+                );
+                out_texts[out_texts.size() - 1] = out_texts
+                                                      [out_texts.size() - 1] +
+                                                  temp_texts[i];
                 continue;
             }
         }
@@ -2405,8 +2415,8 @@ void flat_char_prism(
 
 QString get_status_stylesheet(bool nofont) {
     if ((!nofont) && (STATUS_BAR_FONT_SIZE > -1)) {
-        QString font_size_stylesheet =
-            QString("font-size: %1px").arg(STATUS_BAR_FONT_SIZE);
+        QString font_size_stylesheet = QString("font-size: %1px")
+                                           .arg(STATUS_BAR_FONT_SIZE);
         return QString("background-color: %1; color: %2; border: 0; %3;")
             .arg(
                 get_color_qml_string(
@@ -2436,8 +2446,8 @@ QString get_status_stylesheet(bool nofont) {
 
 QString get_selected_stylesheet(bool nofont) {
     if ((!nofont) && STATUS_BAR_FONT_SIZE > -1) {
-        QString font_size_stylesheet =
-            QString("font-size: %1px").arg(STATUS_BAR_FONT_SIZE);
+        QString font_size_stylesheet = QString("font-size: %1px")
+                                           .arg(STATUS_BAR_FONT_SIZE);
         return QString("background-color: %1; color: %2; border: 0; %3;")
             .arg(
                 get_color_qml_string(

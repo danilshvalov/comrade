@@ -12,3 +12,5 @@ SortIncludes: Never
 SeparateDefinitionBlocks: Always
 IndentCaseLabels: Yes
 PenaltyReturnTypeOnItsOwnLine: 1000
+PenaltyBreakAssignment: 1000
+PenaltyExcessCharacter: 10000
