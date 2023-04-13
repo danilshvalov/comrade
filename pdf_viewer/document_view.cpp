@@ -99,13 +99,17 @@ void DocumentView::set_offsets(float new_offset_x, float new_offset_y) {
     if (num_pages == 0)
         return;
 
-    float max_y_offset =
+    float page_width =
+        current_document->get_page_width(get_center_page_number());
+    float pages_height =
         current_document->get_accum_page_height(num_pages - 1) +
         current_document->get_page_height(num_pages - 1);
-    float min_y_offset = 0;
+    float x_offset =
+        std::max(0.0f, page_width - view_width / zoom_level * 0.95f) / 2;
+    float y_offset = view_height / zoom_level / 2 * 0.95;
 
-    offset_x = std::clamp(new_offset_x, get_min_valid_x(), get_max_valid_x());
-    offset_y = std::clamp(new_offset_y, min_y_offset, max_y_offset);
+    offset_x = std::clamp(new_offset_x, -x_offset, x_offset);
+    offset_y = std::clamp(new_offset_y, y_offset, pages_height - y_offset);
 }
 
 Document* DocumentView::get_document() { return current_document; }
@@ -1088,12 +1092,14 @@ void DocumentView::set_page_offset(int new_offset) {
     current_document->set_page_offset(new_offset);
 }
 
+// TODO: remove
 float DocumentView::get_max_valid_x() {
     float page_width =
         current_document->get_page_width(get_center_page_number());
     return std::max(0.0f, page_width - view_width / zoom_level * 0.85f) / 2;
 }
 
+// TODO: remove
 float DocumentView::get_min_valid_x() {
     float page_width =
         current_document->get_page_width(get_center_page_number());
