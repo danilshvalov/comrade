@@ -668,9 +668,9 @@ std::wstring MainWidget::get_status_string() {
     // if (current_pending_command &&
     // current_pending_command.value().requires_symbol) {
     if (is_waiting_for_symbol()) {
-        std::wstring wcommand_name = utf8_decode(
-            pending_command_instance->next_requirement(this).value().name
-        );
+        std::wstring wcommand_name =
+            utf8_decode(pending_command_instance->next_requirement(*this)->name
+            );
         status_string.replace(
             "%{waiting_for_symbol}",
             " " + QString::fromStdString(pending_command_instance->get_name()) +
@@ -1306,10 +1306,11 @@ void MainWidget::open_document(const DocumentViewState& state) {
 }
 
 bool MainWidget::is_waiting_for_symbol() {
+    // TODO: refactor
     return (
         (pending_command_instance != nullptr) &&
-        pending_command_instance->next_requirement(this).has_value() &&
-        (pending_command_instance->next_requirement(this).value().type ==
+        pending_command_instance->next_requirement(*this).has_value() &&
+        (pending_command_instance->next_requirement(*this)->type ==
          RequirementType::Symbol)
     );
 }
@@ -1875,16 +1876,16 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
         if (is_shift_pressed) {
             auto commands =
                 command_manager->create_macro_command("", SHIFT_CLICK_COMMAND);
-            commands->run(this);
+            commands->run(*this);
         } else if (is_control_pressed) {
             auto commands = command_manager->create_macro_command(
                 "", CONTROL_CLICK_COMMAND
             );
-            commands->run(this);
+            commands->run(*this);
         } else if (is_alt_pressed) {
             auto commands =
                 command_manager->create_macro_command("", ALT_CLICK_COMMAND);
-            commands->run(this);
+            commands->run(*this);
         } else {
             handle_left_click(
                 {mevent->pos().x(), mevent->pos().y()}, false, is_shift_pressed,
@@ -1908,17 +1909,17 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
             auto commands = command_manager->create_macro_command(
                 "", SHIFT_RIGHT_CLICK_COMMAND
             );
-            commands->run(this);
+            commands->run(*this);
         } else if (is_control_pressed) {
             auto commands = command_manager->create_macro_command(
                 "", CONTROL_RIGHT_CLICK_COMMAND
             );
-            commands->run(this);
+            commands->run(*this);
         } else if (is_alt_pressed) {
             auto commands = command_manager->create_macro_command(
                 "", ALT_RIGHT_CLICK_COMMAND
             );
-            commands->run(this);
+            commands->run(*this);
         } else {
             handle_right_click(
                 {mevent->pos().x(), mevent->pos().y()}, false, is_shift_pressed,
@@ -1933,7 +1934,7 @@ void MainWidget::mouseReleaseEvent(QMouseEvent* mevent) {
             !(opengl_widget && opengl_widget->get_overview_page())) {
             command_manager
                 ->get_command_with_name("add_highlight_with_current_type")
-                ->run(this);
+                ->run(*this);
             invalidate_render();
         } else {
             smart_jump_under_pos({mevent->pos().x(), mevent->pos().y()});
@@ -2115,7 +2116,7 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
     if (command) {
         // handle_command(command, num_repeats);
         command->set_num_repeats(num_repeats);
-        command->run(this);
+        command->run(*this);
     }
 }
 
@@ -3903,9 +3904,9 @@ void MainWidget::advance_command(std::unique_ptr<Command> new_command) {
         return;
     }
 
-    const auto requirement = new_command->next_requirement(this);
+    const auto requirement = new_command->next_requirement(*this);
     if (!requirement) {
-        new_command->run(this);
+        new_command->run(*this);
         pending_command_instance = nullptr;
         return;
     }
@@ -3933,7 +3934,7 @@ void MainWidget::advance_command(std::unique_ptr<Command> new_command) {
     }
 
     if (pending_command_instance) {
-        pending_command_instance->pre_perform(this);
+        pending_command_instance->pre_perform(*this);
     }
 }
 
@@ -4351,7 +4352,7 @@ void MainWidget::handle_new_window() {
     // new_widget->run_multiple_commands(STARTUP_COMMANDS);
     auto startup_commands =
         command_manager->create_macro_command("", STARTUP_COMMANDS);
-    startup_commands->run(new_widget);
+    startup_commands->run(*new_widget);
 
     windows.push_back(new_widget);
 }
