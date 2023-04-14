@@ -307,9 +307,8 @@ QStringList convert_arguments(QStringList input_args) {
 void configure_paths() {
 
     fs::path parent_path(QCoreApplication::applicationDirPath().toStdWString());
-    std::string exe_path = utf8_encode(
-        QCoreApplication::applicationFilePath().toStdWString()
-    );
+    std::string exe_path =
+        utf8_encode(QCoreApplication::applicationFilePath().toStdWString());
 
     shader_path = parent_path / "shaders";
 
@@ -321,9 +320,8 @@ void configure_paths() {
 #endif
 
 #ifdef Q_OS_LINUX
-    QStringList all_config_paths = QStandardPaths::standardLocations(
-        QStandardPaths::AppConfigLocation
-    );
+    QStringList all_config_paths =
+        QStandardPaths::standardLocations(QStandardPaths::AppConfigLocation);
     for (int i = all_config_paths.size() - 1; i >= 0; i--) {
         user_config_paths.push_back(
             fs::path(all_config_paths.at(i).toStdWString()) /
@@ -348,8 +346,8 @@ void configure_paths() {
     local_database_file_path = standard_data_path / "local.db";
     global_database_file_path = standard_data_path / "shared.db";
     tutorial_path = read_only_data_path / "tutorial.pdf";
-    last_opened_file_address_path = standard_data_path /
-                                    "last_document_path.txt";
+    last_opened_file_address_path =
+        standard_data_path / "last_document_path.txt";
     shader_path = read_only_data_path / "shaders";
 #else
     char* APPDIR = std::getenv("XDG_CONFIG_HOME");
@@ -371,11 +369,11 @@ void configure_paths() {
     local_database_file_path = standard_data_path / "local.db";
     global_database_file_path = standard_data_path / "shared.db";
     tutorial_path = standard_data_path / "tutorial.pdf";
-    last_opened_file_address_path = standard_data_path /
-                                    "last_document_path.txt";
+    last_opened_file_address_path =
+        standard_data_path / "last_document_path.txt";
 
-    fs::path linux_standard_config_path = linux_home_path / ".config" /
-                                          "sioyek";
+    fs::path linux_standard_config_path =
+        linux_home_path / ".config" / "sioyek";
     // user_keys_paths.push_back(mac_standard_config_path.slash(L"keys_user.config"));
     // user_config_paths.push_back(mac_standard_config_path.slash(L"prefs_user.config"));
     user_keys_paths.push_back(linux_standard_config_path / "keys_user.config");
@@ -396,9 +394,8 @@ void configure_paths() {
             .at(0)
             .toStdWString()
     );
-    QStringList all_config_paths = QStandardPaths::standardLocations(
-        QStandardPaths::AppConfigLocation
-    );
+    QStringList all_config_paths =
+        QStandardPaths::standardLocations(QStandardPaths::AppConfigLocation);
 
     fs::create_directories(standard_data_path);
 
@@ -421,8 +418,8 @@ void configure_paths() {
     database_file_path = standard_data_path / "test.db";
     local_database_file_path = standard_data_path / "local.db";
     global_database_file_path = standard_data_path / "shared.db";
-    last_opened_file_address_path = standard_data_path /
-                                    "last_document_path.txt";
+    last_opened_file_address_path =
+        standard_data_path / "last_document_path.txt";
 #else
     user_config_paths.push_back(parent_path / "prefs_user.config");
     user_keys_paths.push_back(parent_path / "keys_user.config");
@@ -584,9 +581,9 @@ MainWidget* handle_args(const QStringList& arguments) {
     } else if (windows[0]->doc() == nullptr) {
         // when no file is specified, and no current file is open, use the
         // last opened file or tutorial
-        pdf_file_name = get_last_opened_file_name().value_or(
-            tutorial_path.generic_wstring()
-        );
+        pdf_file_name =
+            get_last_opened_file_name().value_or(tutorial_path.generic_wstring()
+            );
     }
 
     std::optional<std::wstring> latex_file_name = {};
@@ -657,7 +654,7 @@ MainWidget* handle_args(const QStringList& arguments) {
         // target_window->run_multiple_commands(STARTUP_COMMANDS);
         target_window->command_manager
             ->create_macro_command("", STARTUP_COMMANDS)
-            ->run(target_window);
+            ->run(*target_window);
         target_window->apply_window_params_for_one_window_mode(true);
         target_window->show();
         windows.push_back(target_window);
@@ -684,7 +681,7 @@ MainWidget* handle_args(const QStringList& arguments) {
         auto command = target_window->command_manager->create_macro_command(
             "", command_string.toStdWString()
         );
-        command->run(target_window);
+        command->run(*target_window);
     }
 
     if (parser->isSet("focus-text")) {
@@ -700,9 +697,8 @@ MainWidget* handle_args(const QStringList& arguments) {
         } else {
             if (windows.size() > 1) {
                 if (windows[windows.size() - 2]->doc()) {
-                    pdf_file_name = windows[windows.size() - 2]
-                                        ->doc()
-                                        ->get_path();
+                    pdf_file_name =
+                        windows[windows.size() - 2]->doc()->get_path();
                 }
             } else {
                 pdf_file_name = tutorial_path.generic_wstring();
@@ -771,13 +767,11 @@ int main(int argc, char* args[]) {
     if (SHARED_DATABASE_PATH.size() > 0) {
         global_database_file_path = SHARED_DATABASE_PATH;
     }
-    char* shared_database_path_arg = get_argv_value(
-        argc, args, "--shared-database-path"
-    );
+    char* shared_database_path_arg =
+        get_argv_value(argc, args, "--shared-database-path");
     if (shared_database_path_arg) {
-        global_database_file_path = utf8_decode(
-            std::string(shared_database_path_arg)
-        );
+        global_database_file_path =
+            utf8_decode(std::string(shared_database_path_arg));
     }
 
     verify_paths();
@@ -823,9 +817,8 @@ int main(int argc, char* args[]) {
     locks.lock = lock_mutex;
     locks.unlock = unlock_mutex;
 
-    fz_context* mupdf_context = fz_new_context(
-        nullptr, &locks, FZ_STORE_DEFAULT
-    );
+    fz_context* mupdf_context =
+        fz_new_context(nullptr, &locks, FZ_STORE_DEFAULT);
 
     if (!mupdf_context) {
         std::cerr << "could not create mupdf context" << std::endl;
@@ -911,7 +904,7 @@ int main(int argc, char* args[]) {
 
     handle_args(app.arguments());
     main_widget->command_manager->create_macro_command("", STARTUP_COMMANDS)
-        ->run(main_widget);
+        ->run(*main_widget);
     // main_widget->run_multiple_commands(STARTUP_COMMANDS);
 
     // load input file from `QFileOpenEvent` for macOS drag and drop & "open

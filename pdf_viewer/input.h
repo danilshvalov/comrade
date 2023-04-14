@@ -14,56 +14,9 @@
 #include "utils.h"
 #include "config.h"
 
+#include "command_manager.h"
+
 class MainWidget;
-
-enum RequirementType { Text, Symbol, File, Rect };
-
-struct Requirement {
-    RequirementType type;
-    std::string name;
-};
-
-class Command {
-  private:
-    virtual void perform(MainWidget* widget) = 0;
-
-  protected:
-    int num_repeats = 1;
-    MainWidget* widget = nullptr;
-
-  public:
-    virtual std::optional<Requirement> next_requirement(MainWidget* widget);
-
-    virtual void set_text_requirement(std::wstring value);
-    virtual void set_symbol_requirement(char value);
-    virtual void set_file_requirement(std::wstring value);
-    virtual void set_rect_requirement(fz_rect value);
-    virtual void set_num_repeats(int nr);
-    virtual std::vector<char> special_symbols();
-    virtual void pre_perform(MainWidget* widget);
-    virtual bool pushes_state();
-    virtual bool requires_document();
-
-    virtual void run(MainWidget* widget);
-    virtual std::string get_name();
-
-    virtual ~Command() = default;
-};
-
-class CommandManager {
-  private:
-    // std::vector<Command> commands;
-    std::map<std::string, std::function<std::unique_ptr<Command>()>>
-        new_commands;
-
-  public:
-    CommandManager(ConfigManager* config_manager);
-    std::unique_ptr<Command> get_command_with_name(std::string name);
-    std::unique_ptr<Command> create_macro_command(
-        std::string name, std::wstring macro_string
-    );
-    QStringList get_all_command_names();
-};
 
 struct InputParseTreeNode {
     std::vector<InputParseTreeNode*> children;
@@ -78,7 +31,7 @@ struct InputParseTreeNode {
     bool is_root = false;
     bool is_final = false;
 
-    // todo: use a pointer to reduce allocation
+    // TODO: use a pointer to reduce allocation
     std::wstring defining_file_path;
     int defining_file_line;
 
