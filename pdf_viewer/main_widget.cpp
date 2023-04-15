@@ -4063,7 +4063,7 @@ void MainWidget::handle_goto_bookmark() {
             bookmarks, main_document_view->get_offset_y()
         );
 
-    set_current_widget(new FilteredSelectTableWindowClass<float>(
+    set_current_widget(new FilteredTableWindowSelector<float>(
         option_names, option_location_strings, option_locations,
         closest_bookmark_index,
         [&](float* offset_value) {
@@ -4104,7 +4104,7 @@ void MainWidget::handle_goto_bookmark_global() {
             book_states.push_back({path.value(), bm.y_offset});
         }
     }
-    set_current_widget(new FilteredSelectTableWindowClass<BookState>(
+    set_current_widget(new FilteredTableWindowSelector<BookState>(
         descs, file_names, book_states, -1,
         [&](BookState* book_state) {
             if (book_state) {
@@ -4171,7 +4171,7 @@ void MainWidget::handle_goto_highlight() {
         option_location_strings.push_back(get_page_formatted_string(page + 1));
     }
 
-    set_current_widget(new FilteredSelectTableWindowClass<Highlight>(
+    set_current_widget(new FilteredTableWindowSelector<Highlight>(
         option_names, option_location_strings, highlights,
         closest_highlight_index,
         [&](Highlight* hl) {
@@ -4221,7 +4221,7 @@ void MainWidget::handle_goto_highlight_global() {
             book_states.push_back({path.value(), hl.selection_begin.y});
         }
     }
-    set_current_widget(new FilteredSelectTableWindowClass<BookState>(
+    set_current_widget(new FilteredTableWindowSelector<BookState>(
         descs, file_names, book_states, -1,
         [&](BookState* book_state) {
             if (book_state) {
@@ -4246,7 +4246,7 @@ void MainWidget::handle_goto_toc() {
                 main_document_view->get_document()->get_toc(), flat_toc,
                 current_document_toc_pages
             );
-            set_current_widget(new FilteredSelectWindowClass<int>(
+            set_current_widget(new FilteredWindowSelector<int>(
                 flat_toc, current_document_toc_pages,
                 [&](int* page_value) {
                     if (page_value) {
@@ -4266,7 +4266,7 @@ void MainWidget::handle_goto_toc() {
 
             std::vector<int> selected_index =
                 main_document_view->get_current_chapter_recursive_index();
-            set_current_widget(new FilteredTreeSelect<int>(
+            set_current_widget(new FilteredTreeSelector(
                 main_document_view->get_document()->get_toc_model(),
                 [&](const std::vector<int>& indices) {
                     TocNode* toc_node = get_toc_node_from_indices(
@@ -4317,7 +4317,7 @@ void MainWidget::handle_open_prev_doc() {
         }
     }
 
-    set_current_widget(new FilteredSelectWindowClass<std::string>(
+    set_current_widget(new FilteredWindowSelector<std::string>(
         opened_docs_names, opened_docs_hashes,
         [&](std::string* doc_hash) {
             if (doc_hash->size() > 0) {
@@ -4456,7 +4456,7 @@ void MainWidget::handle_keys_user_all() {
         keys_paths_wstring.push_back(path.generic_wstring());
     }
 
-    set_current_widget(new FilteredSelectWindowClass<std::wstring>(
+    set_current_widget(new FilteredWindowSelector<std::wstring>(
         keys_paths_wstring, keys_paths_wstring,
         [&](std::wstring* path) {
             if (path) {
@@ -4476,7 +4476,7 @@ void MainWidget::handle_prefs_user_all() {
         prefs_paths_wstring.push_back(path.generic_wstring());
     }
 
-    set_current_widget(new FilteredSelectWindowClass<std::wstring>(
+    set_current_widget(new FilteredWindowSelector<std::wstring>(
         prefs_paths_wstring, prefs_paths_wstring,
         [&](std::wstring* path) {
             if (path) {
@@ -4530,7 +4530,7 @@ void MainWidget::handle_goto_window() {
         window_names.push_back(windows[i]->windowTitle().toStdWString());
         window_ids.push_back(i);
     }
-    set_current_widget(new FilteredSelectWindowClass<int>(
+    set_current_widget(new FilteredWindowSelector<int>(
         window_names, window_ids,
         [&](int* window_id) {
             if (*window_id < windows.size()) {
