@@ -4,129 +4,6 @@
 #include <map>
 #include <qdir.h>
 
-extern float ZOOM_INC_FACTOR;
-extern float GAMMA;
-extern float VERTICAL_MOVE_AMOUNT;
-extern float HORIZONTAL_MOVE_AMOUNT;
-extern float MOVE_SCREEN_PERCENTAGE;
-extern float BACKGROUND_COLOR[3];
-extern float UNSELECTED_SEARCH_HIGHLIGHT_COLOR[3];
-extern float DARK_MODE_BACKGROUND_COLOR[3];
-extern float CUSTOM_COLOR_MODE_EMPTY_BACKGROUND_COLOR[3];
-extern float DARK_MODE_CONTRAST;
-extern bool FLAT_TABLE_OF_CONTENTS;
-extern bool SMALL_TOC;
-extern bool SHOULD_USE_MULTIPLE_MONITORS;
-extern bool SORT_BOOKMARKS_BY_LOCATION;
-extern bool SHOULD_LOAD_TUTORIAL_WHEN_NO_OTHER_FILE;
-extern bool SHOULD_LAUNCH_NEW_INSTANCE;
-extern bool SHOULD_LAUNCH_NEW_WINDOW;
-extern bool SHOULD_CHECK_FOR_LATEST_VERSION_ON_STARTUP;
-extern bool SHOULD_DRAW_UNRENDERED_PAGES;
-extern bool HOVER_OVERVIEW;
-// extern bool AUTO_EMBED_ANNOTATIONS;
-extern bool DEFAULT_DARK_MODE;
-extern float HIGHLIGHT_COLORS[26 * 3];
-extern std::wstring SEARCH_URLS[26];
-extern std::wstring EXECUTE_COMMANDS[26];
-extern std::wstring LIBGEN_ADDRESS;
-extern std::wstring GOOGLE_SCHOLAR_ADDRESS;
-extern std::wstring INVERSE_SEARCH_COMMAND;
-extern std::wstring SHARED_DATABASE_PATH;
-extern std::wstring ITEM_LIST_PREFIX;
-extern float VISUAL_MARK_NEXT_PAGE_FRACTION;
-extern float VISUAL_MARK_NEXT_PAGE_THRESHOLD;
-extern std::wstring UI_FONT_FACE_NAME;
-extern std::wstring MIDDLE_CLICK_SEARCH_ENGINE;
-extern std::wstring SHIFT_MIDDLE_CLICK_SEARCH_ENGINE;
-extern std::wstring STARTUP_COMMANDS;
-extern std::wstring SHUTDOWN_COMMANDS;
-extern int FONT_SIZE;
-extern float CUSTOM_BACKGROUND_COLOR[3];
-extern float CUSTOM_TEXT_COLOR[3];
-extern bool RERENDER_OVERVIEW;
-extern bool WHEEL_ZOOM_ON_CURSOR;
-extern bool RULER_MODE;
-extern bool LINEAR_TEXTURE_FILTERING;
-extern float DISPLAY_RESOLUTION_SCALE;
-extern float STATUS_BAR_COLOR[3];
-extern float STATUS_BAR_TEXT_COLOR[3];
-extern float UI_SELECTED_TEXT_COLOR[3];
-extern float UI_SELECTED_BACKGROUND_COLOR[3];
-extern int STATUS_BAR_FONT_SIZE;
-extern int MAIN_WINDOW_SIZE[2];
-extern int HELPER_WINDOW_SIZE[2];
-extern int MAIN_WINDOW_MOVE[2];
-extern int HELPER_WINDOW_MOVE[2];
-extern float TOUCHPAD_SENSITIVITY;
-extern float SCROLL_VIEW_SENSITIVITY;
-extern float PAGE_SEPARATOR_WIDTH;
-extern float PAGE_SEPARATOR_COLOR[3];
-extern int SINGLE_MAIN_WINDOW_SIZE[2];
-extern int SINGLE_MAIN_WINDOW_MOVE[2];
-extern float FIT_TO_PAGE_WIDTH_RATIO;
-extern float RULER_PADDING;
-extern float RULER_X_PADDING;
-extern std::wstring TEXT_HIGHLIGHT_URL;
-extern bool TEXT_SUMMARY_HIGHLIGHT_SHOULD_REFINE;
-extern bool TEXT_SUMMARY_HIGHLIGHT_SHOULD_FILL;
-extern int TEXT_SUMMARY_CONTEXT_SIZE;
-extern bool USE_HEURISTIC_IF_TEXT_SUMMARY_NOT_AVAILABLE;
-extern std::wstring PAPERS_FOLDER_PATH;
-extern bool ENABLE_EXPERIMENTAL_FEATURES;
-extern bool CREATE_TABLE_OF_CONTENTS_IF_NOT_EXISTS;
-extern int MAX_CREATED_TABLE_OF_CONTENTS_SIZE;
-extern bool FORCE_CUSTOM_LINE_ALGORITHM;
-extern float OVERVIEW_SIZE[2];
-extern float OVERVIEW_OFFSET[2];
-extern bool IGNORE_WHITESPACE_IN_PRESENTATION_MODE;
-extern bool EXACT_HIGHLIGHT_SELECT;
-extern bool SHOW_DOC_PATH;
-extern float FASTREAD_OPACITY;
-extern bool SHOULD_WARN_ABOUT_USER_KEY_OVERRIDE;
-extern bool SINGLE_CLICK_SELECTS_WORDS;
-extern std::wstring SHIFT_CLICK_COMMAND;
-extern std::wstring CONTROL_CLICK_COMMAND;
-extern std::wstring SHIFT_RIGHT_CLICK_COMMAND;
-extern std::wstring CONTROL_RIGHT_CLICK_COMMAND;
-extern std::wstring ALT_CLICK_COMMAND;
-extern std::wstring ALT_RIGHT_CLICK_COMMAND;
-extern bool USE_LEGACY_KEYBINDS;
-extern bool MULTILINE_MENUS;
-extern bool START_WITH_HELPER_WINDOW;
-extern std::map<std::wstring, std::wstring> ADDITIONAL_COMMANDS;
-extern std::map<std::wstring, std::wstring> ADDITIONAL_MACROS;
-extern bool PRERENDER_NEXT_PAGE;
-extern bool EMACS_MODE;
-extern bool HIGHLIGHT_MIDDLE_CLICK;
-extern float HYPERDRIVE_SPEED_FACTOR;
-extern float SMOOTH_SCROLL_SPEED;
-extern float SMOOTH_SCROLL_DRAG;
-extern bool IGNORE_STATUSBAR_IN_PRESENTATION_MODE;
-extern bool SUPER_FAST_SEARCH;
-extern bool SHOW_CLOSEST_BOOKMARK_IN_STATUSBAR;
-extern int PRERENDERED_PAGE_COUNT;
-extern bool CASE_SENSITIVE_SEARCH;
-extern bool SHOW_DOCUMENT_NAME_IN_STATUSBAR;
-extern bool SHOW_CLOSE_PORTAL_IN_STATUSBAR;
-extern bool NUMERIC_TAGS;
-extern bool SHOULD_HIGHLIGHT_LINKS;
-extern bool SHOULD_HIGHLIGHT_UNSELECTED_SEARCH;
-extern int KEYBOARD_SELECT_FONT_SIZE;
-extern bool FUZZY_SEARCHING;
-extern float CUSTOM_COLOR_CONTRAST;
-extern bool DEBUG;
-extern float HIGHLIGHT_DELETE_THRESHOLD;
-extern std::wstring DEFAULT_OPEN_FILE_PATH;
-extern std::wstring STATUS_BAR_FORMAT;
-extern bool INVERTED_HORIZONTAL_SCROLLING;
-extern bool TOC_JUMP_ALIGN_TOP;
-extern float KEYBOARD_SELECT_BACKGROUND_COLOR[4];
-extern float KEYBOARD_SELECT_TEXT_COLOR[4];
-extern bool AUTOCENTER_VISUAL_SCROLL;
-extern bool ALPHABETIC_LINK_TAGS;
-extern bool VIMTEX_WSL_FIX;
-
 template <typename T>
 void* generic_deserializer(std::wstringstream& stream, void* res_) {
     T* res = static_cast<T*>(res_);
@@ -208,9 +85,9 @@ void float_serializer(void* float_pointer, std::wstringstream& stream) {
     stream << *(float*)float_pointer;
 }
 
-void* Config::get_value() { return value; }
+void* ConfigEntry::get_value() { return value; }
 
-Config* ConfigManager::get_mut_config_with_name(std::wstring config_name) {
+ConfigEntry* ConfigManager::get_mut_config_with_name(std::wstring config_name) {
     for (auto& it : configs) {
         if (it.name == config_name)
             return &it;
@@ -240,9 +117,8 @@ bool ensure_between_0_and_1(const QStringList& parts) {
 template <int N>
 bool colorn_validator(const std::wstring& str) {
     QString qstr = QString::fromStdWString(str);
-    auto parts = qstr.trimmed().split(
-        ' ', Qt::SplitBehaviorFlags::SkipEmptyParts
-    );
+    auto parts =
+        qstr.trimmed().split(' ', Qt::SplitBehaviorFlags::SkipEmptyParts);
     if (parts.size() != N) {
         if (parts.size() == 1) {
             if (parts.at(0).at(0) == '#') {
@@ -263,9 +139,8 @@ bool colorn_validator(const std::wstring& str) {
 
 bool bool_validator(const std::wstring& str) {
     QString qstr = QString::fromStdWString(str);
-    auto parts = qstr.trimmed().split(
-        ' ', Qt::SplitBehaviorFlags::SkipEmptyParts
-    );
+    auto parts =
+        qstr.trimmed().split(' ', Qt::SplitBehaviorFlags::SkipEmptyParts);
     std::wstring msg = L"Bool values should be either 0 or 1, but got ";
     if (parts.size() != 1) {
         std::wcout << msg << str << L"\n";
@@ -284,6 +159,7 @@ ConfigManager::ConfigManager(
     const fs::path& auto_path,
     const std::vector<fs::path>& user_paths
 ) {
+    Config& config = Config::instance();
 
     user_config_paths = user_paths;
     auto ivec2_serializer = vec_n_serializer<2, int>;
@@ -292,7 +168,6 @@ ConfigManager::ConfigManager(
     auto fvec2_deserializer = vec_n_deserializer<2, float>;
     auto vec3_serializer = vec_n_serializer<3, float>;
     auto vec4_serializer = vec_n_serializer<4, float>;
-    auto vec3_deserializer = vec_n_deserializer<3, float>;
     auto vec4_deserializer = vec_n_deserializer<4, float>;
     auto float_deserializer = generic_deserializer<float>;
     auto int_deserializer = generic_deserializer<int>;
@@ -320,7 +195,7 @@ ConfigManager::ConfigManager(
     );
     configs.push_back(
         {L"unselected_search_highlight_color",
-         UNSELECTED_SEARCH_HIGHLIGHT_COLOR, vec3_serializer,
+         config.theme.UNSELECTED_SEARCH_HIGHLIGHT_COLOR, vec3_serializer,
          color3_deserializer, color_3_validator}
     );
     configs.push_back(
@@ -332,479 +207,463 @@ ConfigManager::ConfigManager(
          vec3_serializer, color3_deserializer, color_3_validator}
     );
     configs.push_back(
-        {L"background_color", BACKGROUND_COLOR, vec3_serializer,
+        {L"foreground_color", config.document.foreground, vec3_serializer,
          color3_deserializer, color_3_validator}
     );
     configs.push_back(
-        {L"dark_mode_background_color", DARK_MODE_BACKGROUND_COLOR,
+        {L"background_color", config.document.background, vec3_serializer,
+         color3_deserializer, color_3_validator}
+    );
+    configs.push_back(
+        {L"window_background_color", config.background.background,
          vec3_serializer, color3_deserializer, color_3_validator}
     );
     configs.push_back(
-        {L"custom_color_mode_empty_background_color",
-         CUSTOM_COLOR_MODE_EMPTY_BACKGROUND_COLOR, vec3_serializer,
-         color3_deserializer, color_3_validator}
+        {L"custom_color_contrast", &config.CUSTOM_COLOR_CONTRAST,
+         float_serializer, float_deserializer, nullptr}
     );
     configs.push_back(
-        {L"dark_mode_contrast", &DARK_MODE_CONTRAST, float_serializer,
+        {L"google_scholar_address", &config.GOOGLE_SCHOLAR_ADDRESS,
+         string_serializer, string_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"item_list_prefix", &config.ITEM_LIST_PREFIX, string_serializer,
+         string_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"inverse_search_command", &config.INVERSE_SEARCH_COMMAND,
+         string_serializer, string_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"libgen_address", &config.LIBGEN_ADDRESS, string_serializer,
+         string_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"zoom_inc_factor", &config.ZOOM_INC_FACTOR, float_serializer,
          float_deserializer, nullptr}
     );
     configs.push_back(
-        {L"custom_color_contrast", &CUSTOM_COLOR_CONTRAST, float_serializer,
+        {L"vertical_move_amount", &config.VERTICAL_MOVE_AMOUNT,
+         float_serializer, float_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"horizontal_move_amount", &config.HORIZONTAL_MOVE_AMOUNT,
+         float_serializer, float_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"move_screen_percentage", &config.MOVE_SCREEN_PERCENTAGE,
+         float_serializer, float_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"move_screen_ratio", &config.MOVE_SCREEN_PERCENTAGE, float_serializer,
          float_deserializer, nullptr}
     );
     configs.push_back(
-        {L"default_dark_mode", &DEFAULT_DARK_MODE, bool_serializer,
+        {L"flat_toc", &config.FLAT_TABLE_OF_CONTENTS, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"google_scholar_address", &GOOGLE_SCHOLAR_ADDRESS, string_serializer,
-         string_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"item_list_prefix", &ITEM_LIST_PREFIX, string_serializer,
-         string_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"inverse_search_command", &INVERSE_SEARCH_COMMAND, string_serializer,
-         string_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"libgen_address", &LIBGEN_ADDRESS, string_serializer,
-         string_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"zoom_inc_factor", &ZOOM_INC_FACTOR, float_serializer,
-         float_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"vertical_move_amount", &VERTICAL_MOVE_AMOUNT, float_serializer,
-         float_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"horizontal_move_amount", &HORIZONTAL_MOVE_AMOUNT, float_serializer,
-         float_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"move_screen_percentage", &MOVE_SCREEN_PERCENTAGE, float_serializer,
-         float_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"move_screen_ratio", &MOVE_SCREEN_PERCENTAGE, float_serializer,
-         float_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"flat_toc", &FLAT_TABLE_OF_CONTENTS, bool_serializer,
+        {L"should_use_multiple_monitors",
+         &config.application.use_multiple_monitors, bool_serializer,
          bool_deserializer, bool_validator}
-    );
-    configs.push_back(
-        {L"should_use_multiple_monitors", &SHOULD_USE_MULTIPLE_MONITORS,
-         bool_serializer, bool_deserializer, bool_validator}
     );
     configs.push_back(
         {L"should_load_tutorial_when_no_other_file",
-         &SHOULD_LOAD_TUTORIAL_WHEN_NO_OTHER_FILE, bool_serializer,
+         &config.application.load_tutorial_when_no_other_file, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"should_launch_new_instance", &SHOULD_LAUNCH_NEW_INSTANCE,
+        {L"should_launch_new_instance", &config.application.launch_new_instance,
          bool_serializer, bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"should_launch_new_window", &SHOULD_LAUNCH_NEW_WINDOW,
+        {L"should_launch_new_window", &config.application.launch_new_window,
          bool_serializer, bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"should_draw_unrendered_pages", &SHOULD_DRAW_UNRENDERED_PAGES,
-         bool_serializer, bool_deserializer, bool_validator}
-    );
-    configs.push_back(
-        {L"check_for_updates_on_startup",
-         &SHOULD_CHECK_FOR_LATEST_VERSION_ON_STARTUP, bool_serializer,
+        {L"should_draw_unrendered_pages",
+         &config.application.draw_unrendered_pages, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"sort_bookmarks_by_location", &SORT_BOOKMARKS_BY_LOCATION,
+        {L"sort_bookmarks_by_location", &config.SORT_BOOKMARKS_BY_LOCATION,
          bool_serializer, bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"shared_database_path", &SHARED_DATABASE_PATH, string_serializer,
-         string_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"hover_overview", &HOVER_OVERVIEW, bool_serializer, bool_deserializer,
-         bool_validator}
-    );
-    configs.push_back(
-        {L"visual_mark_next_page_fraction", &VISUAL_MARK_NEXT_PAGE_FRACTION,
-         float_serializer, float_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"visual_mark_next_page_threshold", &VISUAL_MARK_NEXT_PAGE_THRESHOLD,
-         float_serializer, float_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"ui_font", &UI_FONT_FACE_NAME, string_serializer, string_deserializer,
-         nullptr}
-    );
-    configs.push_back(
-        {L"middle_click_search_engine", &MIDDLE_CLICK_SEARCH_ENGINE,
+        {L"shared_database_path", &config.SHARED_DATABASE_PATH,
          string_serializer, string_deserializer, nullptr}
     );
     configs.push_back(
-        {L"shift_middle_click_search_engine", &SHIFT_MIDDLE_CLICK_SEARCH_ENGINE,
-         string_serializer, string_deserializer, nullptr}
+        {L"hover_overview", &config.HOVER_OVERVIEW, bool_serializer,
+         bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"startup_commands", &STARTUP_COMMANDS, string_serializer,
+        {L"visual_mark_next_page_fraction",
+         &config.VISUAL_MARK_NEXT_PAGE_FRACTION, float_serializer,
+         float_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"visual_mark_next_page_threshold",
+         &config.VISUAL_MARK_NEXT_PAGE_THRESHOLD, float_serializer,
+         float_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"ui_font", &config.UI_FONT_FACE_NAME, string_serializer,
          string_deserializer, nullptr}
     );
     configs.push_back(
-        {L"font_size", &FONT_SIZE, int_serializer, int_deserializer, nullptr}
+        {L"middle_click_search_engine", &config.MIDDLE_CLICK_SEARCH_ENGINE,
+         string_serializer, string_deserializer, nullptr}
     );
     configs.push_back(
-        {L"keyboard_select_font_size", &KEYBOARD_SELECT_FONT_SIZE,
-         int_serializer, int_deserializer, nullptr}
+        {L"shift_middle_click_search_engine",
+         &config.SHIFT_MIDDLE_CLICK_SEARCH_ENGINE, string_serializer,
+         string_deserializer, nullptr}
     );
     configs.push_back(
-        {L"status_bar_font_size", &STATUS_BAR_FONT_SIZE, int_serializer,
+        {L"startup_commands", &config.STARTUP_COMMANDS, string_serializer,
+         string_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"font_size", &config.application.font_size, int_serializer,
          int_deserializer, nullptr}
     );
     configs.push_back(
-        {L"custom_background_color", CUSTOM_BACKGROUND_COLOR, vec3_serializer,
-         color3_deserializer, color_3_validator}
+        {L"keyboard_select_font_size", &config.KEYBOARD_SELECT_FONT_SIZE,
+         int_serializer, int_deserializer, nullptr}
     );
     configs.push_back(
-        {L"custom_text_color", CUSTOM_TEXT_COLOR, vec3_serializer,
-         color3_deserializer, color_3_validator}
+        {L"status_bar_font_size", &config.theme.status_bar.font_size,
+         int_serializer, int_deserializer, nullptr}
     );
     configs.push_back(
-        {L"rerender_overview", &RERENDER_OVERVIEW, bool_serializer,
+        {L"rerender_overview", &config.RERENDER_OVERVIEW, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"wheel_zoom_on_cursor", &WHEEL_ZOOM_ON_CURSOR, bool_serializer,
+        {L"wheel_zoom_on_cursor", &config.WHEEL_ZOOM_ON_CURSOR, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"linear_filter", &LINEAR_TEXTURE_FILTERING, bool_serializer,
+        {L"linear_filter", &config.LINEAR_TEXTURE_FILTERING, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"display_resolution_scale", &DISPLAY_RESOLUTION_SCALE,
+        {L"display_resolution_scale", &config.DISPLAY_RESOLUTION_SCALE,
          float_serializer, float_deserializer, nullptr}
     );
     configs.push_back(
-        {L"status_bar_color", STATUS_BAR_COLOR, vec3_serializer,
+        {L"status_bar_color", config.theme.status_bar.background,
+         vec3_serializer, color3_deserializer, color_3_validator}
+    );
+    configs.push_back(
+        {L"status_bar_text_color", config.theme.status_bar.foreground,
+         vec3_serializer, color3_deserializer, color_3_validator}
+    );
+    configs.push_back(
+        {L"main_window_size", &config.MAIN_WINDOW_SIZE, ivec2_serializer,
+         ivec2_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"helper_window_size", &config.HELPER_WINDOW_SIZE, ivec2_serializer,
+         ivec2_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"main_window_move", &config.MAIN_WINDOW_MOVE, ivec2_serializer,
+         ivec2_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"helper_window_move", &config.HELPER_WINDOW_MOVE, ivec2_serializer,
+         ivec2_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"touchpad_sensitivity", &config.TOUCHPAD_SENSITIVITY,
+         float_serializer, float_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"scrollview_sensitivity", &config.SCROLL_VIEW_SENSITIVITY,
+         float_serializer, float_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"page_separator_width", &config.PAGE_SEPARATOR_WIDTH,
+         float_serializer, float_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"page_separator_color", config.PAGE_SEPARATOR_COLOR, vec3_serializer,
          color3_deserializer, color_3_validator}
     );
     configs.push_back(
-        {L"status_bar_text_color", STATUS_BAR_TEXT_COLOR, vec3_serializer,
-         color3_deserializer, color_3_validator}
+        {L"single_main_window_size", &config.SINGLE_MAIN_WINDOW_SIZE,
+         ivec2_serializer, ivec2_deserializer, nullptr}
     );
     configs.push_back(
-        {L"main_window_size", &MAIN_WINDOW_SIZE, ivec2_serializer,
-         ivec2_deserializer, nullptr}
+        {L"single_main_window_move", &config.SINGLE_MAIN_WINDOW_MOVE,
+         ivec2_serializer, ivec2_deserializer, nullptr}
     );
     configs.push_back(
-        {L"helper_window_size", &HELPER_WINDOW_SIZE, ivec2_serializer,
-         ivec2_deserializer, nullptr}
+        {L"fit_to_page_width_ratio", &config.FIT_TO_PAGE_WIDTH_RATIO,
+         float_serializer, float_deserializer, nullptr}
     );
     configs.push_back(
-        {L"main_window_move", &MAIN_WINDOW_MOVE, ivec2_serializer,
-         ivec2_deserializer, nullptr}
+        {L"collapsed_toc", &config.SMALL_TOC, bool_serializer,
+         bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"helper_window_move", &HELPER_WINDOW_MOVE, ivec2_serializer,
-         ivec2_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"touchpad_sensitivity", &TOUCHPAD_SENSITIVITY, float_serializer,
-         float_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"scrollview_sensitivity", &SCROLL_VIEW_SENSITIVITY, float_serializer,
-         float_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"page_separator_width", &PAGE_SEPARATOR_WIDTH, float_serializer,
-         float_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"page_separator_color", PAGE_SEPARATOR_COLOR, vec3_serializer,
-         color3_deserializer, color_3_validator}
-    );
-    configs.push_back(
-        {L"single_main_window_size", &SINGLE_MAIN_WINDOW_SIZE, ivec2_serializer,
-         ivec2_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"single_main_window_move", &SINGLE_MAIN_WINDOW_MOVE, ivec2_serializer,
-         ivec2_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"fit_to_page_width_ratio", &FIT_TO_PAGE_WIDTH_RATIO, float_serializer,
-         float_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"collapsed_toc", &SMALL_TOC, bool_serializer, bool_deserializer,
+        {L"ruler_mode", &config.RULER_MODE, bool_serializer, bool_deserializer,
          bool_validator}
     );
     configs.push_back(
-        {L"ruler_mode", &RULER_MODE, bool_serializer, bool_deserializer,
-         bool_validator}
-    );
-    configs.push_back(
-        {L"ruler_padding", &RULER_PADDING, float_serializer, float_deserializer,
-         nullptr}
-    );
-    configs.push_back(
-        {L"ruler_x_padding", &RULER_X_PADDING, float_serializer,
+        {L"ruler_padding", &config.RULER_PADDING, float_serializer,
          float_deserializer, nullptr}
     );
     configs.push_back(
-        {L"text_summary_url", &TEXT_HIGHLIGHT_URL, string_serializer,
+        {L"ruler_x_padding", &config.RULER_X_PADDING, float_serializer,
+         float_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"text_summary_url", &config.TEXT_HIGHLIGHT_URL, string_serializer,
          string_deserializer, nullptr}
     );
     configs.push_back(
-        {L"text_summary_should_refine", &TEXT_SUMMARY_HIGHLIGHT_SHOULD_REFINE,
-         bool_serializer, bool_deserializer, bool_validator}
+        {L"text_summary_should_refine",
+         &config.TEXT_SUMMARY_HIGHLIGHT_SHOULD_REFINE, bool_serializer,
+         bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"text_summary_should_fill", &TEXT_SUMMARY_HIGHLIGHT_SHOULD_FILL,
-         bool_serializer, bool_deserializer, bool_validator}
+        {L"text_summary_should_fill",
+         &config.TEXT_SUMMARY_HIGHLIGHT_SHOULD_FILL, bool_serializer,
+         bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"text_summary_context_size", &TEXT_SUMMARY_CONTEXT_SIZE,
+        {L"text_summary_context_size", &config.TEXT_SUMMARY_CONTEXT_SIZE,
          int_serializer, int_deserializer, nullptr}
     );
     configs.push_back(
         {L"use_heuristic_if_text_summary_not_available",
-         &USE_HEURISTIC_IF_TEXT_SUMMARY_NOT_AVAILABLE, bool_serializer,
+         &config.USE_HEURISTIC_IF_TEXT_SUMMARY_NOT_AVAILABLE, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"papers_folder_path", &PAPERS_FOLDER_PATH, string_serializer,
+        {L"papers_folder_path", &config.PAPERS_FOLDER_PATH, string_serializer,
          string_deserializer, nullptr}
     );
     configs.push_back(
-        {L"enable_experimental_features", &ENABLE_EXPERIMENTAL_FEATURES,
+        {L"enable_experimental_features", &config.ENABLE_EXPERIMENTAL_FEATURES,
          bool_serializer, bool_deserializer, bool_validator}
     );
     configs.push_back(
         {L"create_table_of_contents_if_not_exists",
-         &CREATE_TABLE_OF_CONTENTS_IF_NOT_EXISTS, bool_serializer,
+         &config.CREATE_TABLE_OF_CONTENTS_IF_NOT_EXISTS, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"max_created_toc_size", &MAX_CREATED_TABLE_OF_CONTENTS_SIZE,
+        {L"max_created_toc_size", &config.MAX_CREATED_TABLE_OF_CONTENTS_SIZE,
          int_serializer, int_deserializer, nullptr}
     );
     configs.push_back(
-        {L"force_custom_line_algorithm", &FORCE_CUSTOM_LINE_ALGORITHM,
+        {L"force_custom_line_algorithm", &config.FORCE_CUSTOM_LINE_ALGORITHM,
          bool_serializer, bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"overview_size", &OVERVIEW_SIZE, fvec2_serializer, fvec2_deserializer,
-         nullptr}
+        {L"overview_size", &config.OVERVIEW_SIZE, fvec2_serializer,
+         fvec2_deserializer, nullptr}
     );
     configs.push_back(
-        {L"overview_offset", &OVERVIEW_OFFSET, fvec2_serializer,
+        {L"overview_offset", &config.OVERVIEW_OFFSET, fvec2_serializer,
          fvec2_deserializer, nullptr}
     );
     configs.push_back(
         {L"ignore_whitespace_in_presentation_mode",
-         &IGNORE_WHITESPACE_IN_PRESENTATION_MODE, bool_serializer,
+         &config.IGNORE_WHITESPACE_IN_PRESENTATION_MODE, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"exact_highlight_select", &EXACT_HIGHLIGHT_SELECT, bool_serializer,
+        {L"exact_highlight_select", &config.EXACT_HIGHLIGHT_SELECT,
+         bool_serializer, bool_deserializer, bool_validator}
+    );
+    configs.push_back(
+        {L"show_doc_path", &config.SHOW_DOC_PATH, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"show_doc_path", &SHOW_DOC_PATH, bool_serializer, bool_deserializer,
-         bool_validator}
-    );
-    configs.push_back(
-        {L"fastread_opacity", &FASTREAD_OPACITY, float_serializer,
+        {L"fastread_opacity", &config.FASTREAD_OPACITY, float_serializer,
          float_deserializer, nullptr}
     );
     configs.push_back(
         {L"should_warn_about_user_key_override",
-         &SHOULD_WARN_ABOUT_USER_KEY_OVERRIDE, bool_serializer,
+         &config.application.warn_about_user_key_override, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"single_click_selects_words", &SINGLE_CLICK_SELECTS_WORDS,
+        {L"single_click_selects_words", &config.SINGLE_CLICK_SELECTS_WORDS,
          bool_serializer, bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"shift_click_command", &SHIFT_CLICK_COMMAND, string_serializer,
+        {L"shift_click_command", &config.SHIFT_CLICK_COMMAND, string_serializer,
          string_deserializer, nullptr}
     );
     configs.push_back(
-        {L"control_click_command", &CONTROL_CLICK_COMMAND, string_serializer,
+        {L"control_click_command", &config.CONTROL_CLICK_COMMAND,
+         string_serializer, string_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"shift_right_click_command", &config.SHIFT_RIGHT_CLICK_COMMAND,
+         string_serializer, string_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"control_right_click_command", &config.CONTROL_RIGHT_CLICK_COMMAND,
+         string_serializer, string_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"alt_click_command", &config.ALT_CLICK_COMMAND, string_serializer,
          string_deserializer, nullptr}
     );
     configs.push_back(
-        {L"shift_right_click_command", &SHIFT_RIGHT_CLICK_COMMAND,
+        {L"alt_right_click_command", &config.ALT_RIGHT_CLICK_COMMAND,
          string_serializer, string_deserializer, nullptr}
     );
     configs.push_back(
-        {L"control_right_click_command", &CONTROL_RIGHT_CLICK_COMMAND,
-         string_serializer, string_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"use_legacy_keybinds", &USE_LEGACY_KEYBINDS, bool_serializer,
+        {L"multiline_menus", &config.MULTILINE_MENUS, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"alt_click_command", &ALT_CLICK_COMMAND, string_serializer,
-         string_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"alt_right_click_command", &ALT_RIGHT_CLICK_COMMAND,
-         string_serializer, string_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"multiline_menus", &MULTILINE_MENUS, bool_serializer,
-         bool_deserializer, bool_validator}
-    );
-    configs.push_back(
-        {L"start_with_helper_window", &START_WITH_HELPER_WINDOW,
+        {L"start_with_helper_window", &config.START_WITH_HELPER_WINDOW,
          bool_serializer, bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"prerender_next_page_presentation", &PRERENDER_NEXT_PAGE,
+        {L"prerender_next_page_presentation", &config.PRERENDER_NEXT_PAGE,
          bool_serializer, bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"emacs_mode_menus", &EMACS_MODE, bool_serializer, bool_deserializer,
-         bool_validator}
-    );
-    configs.push_back(
-        {L"highlight_middle_click", &HIGHLIGHT_MIDDLE_CLICK, bool_serializer,
+        {L"emacs_mode_menus", &config.EMACS_MODE, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"hyperdrive_speed_factor", &HYPERDRIVE_SPEED_FACTOR, float_serializer,
+        {L"highlight_middle_click", &config.HIGHLIGHT_MIDDLE_CLICK,
+         bool_serializer, bool_deserializer, bool_validator}
+    );
+    configs.push_back(
+        {L"hyperdrive_speed_factor", &config.HYPERDRIVE_SPEED_FACTOR,
+         float_serializer, float_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"smooth_scroll_speed", &config.SMOOTH_SCROLL_SPEED, float_serializer,
          float_deserializer, nullptr}
     );
     configs.push_back(
-        {L"smooth_scroll_speed", &SMOOTH_SCROLL_SPEED, float_serializer,
-         float_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"smooth_scroll_drag", &SMOOTH_SCROLL_DRAG, float_serializer,
+        {L"smooth_scroll_drag", &config.SMOOTH_SCROLL_DRAG, float_serializer,
          float_deserializer, nullptr}
     );
     configs.push_back(
         {L"ignore_statusbar_in_presentation_mode",
-         &IGNORE_STATUSBAR_IN_PRESENTATION_MODE, bool_serializer,
+         &config.IGNORE_STATUSBAR_IN_PRESENTATION_MODE, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"super_fast_search", &SUPER_FAST_SEARCH, bool_serializer,
+        {L"super_fast_search", &config.SUPER_FAST_SEARCH, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
         {L"show_closest_bookmark_in_statusbar",
-         &SHOW_CLOSEST_BOOKMARK_IN_STATUSBAR, bool_serializer,
+         &config.SHOW_CLOSEST_BOOKMARK_IN_STATUSBAR, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"show_close_portal_in_statusbar", &SHOW_CLOSE_PORTAL_IN_STATUSBAR,
-         bool_serializer, bool_deserializer, bool_validator}
-    );
-    configs.push_back(
-        {L"prerendered_page_count", &PRERENDERED_PAGE_COUNT, int_serializer,
-         int_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"case_sensitive_search", &CASE_SENSITIVE_SEARCH, bool_serializer,
+        {L"show_close_portal_in_statusbar",
+         &config.SHOW_CLOSE_PORTAL_IN_STATUSBAR, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"show_document_name_in_statusbar", &SHOW_DOCUMENT_NAME_IN_STATUSBAR,
+        {L"prerendered_page_count", &config.PRERENDERED_PAGE_COUNT,
+         int_serializer, int_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"case_sensitive_search", &config.CASE_SENSITIVE_SEARCH,
          bool_serializer, bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"ui_selected_background_color", UI_SELECTED_BACKGROUND_COLOR,
+        {L"show_document_name_in_statusbar",
+         &config.SHOW_DOCUMENT_NAME_IN_STATUSBAR, bool_serializer,
+         bool_deserializer, bool_validator}
+    );
+    configs.push_back(
+        {L"ui_selected_background_color", config.theme.selected.background,
          vec3_serializer, color3_deserializer, color_3_validator}
     );
     configs.push_back(
-        {L"ui_selected_text_color", UI_SELECTED_TEXT_COLOR, vec3_serializer,
+        {L"ui_selected_text_color", config.theme.selected.foreground,
+         vec3_serializer, color3_deserializer, color_3_validator}
+    );
+    configs.push_back(
+        {L"ui_background_color", config.theme.status_bar.background,
+         vec3_serializer, color3_deserializer, color_3_validator}
+    );
+    configs.push_back(
+        {L"ui_text_color", config.theme.status_bar.foreground, vec3_serializer,
          color3_deserializer, color_3_validator}
     );
     configs.push_back(
-        {L"ui_background_color", STATUS_BAR_COLOR, vec3_serializer,
-         color3_deserializer, color_3_validator}
+        {L"numeric_tags", &config.NUMERIC_TAGS, bool_serializer,
+         bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"ui_text_color", STATUS_BAR_TEXT_COLOR, vec3_serializer,
-         color3_deserializer, color_3_validator}
-    );
-    configs.push_back(
-        {L"numeric_tags", &NUMERIC_TAGS, bool_serializer, bool_deserializer,
-         bool_validator}
-    );
-    configs.push_back(
-        {L"highlight_links", &SHOULD_HIGHLIGHT_LINKS, bool_serializer,
+        {L"highlight_links", &config.SHOULD_HIGHLIGHT_LINKS, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
         {L"should_highlight_unselected_search",
-         &SHOULD_HIGHLIGHT_UNSELECTED_SEARCH, bool_serializer,
+         &config.SHOULD_HIGHLIGHT_UNSELECTED_SEARCH, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"gamma", &GAMMA, float_serializer, float_deserializer, nullptr}
+        {L"gamma", &config.application.gamma, float_serializer,
+         float_deserializer, nullptr}
     );
     configs.push_back(
-        {L"fuzzy_searching", &FUZZY_SEARCHING, bool_serializer,
+        {L"debug", &config.application.debug, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"debug", &DEBUG, bool_serializer, bool_deserializer, bool_validator}
-    );
-    configs.push_back(
-        {L"highlight_delete_threshold", &HIGHLIGHT_DELETE_THRESHOLD,
+        {L"highlight_delete_threshold", &config.HIGHLIGHT_DELETE_THRESHOLD,
          float_serializer, float_deserializer, nullptr}
     );
     configs.push_back(
-        {L"default_open_file_path", &DEFAULT_OPEN_FILE_PATH, string_serializer,
+        {L"default_open_file_path", &config.DEFAULT_OPEN_FILE_PATH,
+         string_serializer, string_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"status_bar_format", &config.STATUS_BAR_FORMAT, string_serializer,
          string_deserializer, nullptr}
     );
     configs.push_back(
-        {L"status_bar_format", &STATUS_BAR_FORMAT, string_serializer,
-         string_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"inverted_horizontal_scrolling", &INVERTED_HORIZONTAL_SCROLLING,
-         bool_serializer, bool_deserializer, bool_validator}
-    );
-    configs.push_back(
-        {L"toc_jump_align_top", &TOC_JUMP_ALIGN_TOP, bool_serializer,
+        {L"inverted_horizontal_scrolling",
+         &config.INVERTED_HORIZONTAL_SCROLLING, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"keyboard_select_background_color", &KEYBOARD_SELECT_BACKGROUND_COLOR,
-         vec4_serializer, vec4_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"keyboard_select_text_color", &KEYBOARD_SELECT_TEXT_COLOR,
-         vec4_serializer, vec4_deserializer, nullptr}
-    );
-    configs.push_back(
-        {L"autocenter_visual_scroll", &AUTOCENTER_VISUAL_SCROLL,
-         bool_serializer, bool_deserializer, bool_validator}
-    );
-    configs.push_back(
-        {L"alphabetic_link_tags", &ALPHABETIC_LINK_TAGS, bool_serializer,
+        {L"toc_jump_align_top", &config.TOC_JUMP_ALIGN_TOP, bool_serializer,
          bool_deserializer, bool_validator}
     );
     configs.push_back(
-        {L"vimtex_wsl_fix", &VIMTEX_WSL_FIX, bool_serializer, bool_deserializer,
-         bool_validator}
+        {L"keyboard_select_background_color",
+         &config.KEYBOARD_SELECT_BACKGROUND_COLOR, vec4_serializer,
+         vec4_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"keyboard_select_text_color", &config.KEYBOARD_SELECT_TEXT_COLOR,
+         vec4_serializer, vec4_deserializer, nullptr}
+    );
+    configs.push_back(
+        {L"autocenter_visual_scroll", &config.AUTOCENTER_VISUAL_SCROLL,
+         bool_serializer, bool_deserializer, bool_validator}
+    );
+    configs.push_back(
+        {L"alphabetic_link_tags", &config.ALPHABETIC_LINK_TAGS, bool_serializer,
+         bool_deserializer, bool_validator}
+    );
+    configs.push_back(
+        {L"vimtex_wsl_fix", &config.VIMTEX_WSL_FIX, bool_serializer,
+         bool_deserializer, bool_validator}
     );
 
     std::wstring highlight_config_string = L"highlight_color_a";
@@ -818,37 +677,28 @@ ConfigManager::ConfigManager(
             [execute_command_config_string.size() - 1] = letter;
 
         configs.push_back(
-            {highlight_config_string, &HIGHLIGHT_COLORS[(letter - 'a') * 3],
+            {highlight_config_string,
+             &config.theme.highlight_colors[(letter - 'a') * 3],
              vec3_serializer, color3_deserializer, color_3_validator}
         );
         configs.push_back(
-            {search_url_config_string, &SEARCH_URLS[letter - 'a'],
+            {search_url_config_string, &config.SEARCH_URLS[letter - 'a'],
              string_serializer, string_deserializer, nullptr}
         );
         configs.push_back(
-            {execute_command_config_string, &EXECUTE_COMMANDS[letter - 'a'],
-             string_serializer, string_deserializer, nullptr}
+            {execute_command_config_string,
+             &config.EXECUTE_COMMANDS[letter - 'a'], string_serializer,
+             string_deserializer, nullptr}
         );
     }
 
     deserialize(default_path, auto_path, user_paths);
 }
 
-// void ConfigManager::serialize(std::wofstream& file) {
-//	for (auto it : configs) {
-//		std::wstringstream ss;
-//		file << it.name << " ";
-//		if (it.get_value()) {
-//			it.serialize(it.get_value(), ss);
-//		}
-//		file << ss.str() << std::endl;
-//	}
-// }
-
 void ConfigManager::deserialize_file(
     const fs::path& file_path, bool warn_if_not_exists
 ) {
-
+    Config& config = Config::instance();
     std::wstring line;
     std::wifstream default_file(file_path);
     int line_number = 0;
@@ -887,15 +737,16 @@ void ConfigManager::deserialize_file(
                     space_index + 1, config_value.size() - space_index - 1
                 );
                 if (conf_name == L"new_command") {
-                    ADDITIONAL_COMMANDS[new_command_name] = command_value;
+                    config.ADDITIONAL_COMMANDS[new_command_name] =
+                        command_value;
                 }
                 if (conf_name == L"new_macro") {
-                    ADDITIONAL_MACROS[new_command_name] = command_value;
+                    config.ADDITIONAL_MACROS[new_command_name] = command_value;
                 }
             }
         } else {
 
-            Config* conf = get_mut_config_with_name(conf_name);
+            ConfigEntry* conf = get_mut_config_with_name(conf_name);
             if (conf == nullptr) {
                 std::wcout << L"Error: " << conf_name
                            << L" is not a valid configuration name\n";
@@ -917,9 +768,8 @@ void ConfigManager::deserialize_file(
             }
 
             if (conf) {
-                auto deserialization_result = conf->deserialize(
-                    config_value_stream, conf->value
-                );
+                auto deserialization_result =
+                    conf->deserialize(config_value_stream, conf->value);
                 if (deserialization_result != nullptr) {
                     conf->value = deserialization_result;
                 } else {
@@ -938,8 +788,7 @@ void ConfigManager::deserialize(
     const fs::path& auto_path,
     const std::vector<fs::path>& user_file_paths
 ) {
-
-    ADDITIONAL_COMMANDS.clear();
+    Config::instance().ADDITIONAL_COMMANDS.clear();
 
     deserialize_file(default_file_path);
     deserialize_file(auto_path);
@@ -974,18 +823,182 @@ std::vector<fs::path> ConfigManager::get_all_user_config_files() {
     return res;
 }
 
-std::vector<Config> ConfigManager::get_configs() { return configs; }
+std::vector<ConfigEntry> ConfigManager::get_configs() { return configs; }
 
 void ConfigManager::deserialize_config(
     std::string config_name, std::wstring config_value
 ) {
 
     std::wstringstream config_value_stream(config_value);
-    Config* conf = get_mut_config_with_name(utf8_decode(config_name));
-    auto deserialization_result = conf->deserialize(
-        config_value_stream, conf->value
-    );
+    ConfigEntry* conf = get_mut_config_with_name(utf8_decode(config_name));
+    auto deserialization_result =
+        conf->deserialize(config_value_stream, conf->value);
     if (deserialization_result != nullptr) {
         conf->value = deserialization_result;
     }
+}
+
+void Config::configure_paths() {
+    fs::path parent_path(QCoreApplication::applicationDirPath().toStdWString());
+    std::string exe_path =
+        utf8_encode(QCoreApplication::applicationFilePath().toStdWString());
+
+    shader_path = parent_path / "shaders";
+
+#ifdef Q_OS_MACOS
+    fs::path mac_home_path(QDir::homePath().toStdWString());
+    fs::path mac_standard_config_path = mac_home_path / ".config" / "sioyek";
+    user_keys_paths.push_back(mac_standard_config_path / "keys_user.config");
+    user_config_paths.push_back(mac_standard_config_path / "prefs_user.config");
+#endif
+
+#ifdef Q_OS_LINUX
+    QStringList all_config_paths =
+        QStandardPaths::standardLocations(QStandardPaths::AppConfigLocation);
+    for (int i = all_config_paths.size() - 1; i >= 0; i--) {
+        user_config_paths.push_back(
+            fs::path(all_config_paths.at(i).toStdWString()) /
+            "prefs_user.config"
+        );
+        user_keys_paths.push_back(
+            fs::path(all_config_paths.at(i).toStdWString()) / "keys_user.config"
+        );
+    }
+
+#ifdef LINUX_STANDARD_PATHS
+    fs::path home_path(QDir::homePath().toStdWString());
+    fs::path standard_data_path = home_path / ".local" / "share" / "sioyek";
+    fs::path standard_config_path = "/etc/sioyek";
+    fs::path read_only_data_path = "/usr/share/sioyek";
+    fs::create_directories(standard_data_path);
+
+    default_config_path = standard_config_path / "prefs.config";
+    default_keys_path = standard_config_path / "keys.config";
+
+    database_file_path = standard_data_path / "test.db";
+    local_database_file_path = standard_data_path / "local.db";
+    global_database_file_path = standard_data_path / "shared.db";
+    tutorial_path = read_only_data_path / "tutorial.pdf";
+    last_opened_file_address_path =
+        standard_data_path / "last_document_path.txt";
+    shader_path = read_only_data_path / "shaders";
+#else
+    char* APPDIR = std::getenv("XDG_CONFIG_HOME");
+    fs::path linux_home_path = QDir::homePath().toStdWString();
+
+    if (!APPDIR) {
+        APPDIR = std::getenv("HOME");
+    }
+
+    fs::path standard_data_path = utf8_decode(APPDIR);
+    standard_data_path = standard_data_path / ".local" / "share" / "Sioyek";
+    fs::create_directories(standard_data_path);
+
+    default_config_path = parent_path / "prefs.config";
+    user_config_paths.push_back(standard_data_path / "prefs_user.config");
+    default_keys_path = parent_path / "keys.config";
+    user_keys_paths.push_back(standard_data_path / "keys_user.config");
+    database_file_path = standard_data_path / "test.db";
+    local_database_file_path = standard_data_path / "local.db";
+    global_database_file_path = standard_data_path / "shared.db";
+    tutorial_path = standard_data_path / "tutorial.pdf";
+    last_opened_file_address_path =
+        standard_data_path / "last_document_path.txt";
+
+    fs::path linux_standard_config_path =
+        linux_home_path / ".config" / "sioyek";
+    // user_keys_paths.push_back(mac_standard_config_path.slash(L"keys_user.config"));
+    // user_config_paths.push_back(mac_standard_config_path.slash(L"prefs_user.config"));
+    user_keys_paths.push_back(linux_standard_config_path / "keys_user.config");
+    user_config_paths.push_back(
+        linux_standard_config_path / "prefs_user.config"
+    );
+
+    if (!fs::exists(tutorial_path)) {
+        copy_file(parent_path / "tutorial.pdf", tutorial_path);
+    }
+#endif
+#else // windows
+#ifdef NDEBUG
+    // install_app(exe_path.c_str());
+#endif
+    fs::path standard_data_path(
+        QStandardPaths::standardLocations(QStandardPaths::AppDataLocation)
+            .at(0)
+            .toStdWString()
+    );
+    QStringList all_config_paths =
+        QStandardPaths::standardLocations(QStandardPaths::AppConfigLocation);
+
+    fs::create_directories(standard_data_path);
+
+    default_config_path = parent_path / "prefs.config";
+    default_keys_path = parent_path / "keys.config";
+    tutorial_path = parent_path / "tutorial.pdf";
+
+#ifdef NON_PORTABLE
+    user_config_paths.push_back(standard_data_path / "prefs_user.config");
+    user_keys_paths.push_back(standard_data_path / "keys_user.config");
+    for (int i = all_config_paths.size() - 1; i > 0; i--) {
+        user_config_paths.push_back(
+            fs::path(all_config_paths.at(i).toStdWString()) /
+            "prefs_user.config"
+        );
+        user_keys_paths.push_back(
+            fs::path(all_config_paths.at(i).toStdWString()) / "keys_user.config"
+        );
+    }
+    database_file_path = standard_data_path / "test.db";
+    local_database_file_path = standard_data_path / "local.db";
+    global_database_file_path = standard_data_path / "shared.db";
+    last_opened_file_address_path =
+        standard_data_path / "last_document_path.txt";
+#else
+    user_config_paths.push_back(parent_path / "prefs_user.config");
+    user_keys_paths.push_back(parent_path / "keys_user.config");
+    database_file_path = parent_path / "test.db";
+    local_database_file_path = parent_path / "local.db";
+    global_database_file_path = parent_path / "shared.db";
+    last_opened_file_address_path = parent_path / "last_document_path.txt";
+#endif
+
+#endif
+    auto_config_path = standard_data_path / "auto.config";
+    // user_config_paths.insert(user_config_paths.begin(),
+    // auto_config_path);
+}
+
+void check_path_exists(const fs::path& path) {
+    if (!fs::exists(path)) {
+        std::wcout << L"Error: " << path << ": " << path << L" doesn't exist!"
+                   << std::endl;
+    }
+}
+
+void Config::verify_config_paths() {
+    std::wcout << L"default_config_path: " << default_config_path << L"\n";
+    check_path_exists(default_config_path);
+    std::wcout << L"default_keys_path: " << default_keys_path << L"\n";
+    check_path_exists(default_keys_path);
+    for (size_t i = 0; i < user_config_paths.size(); i++) {
+        std::wcout << L"user_config_path: [ " << i << " ] "
+                   << user_config_paths[i] << L"\n";
+    }
+    for (size_t i = 0; i < user_keys_paths.size(); i++) {
+        std::wcout << L"user_keys_path: [ " << i << " ] " << user_keys_paths[i]
+                   << L"\n";
+    }
+}
+
+void Config::verify_paths() {
+    std::wcout << L"database_file_path: " << database_file_path << L"\n";
+    std::wcout << L"local_database_file_path: " << local_database_file_path
+               << L"\n";
+    std::wcout << L"global_database_file_path: " << global_database_file_path
+               << L"\n";
+    std::wcout << L"tutorial_path: " << tutorial_path << L"\n";
+    std::wcout << L"last_opened_file_address_path: "
+               << last_opened_file_address_path << L"\n";
+    std::wcout << L"shader_path: " << shader_path << L"\n";
+    check_path_exists(shader_path);
 }

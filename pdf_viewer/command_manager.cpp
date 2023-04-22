@@ -1,8 +1,6 @@
 #include "command_manager.h"
+#include "config.h"
 #include "commands/all_commands.h"
-
-extern std::map<std::wstring, std::wstring> ADDITIONAL_MACROS;
-extern std::map<std::wstring, std::wstring> ADDITIONAL_COMMANDS;
 
 template <typename T>
 auto make_command_creator() {
@@ -98,8 +96,6 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     new_commands["screen_up"] = make_command_creator<ScreenUpCommand>();
     new_commands["next_chapter"] = make_command_creator<NextChapterCommand>();
     new_commands["prev_chapter"] = make_command_creator<PrevChapterCommand>();
-    new_commands["toggle_dark_mode"] =
-        make_command_creator<ToggleDarkModeCommand>();
     new_commands["toggle_presentation_mode"] =
         make_command_creator<TogglePresentationModeCommand>();
     new_commands["turn_on_presentation_mode"] =
@@ -129,8 +125,6 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
         make_command_creator<MoveVisualMarkDownCommand>();
     new_commands["move_visual_mark_up"] =
         make_command_creator<MoveVisualMarkUpCommand>();
-    new_commands["toggle_custom_color"] =
-        make_command_creator<ToggleCustomColorMode>();
     new_commands["set_select_highlight_type"] =
         make_command_creator<SetSelectHighlightTypeCommand>();
     new_commands["toggle_window_configuration"] =
@@ -243,7 +237,9 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     new_commands["toggle_statusbar"] =
         make_command_creator<ToggleStatusbarCommand>();
 
-    for (auto [command_name_, command_value] : ADDITIONAL_COMMANDS) {
+    const Config& config = Config::instance();
+
+    for (auto [command_name_, command_value] : config.ADDITIONAL_COMMANDS) {
         std::string command_name = utf8_encode(command_name_);
         std::wstring local_command_value = command_value;
         new_commands[command_name] = [command_name, local_command_value]() {
@@ -253,7 +249,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
         };
     }
 
-    for (auto [command_name_, macro_value] : ADDITIONAL_MACROS) {
+    for (auto [command_name_, macro_value] : config.ADDITIONAL_MACROS) {
         std::string command_name = utf8_encode(command_name_);
         std::wstring local_macro_value = macro_value;
         new_commands[command_name] = [command_name, local_macro_value, this]() {
@@ -263,7 +259,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
         };
     }
 
-    std::vector<Config> configs = config_manager->get_configs();
+    std::vector<ConfigEntry> configs = config_manager->get_configs();
 
     for (auto conf : configs) {
         std::string confname = utf8_encode(conf.name);

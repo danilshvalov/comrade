@@ -1,12 +1,11 @@
 #pragma once
 
+#include "config.h"
 #include "ui/selectors/base_selector.h"
 
 #include <QTableView>
 #include <QHeaderView>
 #include <QStringListModel>
-
-extern bool MULTILINE_MENUS;
 
 template <typename T>
 class FilteredTableWindowSelector : public BaseSelector {
@@ -70,7 +69,7 @@ class FilteredTableWindowSelector : public BaseSelector {
         table_view->horizontalHeader()->hide();
         table_view->verticalHeader()->hide();
 
-        if (MULTILINE_MENUS) {
+        if (Config::instance().MULTILINE_MENUS) {
             table_view->setWordWrap(true);
             table_view->verticalHeader()->setSectionResizeMode(
                 QHeaderView::ResizeToContents

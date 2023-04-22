@@ -25,9 +25,6 @@
 #include "ui.h"
 #include "checksum.h"
 
-extern float ZOOM_INC_FACTOR;
-extern const int PAGE_PADDINGS;
-
 class DocumentView {
   protected:
   private:
@@ -146,12 +143,16 @@ class DocumentView {
     float get_min_valid_x();
 
     float set_zoom_level(float zl, bool should_exit_auto_resize_mode);
-    float zoom_in(float zoom_factor = ZOOM_INC_FACTOR);
-    float zoom_out(float zoom_factor = ZOOM_INC_FACTOR);
-    float
-    zoom_in_cursor(WindowPos mouse_pos, float zoom_factor = ZOOM_INC_FACTOR);
-    float
-    zoom_out_cursor(WindowPos mouse_pos, float zoom_factor = ZOOM_INC_FACTOR);
+    float zoom_in(float zoom_factor = Config::instance().ZOOM_INC_FACTOR);
+    float zoom_out(float zoom_factor = Config::instance().ZOOM_INC_FACTOR);
+    float zoom_in_cursor(
+        WindowPos mouse_pos,
+        float zoom_factor = Config::instance().ZOOM_INC_FACTOR
+    );
+    float zoom_out_cursor(
+        WindowPos mouse_pos,
+        float zoom_factor = Config::instance().ZOOM_INC_FACTOR
+    );
     void move_absolute(float dx, float dy);
     void move(float dx, float dy);
     void get_absolute_delta_from_doc_delta(
@@ -216,8 +217,8 @@ class DocumentView {
     void readjust_to_screen();
     float get_half_screen_offset();
     void scroll_mid_to_top();
-    void
-    get_visible_links(std::vector<std::pair<int, fz_link*>>& visible_page_links
+    void get_visible_links(
+        std::vector<std::pair<int, fz_link*>>& visible_page_links
     );
 
     std::vector<fz_rect>* get_selected_character_rects();

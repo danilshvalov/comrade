@@ -1,5 +1,6 @@
 #include "ui/selectors/base_selector.h"
 #include "utils.h"
+#include "config.h"
 #include "rapidfuzz_amalgamated.hpp"
 
 #define FTS_FUZZY_MATCH_IMPLEMENTATION
@@ -12,10 +13,6 @@
 #include <QLineEdit>
 #include <QKeyEvent>
 #include <QCoreApplication>
-
-extern bool EMACS_MODE;
-extern bool FUZZY_SEARCHING;
-extern int FONT_SIZE;
 
 BaseSelector::BaseSelector(
     QStandardItemModel* item_model,
@@ -111,7 +108,7 @@ bool BaseSelector::eventFilter(QObject* obj, QEvent* event) {
                 QCoreApplication::postEvent(get_view(), new_key_event);
                 return true;
             }
-            if (EMACS_MODE) {
+            if (Config::instance().EMACS_MODE) {
                 if (((key_event->key() == Qt::Key_V)) && is_control_pressed) {
                     QKeyEvent* new_key_event = new QKeyEvent(
                         key_event->type(), Qt::Key_Up, key_event->modifiers()
@@ -220,9 +217,11 @@ void BaseSelector::handle_delete() {
 }
 
 void BaseSelector::on_config_file_changed() {
+    const Config& config = Config::instance();
     QString font_size_stylesheet = "";
-    if (FONT_SIZE > 0) {
-        font_size_stylesheet = QString("font-size: %1px").arg(FONT_SIZE);
+    if (config.application.font_size > 0) {
+        font_size_stylesheet =
+            QString("font-size: %1px").arg(config.application.font_size);
     }
 
     std::wstring ss =
@@ -271,66 +270,44 @@ bool BaseSelector::on_text_change(const QString& text) { return false; }
 bool MySortFilterProxyModel::filterAcceptsRow(
     int source_row, const QModelIndex& source_parent
 ) const {
-    if (FUZZY_SEARCHING) {
+    QModelIndex source_index = sourceModel()->index(
+        source_row, this->filterKeyColumn(), source_parent
+    );
+    if (source_index.isValid()) {
+        // check current index itself :
+        QString key =
+            sourceModel()->data(source_index, filterRole()).toString();
+        if (filterString.size() == 0)
+            return true;
+        std::wstring s1 = filterString.toStdWString();
+        std::wstring s2 = key.toStdWString();
+        int score = static_cast<int>(rapidfuzz::fuzz::partial_ratio(s1, s2));
 
-        QModelIndex source_index = sourceModel()->index(
-            source_row, this->filterKeyColumn(), source_parent
-        );
-        if (source_index.isValid()) {
-            // check current index itself :
-
-            QString key =
-                sourceModel()->data(source_index, filterRole()).toString();
-            if (filterString.size() == 0)
-                return true;
-            std::wstring s1 = filterString.toStdWString();
-            std::wstring s2 = key.toStdWString();
-            int score =
-                static_cast<int>(rapidfuzz::fuzz::partial_ratio(s1, s2));
-
-            return score > 50;
-        } else {
-            return false;
-        }
+        return score > 50;
     } else {
-        return QSortFilterProxyModel::filterAcceptsRow(
-            source_row, source_parent
-        );
+        return false;
     }
 }
 
 void MySortFilterProxyModel::setFilterCustom(QString filterString) {
-    if (FUZZY_SEARCHING) {
-        this->filterString = filterString;
-        this->setFilterFixedString(filterString);
-        sort(0);
-    } else {
-        this->setFilterFixedString(filterString);
-    }
+    this->filterString = filterString;
+    this->setFilterFixedString(filterString);
+    sort(0);
 }
 
 bool MySortFilterProxyModel::lessThan(
     const QModelIndex& left, const QModelIndex& right
 ) const {
-    if (FUZZY_SEARCHING) {
+    QString leftData = sourceModel()->data(left).toString();
+    QString rightData = sourceModel()->data(right).toString();
 
-        QString leftData = sourceModel()->data(left).toString();
-        QString rightData = sourceModel()->data(right).toString();
-
-        int left_score = static_cast<int>(rapidfuzz::fuzz::partial_ratio(
-            filterString.toStdWString(), leftData.toStdWString()
-        ));
-        int right_score = static_cast<int>(rapidfuzz::fuzz::partial_ratio(
-            filterString.toStdWString(), rightData.toStdWString()
-        ));
-        return left_score > right_score;
-    } else {
-        return QSortFilterProxyModel::lessThan(left, right);
-    }
+    int left_score = static_cast<int>(rapidfuzz::fuzz::partial_ratio(
+        filterString.toStdWString(), leftData.toStdWString()
+    ));
+    int right_score = static_cast<int>(rapidfuzz::fuzz::partial_ratio(
+        filterString.toStdWString(), rightData.toStdWString()
+    ));
+    return left_score > right_score;
 }
 
-MySortFilterProxyModel::MySortFilterProxyModel() {
-    if (FUZZY_SEARCHING) {
-        setDynamicSortFilter(true);
-    }
-}
+MySortFilterProxyModel::MySortFilterProxyModel() { setDynamicSortFilter(true); }

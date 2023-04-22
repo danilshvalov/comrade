@@ -2,8 +2,7 @@
 
 #include "command.h"
 #include "utils.h"
-
-extern fs::path default_config_path;
+#include "config.h"
 
 class PrefsCommand : public Command {
   public:
@@ -13,6 +12,6 @@ class PrefsCommand : public Command {
 
   protected:
     void perform(MainWidget& widget) override {
-        open_file(default_config_path.generic_wstring());
+        open_file(Config::instance().default_config_path.generic_wstring());
     }
 };

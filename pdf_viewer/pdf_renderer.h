@@ -1,8 +1,9 @@
 #pragma once
 
+#include "book.h"
+
 #include <vector>
 #include <string>
-#include <mupdf/fitz.h>
 #include <mutex>
 #include <variant>
 #include <unordered_map>
@@ -13,16 +14,10 @@
 #include <thread>
 #include <unordered_map>
 #include <map>
-// #include <gl/glew.h>
-// #include <Windows.h>
 
-#include <qobject.h>
-#include <qtimer.h>
-
-#include "book.h"
-
-extern const int MAX_PENDING_REQUESTS;
-extern const unsigned int CACHE_INVALID_MILIES;
+#include <mupdf/fitz.h>
+#include <QObject>
+#include <QTimer>
 
 struct RenderRequest {
     std::wstring path;

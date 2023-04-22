@@ -27,9 +27,6 @@
 #include "pdf_view_opengl_widget.h"
 #include "checksum.h"
 
-extern float VERTICAL_MOVE_AMOUNT;
-extern float HORIZONTAL_MOVE_AMOUNT;
-
 class MainWidget : public QWidget, ConfigFileChangeListener {
 
   public:
@@ -295,7 +292,6 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     void move_visual_mark(int offset);
     void on_config_file_changed(ConfigManager* new_config) override;
     void toggle_mouse_drag_mode();
-    void toggle_dark_mode();
     void do_synctex_forward_search(
         const fs::path& pdf_file_path,
         const fs::path& latex_file_path,

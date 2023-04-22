@@ -13,16 +13,6 @@
 #include "ui.h"
 #include "commands/all_commands.h"
 
-extern bool SHOULD_WARN_ABOUT_USER_KEY_OVERRIDE;
-extern bool USE_LEGACY_KEYBINDS;
-extern std::wstring SEARCH_URLS[26];
-extern bool ALPHABETIC_LINK_TAGS;
-
-extern fs::path default_config_path;
-extern fs::path default_keys_path;
-extern std::vector<fs::path> user_config_paths;
-extern std::vector<fs::path> user_keys_paths;
-
 void print_tree_node(InputParseTreeNode node) {
     if (node.requires_text) {
         std::wcout << "text node" << std::endl;
@@ -199,7 +189,7 @@ InputParseTreeNode* parse_lines(
                     }
                 }
             } else if (((size_t)i == (tokens.size() - 1)) &&
-                       (SHOULD_WARN_ABOUT_USER_KEY_OVERRIDE ||
+                       (Config::instance().application.warn_about_user_key_override ||
                         (command_file_names[j].compare(parent_node->defining_file_path)) == 0)) {
                 if ((parent_node->name.size() == 0) ||
                     parent_node->name[0].compare(command_names[j][0]) != 0) {
@@ -367,30 +357,30 @@ std::vector<std::unique_ptr<Command>> InputHandler::handle_key(
     std::vector<std::unique_ptr<Command>> res;
 
     int key = 0;
-        std::vector<QString> special_texts = {"\b", "\t", " ", "\r", "\n"};
-        if (((key_event->key() >= 'A') && (key_event->key() <= 'Z')) ||
-            ((key_event->text().size() > 0) &&
-             (std::find(
-                  special_texts.begin(), special_texts.end(), key_event->text()
-              ) == special_texts.end()))) {
-            if (!control_pressed && !alt_pressed) {
-                // shift is already handled in the returned text
-                shift_pressed = false;
-                std::wstring text = key_event->text().toStdWString();
-                key = key_event->text().toStdWString()[0];
-            } else {
-                key = key_event->key();
-                if (key >= 'A' && key <= 'Z') {
-                    key = key - 'A' + 'a';
-                }
-            }
+    std::vector<QString> special_texts = {"\b", "\t", " ", "\r", "\n"};
+    if (((key_event->key() >= 'A') && (key_event->key() <= 'Z')) ||
+        ((key_event->text().size() > 0) &&
+         (std::find(
+              special_texts.begin(), special_texts.end(), key_event->text()
+          ) == special_texts.end()))) {
+        if (!control_pressed && !alt_pressed) {
+            // shift is already handled in the returned text
+            shift_pressed = false;
+            std::wstring text = key_event->text().toStdWString();
+            key = key_event->text().toStdWString()[0];
         } else {
             key = key_event->key();
-
-            if (key == Qt::Key::Key_Backtab) {
-                key = Qt::Key::Key_Tab;
+            if (key >= 'A' && key <= 'Z') {
+                key = key - 'A' + 'a';
             }
         }
+    } else {
+        key = key_event->key();
+
+        if (key == Qt::Key::Key_Backtab) {
+            key = Qt::Key::Key_Tab;
+        }
+    }
 
     if (current_node == root && is_digit(key)) {
         if (!(key == '0' && (number_stack.size() == 0)) && (!control_pressed) &&

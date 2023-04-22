@@ -2,8 +2,7 @@
 
 #include "command.h"
 #include "utils.h"
-
-extern fs::path default_keys_path;
+#include "config.h"
 
 class KeysCommand : public Command {
   public:
@@ -13,6 +12,6 @@ class KeysCommand : public Command {
 
   protected:
     void perform(MainWidget& widget) override {
-        open_file(default_keys_path.generic_wstring());
+        open_file(Config::instance().default_keys_path.generic_wstring());
     }
 };

@@ -1,10 +1,10 @@
-// #include <Windows.h>
-#include <cwctype>
+#include "utils.h"
+#include "config.h"
 
+#include <cwctype>
 #include <cmath>
 #include <filesystem>
 #include <cassert>
-#include "utils.h"
 #include <optional>
 #include <cstring>
 #include <sstream>
@@ -29,16 +29,6 @@
 #include <mupdf/pdf.h>
 
 namespace fs = std::filesystem;
-
-extern std::wstring LIBGEN_ADDRESS;
-extern std::wstring GOOGLE_SCHOLAR_ADDRESS;
-extern std::ofstream LOG_FILE;
-extern int STATUS_BAR_FONT_SIZE;
-extern float STATUS_BAR_COLOR[3];
-extern float STATUS_BAR_TEXT_COLOR[3];
-extern float UI_SELECTED_TEXT_COLOR[3];
-extern float UI_SELECTED_BACKGROUND_COLOR[3];
-extern bool NUMERIC_TAGS;
 
 #ifdef Q_OS_WIN
 #include <windows.h>
@@ -94,12 +84,10 @@ QStandardItem* get_item_tree_from_toc_helper(
 ) {
 
     for (const auto* child : children) {
-        QStandardItem* child_item = new QStandardItem(
-            QString::fromStdWString(child->title)
-        );
-        QStandardItem* page_item = new QStandardItem(
-            "[ " + QString::number(child->page) + " ]"
-        );
+        QStandardItem* child_item =
+            new QStandardItem(QString::fromStdWString(child->title));
+        QStandardItem* page_item =
+            new QStandardItem("[ " + QString::number(child->page) + " ]");
         child_item->setData(child->page);
         page_item->setTextAlignment(Qt::AlignVCenter | Qt::AlignRight);
 
@@ -389,9 +377,8 @@ void get_flat_chars_from_block(
 ) {
     if (block->type == FZ_STEXT_BLOCK_TEXT) {
         LL_ITER(line, block->u.t.first_line) {
-            std::vector<fz_stext_char*> reordered_chars = reorder_stext_line(
-                line
-            );
+            std::vector<fz_stext_char*> reordered_chars =
+                reorder_stext_line(line);
             for (auto ch : reordered_chars) {
                 flat_chars.push_back(ch);
             }
@@ -617,7 +604,7 @@ std::vector<std::string> get_tags(int n) {
     for (int i = 0; i < n; i++) {
         int current_n = i;
         std::string tag;
-        if (!NUMERIC_TAGS) {
+        if (!Config::instance().NUMERIC_TAGS) {
             for (int i = 0; i < n_digits; i++) {
                 tag.push_back('a' + (current_n % 26));
                 current_n = current_n / 26;
@@ -634,7 +621,7 @@ int get_index_from_tag(const std::string& tag) {
     int res = 0;
     int mult = 1;
 
-    if (!NUMERIC_TAGS) {
+    if (!Config::instance().NUMERIC_TAGS) {
         for (size_t i = 0; i < tag.size(); i++) {
             res += (tag[i] - 'a') * mult;
             mult = mult * 26;
@@ -964,29 +951,22 @@ void search_custom_engine(
 ) {
 
     if (search_string.size() > 0) {
-        QString qurl_string = QString::fromStdWString(
-            custom_engine_url + search_string
-        );
+        QString qurl_string =
+            QString::fromStdWString(custom_engine_url + search_string);
         open_web_url(qurl_string);
     }
 }
 
 void search_google_scholar(const std::wstring& search_string) {
-    search_custom_engine(search_string, GOOGLE_SCHOLAR_ADDRESS);
+    search_custom_engine(
+        search_string, Config::instance().GOOGLE_SCHOLAR_ADDRESS
+    );
 }
 
 void search_libgen(const std::wstring& search_string) {
-    search_custom_engine(search_string, LIBGEN_ADDRESS);
+    search_custom_engine(search_string, Config::instance().LIBGEN_ADDRESS);
 }
 
-// void open_url(const std::wstring& url_string) {
-//
-//	if (url_string.size() > 0) {
-//		QString qurl_string = QString::fromStdWString(url_string);
-//		open_url(qurl_string);
-//	}
-// }
-//
 void create_file_if_not_exists(const fs::path& path) {
     if (!fs::exists(path)) {
         std::ofstream outfile(path);
@@ -1203,9 +1183,8 @@ void index_equations(
                  flat_chars[start_index - 1], flat_chars[start_index]
              ))) {
 
-            std::wstring match_text = match_texts[i].substr(
-                1, match_texts[i].size() - 2
-            );
+            std::wstring match_text =
+                match_texts[i].substr(1, match_texts[i].size() - 2);
             IndexedData indexed_equation;
             indexed_equation.page = page_number;
             indexed_equation.text = match_text;
@@ -1488,9 +1467,8 @@ void get_line_begins_and_ends_from_histogram(
 
         for (size_t i = 0; i < res.size(); i++) {
             res[i] += static_cast<unsigned int>(additional_distance / 5.0f);
-            res_begins[i] -= static_cast<unsigned int>(
-                additional_distance / 5.0f
-            );
+            res_begins[i] -=
+                static_cast<unsigned int>(additional_distance / 5.0f);
         }
     }
 }
@@ -1505,9 +1483,8 @@ int find_best_vertical_line_location(fz_pixmap* pixmap, int doc_x, int doc_y) {
     std::vector<int> max_possible_widths;
 
     for (int candid_y = min_candid_y; candid_y <= max_candid_y; candid_y++) {
-        int current_width = find_max_horizontal_line_length_at_pos(
-            pixmap, doc_x, candid_y
-        );
+        int current_width =
+            find_max_horizontal_line_length_at_pos(pixmap, doc_x, candid_y);
         max_possible_widths.push_back(current_width);
     }
 
@@ -1853,48 +1830,6 @@ float type_name_similarity_score(std::wstring name1, std::wstring name2) {
     return common_prefix_index;
 }
 
-void check_for_updates(QWidget* parent, std::string current_version) {
-
-    QString url = "https://github.com/ahrm/sioyek/releases/latest";
-    QNetworkAccessManager* manager = new QNetworkAccessManager;
-
-    QObject::connect(
-        manager, &QNetworkAccessManager::finished,
-        [=](QNetworkReply* reply) {
-            std::string response_text = reply->readAll().toStdString();
-            int first_index = response_text.find("\"");
-            int last_index = response_text.rfind("\"");
-            std::string url_string = response_text.substr(
-                first_index + 1, last_index - first_index - 1
-            );
-
-            std::vector<std::wstring> parts;
-            split_path(utf8_decode(url_string), parts);
-            if (parts.size() > 0) {
-                std::string version_string = utf8_encode(
-                    parts.back().substr(1, parts.back().size() - 1)
-                );
-
-                if (version_string != current_version) {
-                    int ret = QMessageBox::information(
-                        parent, "Update",
-                        QString::fromStdString(
-                            "Do you want to update from " + current_version +
-                            " to " + version_string + "?"
-                        ),
-                        QMessageBox::Ok | QMessageBox::Cancel,
-                        QMessageBox::Cancel
-                    );
-                    if (ret == QMessageBox::Ok) {
-                        open_web_url(url);
-                    }
-                }
-            }
-        }
-    );
-    manager->get(QNetworkRequest(QUrl(url)));
-}
-
 QString expand_home_dir(QString path) {
     if (path.size() > 0) {
         if (path.at(0) == '~') {
@@ -1990,8 +1925,8 @@ void hexademical_to_normalized_color(
     }
 
     for (int i = 0; i < n_components; i++) {
-        *(color + i
-        ) = get_color_component_from_hex(color_string.substr(i * 2, 2));
+        *(color + i) =
+            get_color_component_from_hex(color_string.substr(i * 2, 2));
     }
 }
 
@@ -2113,8 +2048,8 @@ int find_best_merge_index_for_line_index(
     Range current_range_x = {line_rects[index].x0, line_rects[index].x1};
     float maximum_height = current_range.size();
     float maximum_width = current_range_x.size();
-    float min_cost = current_range.size() * line_num_penalty(1) /
-                     current_range_x.size();
+    float min_cost =
+        current_range.size() * line_num_penalty(1) / current_range_x.size();
     int min_index = index;
 
     for (size_t j = index + 1;
@@ -2133,18 +2068,14 @@ int find_best_merge_index_for_line_index(
             );
         }
 
-        current_range_x = merge_range(
-            current_range, {line_rects[j].x0, line_rects[j].x1}
-        );
+        current_range_x =
+            merge_range(current_range, {line_rects[j].x0, line_rects[j].x1});
 
-        float cost = current_range.size() / (j - index + 1) +
-                     line_num_penalty(j - index + 1) / current_range_x.size() +
-                     height_increase_penalty(
-                         current_range.size() / maximum_height
-                     ) +
-                     width_increase_bonus(
-                         current_range_x.size() / maximum_width
-                     );
+        float cost =
+            current_range.size() / (j - index + 1) +
+            line_num_penalty(j - index + 1) / current_range_x.size() +
+            height_increase_penalty(current_range.size() / maximum_height) +
+            width_increase_bonus(current_range_x.size() / maximum_width);
         if (cost < min_cost) {
             min_cost = cost;
             min_index = j;
@@ -2265,22 +2196,17 @@ void merge_lines(
             fz_rect current_rect = temp_rects[i];
             if ((std::abs(prev_rect.y0 - current_rect.y0) < 1.0f) ||
                 (std::abs(prev_rect.y1 - current_rect.y1) < 1.0f)) {
-                out_rects[out_rects.size() - 1].x0 = std::min(
-                    prev_rect.x0, current_rect.x0
-                );
-                out_rects[out_rects.size() - 1].x1 = std::max(
-                    prev_rect.x1, current_rect.x1
-                );
+                out_rects[out_rects.size() - 1].x0 =
+                    std::min(prev_rect.x0, current_rect.x0);
+                out_rects[out_rects.size() - 1].x1 =
+                    std::max(prev_rect.x1, current_rect.x1);
 
-                out_rects[out_rects.size() - 1].y0 = std::min(
-                    prev_rect.y0, current_rect.y0
-                );
-                out_rects[out_rects.size() - 1].y1 = std::max(
-                    prev_rect.y1, current_rect.y1
-                );
-                out_texts[out_texts.size() - 1] = out_texts
-                                                      [out_texts.size() - 1] +
-                                                  temp_texts[i];
+                out_rects[out_rects.size() - 1].y0 =
+                    std::min(prev_rect.y0, current_rect.y0);
+                out_rects[out_rects.size() - 1].y1 =
+                    std::max(prev_rect.y1, current_rect.y1);
+                out_texts[out_texts.size() - 1] =
+                    out_texts[out_texts.size() - 1] + temp_texts[i];
                 continue;
             }
         }
@@ -2378,8 +2304,9 @@ void parse_color(
 }
 
 int get_status_bar_height() {
-    if (STATUS_BAR_FONT_SIZE > 0) {
-        return STATUS_BAR_FONT_SIZE + 5;
+    const Config& config = Config::instance();
+    if (config.theme.status_bar.font_size > 0) {
+        return config.theme.status_bar.font_size + 5;
     } else {
         return 20;
     }
@@ -2414,18 +2341,21 @@ void flat_char_prism(
 }
 
 QString get_status_stylesheet(bool nofont) {
-    if ((!nofont) && (STATUS_BAR_FONT_SIZE > -1)) {
-        QString font_size_stylesheet = QString("font-size: %1px")
-                                           .arg(STATUS_BAR_FONT_SIZE);
+    const Config& config = Config::instance();
+    if (!nofont && config.theme.status_bar.font_size > -1) {
+        QString font_size_stylesheet =
+            QString("font-size: %1px").arg(config.theme.status_bar.font_size);
         return QString("background-color: %1; color: %2; border: 0; %3;")
             .arg(
                 get_color_qml_string(
-                    STATUS_BAR_COLOR[0], STATUS_BAR_COLOR[1],
-                    STATUS_BAR_COLOR[2]
+                    config.theme.status_bar.background[0],
+                    config.theme.status_bar.background[1],
+                    config.theme.status_bar.background[2]
                 ),
                 get_color_qml_string(
-                    STATUS_BAR_TEXT_COLOR[0], STATUS_BAR_TEXT_COLOR[1],
-                    STATUS_BAR_TEXT_COLOR[2]
+                    config.theme.status_bar.foreground[0],
+                    config.theme.status_bar.foreground[1],
+                    config.theme.status_bar.foreground[2]
                 ),
                 font_size_stylesheet
             );
@@ -2433,31 +2363,36 @@ QString get_status_stylesheet(bool nofont) {
         return QString("background-color: %1; color: %2; border: 0;")
             .arg(
                 get_color_qml_string(
-                    STATUS_BAR_COLOR[0], STATUS_BAR_COLOR[1],
-                    STATUS_BAR_COLOR[2]
+                    config.theme.status_bar.background[0],
+                    config.theme.status_bar.background[1],
+                    config.theme.status_bar.background[2]
                 ),
                 get_color_qml_string(
-                    STATUS_BAR_TEXT_COLOR[0], STATUS_BAR_TEXT_COLOR[1],
-                    STATUS_BAR_TEXT_COLOR[2]
+                    config.theme.status_bar.foreground[0],
+                    config.theme.status_bar.foreground[1],
+                    config.theme.status_bar.foreground[2]
                 )
             );
     }
 }
 
 QString get_selected_stylesheet(bool nofont) {
-    if ((!nofont) && STATUS_BAR_FONT_SIZE > -1) {
-        QString font_size_stylesheet = QString("font-size: %1px")
-                                           .arg(STATUS_BAR_FONT_SIZE);
+    const Config& config = Config::instance();
+
+    if ((!nofont) && config.theme.status_bar.font_size > -1) {
+        QString font_size_stylesheet =
+            QString("font-size: %1px").arg(config.theme.status_bar.font_size);
         return QString("background-color: %1; color: %2; border: 0; %3;")
             .arg(
                 get_color_qml_string(
-                    UI_SELECTED_BACKGROUND_COLOR[0],
-                    UI_SELECTED_BACKGROUND_COLOR[1],
-                    UI_SELECTED_BACKGROUND_COLOR[2]
+                    config.theme.selected.background[0],
+                    config.theme.selected.background[1],
+                    config.theme.selected.background[2]
                 ),
                 get_color_qml_string(
-                    UI_SELECTED_TEXT_COLOR[0], UI_SELECTED_TEXT_COLOR[1],
-                    UI_SELECTED_TEXT_COLOR[2]
+                    config.theme.selected.foreground[0],
+                    config.theme.selected.foreground[1],
+                    config.theme.selected.foreground[2]
                 ),
                 font_size_stylesheet
             );
@@ -2465,13 +2400,14 @@ QString get_selected_stylesheet(bool nofont) {
         return QString("background-color: %1; color: %2; border: 0;")
             .arg(
                 get_color_qml_string(
-                    UI_SELECTED_BACKGROUND_COLOR[0],
-                    UI_SELECTED_BACKGROUND_COLOR[1],
-                    UI_SELECTED_BACKGROUND_COLOR[2]
+                    config.theme.selected.background[0],
+                    config.theme.selected.background[1],
+                    config.theme.selected.background[2]
                 ),
                 get_color_qml_string(
-                    UI_SELECTED_TEXT_COLOR[0], UI_SELECTED_TEXT_COLOR[1],
-                    UI_SELECTED_TEXT_COLOR[2]
+                    config.theme.selected.foreground[0],
+                    config.theme.selected.foreground[1],
+                    config.theme.selected.foreground[2]
                 )
             );
     }

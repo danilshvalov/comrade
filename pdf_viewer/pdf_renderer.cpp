@@ -1,9 +1,8 @@
 #include "pdf_renderer.h"
 #include "utils.h"
-#include <qdatetime.h>
+#include "config.h"
 
-extern bool LINEAR_TEXTURE_FILTERING;
-// extern bool AUTO_EMBED_ANNOTATIONS;
+#include <QDateTime>
 
 PdfRenderer::PdfRenderer(
     int num_threads,
@@ -66,7 +65,8 @@ void PdfRenderer::add_request(
         if (should_add) {
             pending_render_requests.push_back(req);
         }
-        if (pending_render_requests.size() > (size_t)MAX_PENDING_REQUESTS) {
+        if (pending_render_requests.size() >
+            Config::instance().MAX_PENDING_REQUESTS) {
             pending_render_requests.erase(pending_render_requests.begin());
         }
         pending_requests_mutex.unlock();
@@ -74,6 +74,7 @@ void PdfRenderer::add_request(
         std::wcout << "Error: could not find documnet" << std::endl;
     }
 }
+
 void PdfRenderer::add_request(
     std::wstring document_path,
     int page,
@@ -145,7 +146,7 @@ GLuint PdfRenderer::find_rendered_page(
                     glGenTextures(1, &result);
                     glBindTexture(GL_TEXTURE_2D, result);
 
-                    if (LINEAR_TEXTURE_FILTERING) {
+                    if (Config::instance().LINEAR_TEXTURE_FILTERING) {
                         glTexParameteri(
                             GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR
                         );
@@ -292,7 +293,7 @@ void PdfRenderer::delete_old_pages(bool force_all, bool invalidate_all) {
         for (size_t i = 0; i < cached_responses.size(); i++) {
             if ((cached_responses[i].last_access_time < time_threshold) &&
                 ((now - cached_responses[i].last_access_time) >
-                 CACHE_INVALID_MILIES)) {
+                 Config::instance().CACHE_INVALID_MILIES)) {
                 indices_to_delete.push_back(i);
             }
         }
@@ -475,6 +476,7 @@ void PdfRenderer::delete_old_pixmaps(
     pixmaps_to_drop[thread_index].clear();
     pixmap_drop_mutex[thread_index].unlock();
 }
+
 void PdfRenderer::clear_cache() { delete_old_pages(false, true); }
 
 void PdfRenderer::run(int thread_index) {
@@ -534,9 +536,9 @@ void PdfRenderer::run(int thread_index) {
 
                 // if (AUTO_EMBED_ANNOTATIONS) {
                 //	fz_page* page = fz_load_page(mupdf_context, doc,
-                //req.page); 	rendered_pixmap =
-                //fz_new_pixmap_from_page_contents(mupdf_context, page,
-                //transform_matrix, fz_device_rgb(mupdf_context), 0);
+                // req.page); 	rendered_pixmap =
+                // fz_new_pixmap_from_page_contents(mupdf_context, page,
+                // transform_matrix, fz_device_rgb(mupdf_context), 0);
                 //	fz_drop_page(mupdf_context, page);
                 // }
                 // else {

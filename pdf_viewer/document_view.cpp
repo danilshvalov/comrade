@@ -4,13 +4,6 @@
 #include <algorithm>
 #include <optional>
 
-extern float MOVE_SCREEN_PERCENTAGE;
-extern float FIT_TO_PAGE_WIDTH_RATIO;
-extern float RULER_PADDING;
-extern float RULER_X_PADDING;
-extern bool EXACT_HIGHLIGHT_SELECT;
-extern bool IGNORE_STATUSBAR_IN_PRESENTATION_MODE;
-
 DocumentView::DocumentView(
     fz_context* mupdf_context,
     DatabaseManager* db_manager,
@@ -303,8 +296,9 @@ void DocumentView::add_highlight(
         std::wstring selected_text;
 
         get_text_selection(
-            selection_begin, selection_end, !EXACT_HIGHLIGHT_SELECT,
-            selected_characters, selected_text
+            selection_begin, selection_end,
+            !Config::instance().EXACT_HIGHLIGHT_SELECT, selected_characters,
+            selected_text
         );
         merge_selected_character_rects(selected_characters, merged_characters);
         if (selected_text.size() > 0) {
@@ -679,16 +673,16 @@ void DocumentView::move_pages(int num_pages) {
         current_page = 0;
     }
     move_absolute(
-        0, num_pages *
-               (current_document->get_page_height(current_page) + PAGE_PADDINGS)
+        0, num_pages * (current_document->get_page_height(current_page) +
+                        Config::instance().PAGE_PADDINGS)
     );
 }
 
 void DocumentView::move_screens(int num_screens) {
     float screen_height_in_doc_space = view_height / zoom_level;
     set_offset_y(
-        get_offset_y() +
-        num_screens * screen_height_in_doc_space * MOVE_SCREEN_PERCENTAGE
+        get_offset_y() + num_screens * screen_height_in_doc_space *
+                             Config::instance().MOVE_SCREEN_PERCENTAGE
     );
     // return move_amount;
 }
@@ -853,7 +847,8 @@ void DocumentView::fit_to_page_width(bool smart, bool ratio) {
         int virtual_view_width = view_width;
         if (ratio) {
             virtual_view_width = static_cast<int>(
-                static_cast<float>(view_width) * FIT_TO_PAGE_WIDTH_RATIO
+                static_cast<float>(view_width) *
+                Config::instance().FIT_TO_PAGE_WIDTH_RATIO
             );
         }
         set_offset_x(0);
@@ -873,7 +868,7 @@ void DocumentView::fit_to_page_height_width_minimum() {
 
     float x_zoom_level = static_cast<float>(view_width) / page_width;
     float y_zoom_level;
-    if (IGNORE_STATUSBAR_IN_PRESENTATION_MODE) {
+    if (Config::instance().IGNORE_STATUSBAR_IN_PRESENTATION_MODE) {
         y_zoom_level = (static_cast<float>(view_height)) / page_height;
     } else {
         y_zoom_level =
@@ -1003,10 +998,6 @@ void DocumentView::set_vertical_line_pos(float pos) {
 
 void DocumentView::set_vertical_line_rect(fz_rect rect) { ruler_rect = rect; }
 
-// float DocumentView::get_vertical_line_pos() {
-//	return vertical_line_pos;
-// }
-
 float DocumentView::get_ruler_pos() {
     if (ruler_rect.has_value()) {
         return ruler_rect.value().y1;
@@ -1020,10 +1011,9 @@ std::optional<fz_rect> DocumentView::get_ruler_rect() { return ruler_rect; }
 bool DocumentView::has_ruler_rect() { return ruler_rect.has_value(); }
 
 float DocumentView::get_ruler_window_y() {
-
     float absol_end_y = get_ruler_pos();
 
-    absol_end_y += RULER_PADDING;
+    absol_end_y += Config::instance().RULER_PADDING;
 
     float window_end_x, window_end_y;
     absolute_to_window_pos(0.0, absol_end_y, &window_end_x, &window_end_y);
@@ -1032,31 +1022,20 @@ float DocumentView::get_ruler_window_y() {
 }
 
 std::optional<fz_rect> DocumentView::get_ruler_window_rect() {
-    if (has_ruler_rect()) {
-        fz_rect absol_ruler_rect = get_ruler_rect().value();
-
-        absol_ruler_rect.y0 -= RULER_PADDING;
-        absol_ruler_rect.y1 += RULER_PADDING;
-
-        absol_ruler_rect.x0 -= RULER_X_PADDING;
-        absol_ruler_rect.x1 += RULER_X_PADDING;
-        return absolute_to_window_rect(absol_ruler_rect);
+    if (!has_ruler_rect()) {
+        return std::nullopt;
     }
-    return {};
-}
 
-// float DocumentView::get_vertical_line_window_y() {
-//
-//	float absol_end_y = get_vertical_line_pos();
-//
-//	absol_end_y += RULER_PADDING;
-//
-//	float window_begin_x, window_begin_y;
-//	float window_end_x, window_end_y;
-//	absolute_to_window_pos(0.0, absol_end_y, &window_end_x, &window_end_y);
-//
-//	return window_end_y;
-// }
+    const Config& config = Config::instance();
+    fz_rect absol_ruler_rect = get_ruler_rect().value();
+
+    absol_ruler_rect.y0 -= config.RULER_PADDING;
+    absol_ruler_rect.y1 += config.RULER_PADDING;
+
+    absol_ruler_rect.x0 -= config.RULER_X_PADDING;
+    absol_ruler_rect.x1 += config.RULER_X_PADDING;
+    return absolute_to_window_rect(absol_ruler_rect);
+}
 
 void DocumentView::goto_vertical_line_pos() {
     if (current_document) {

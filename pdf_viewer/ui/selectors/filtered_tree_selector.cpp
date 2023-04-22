@@ -1,9 +1,8 @@
 #include "ui/selectors/filtered_tree_selector.h"
+#include "config.h"
 
 #include <QTreeView>
 #include <QHeaderView>
-
-extern bool SMALL_TOC;
 
 QString FilteredTreeSelector::get_view_stylesheet_type_name() {
     return "QTreeView";
@@ -23,7 +22,7 @@ FilteredTreeSelector::FilteredTreeSelector(
     }
 
     QTreeView* tree_view = dynamic_cast<QTreeView*>(this->get_view());
-    if (SMALL_TOC) {
+    if (Config::instance().SMALL_TOC) {
         tree_view->collapseAll();
         tree_view->expand(index);
     }

@@ -2,8 +2,6 @@
 
 #include <QFileDialog>
 
-extern std::wstring DEFAULT_OPEN_FILE_PATH;
-
 std::wstring select_command_file_name(std::string command_name) {
     if (command_name == "open_document") {
         return select_document_file_name();
@@ -15,7 +13,8 @@ std::wstring select_command_file_name(std::string command_name) {
 }
 
 std::wstring select_document_file_name() {
-    if (DEFAULT_OPEN_FILE_PATH.size() == 0) {
+    const Config& config = Config::instance();
+    if (config.DEFAULT_OPEN_FILE_PATH.size() == 0) {
 
         QString file_name = QFileDialog::getOpenFileName(
             nullptr, "Select Document", "", "Documents (*.pdf *.epub *.cbz)"
@@ -26,7 +25,7 @@ std::wstring select_document_file_name() {
         QFileDialog fd = QFileDialog(
             nullptr, "Select Document", "", "Documents (*.pdf *.epub *.cbz)"
         );
-        fd.setDirectory(QString::fromStdWString(DEFAULT_OPEN_FILE_PATH));
+        fd.setDirectory(QString::fromStdWString(config.DEFAULT_OPEN_FILE_PATH));
         if (fd.exec()) {
 
             QString file_name = fd.selectedFiles().first();

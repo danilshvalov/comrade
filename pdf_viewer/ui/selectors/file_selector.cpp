@@ -1,11 +1,10 @@
 #include "ui/selectors/file_selector.h"
 #include "rapidfuzz_amalgamated.hpp"
+#include "config.h"
 
 #define FTS_FUZZY_MATCH_IMPLEMENTATION
 #include "fts_fuzzy_match.h"
 #undef FTS_FUZZY_MATCH_IMPLEMENTATION
-
-extern bool FUZZY_SEARCHING;
 
 FileSelector::FileSelector(
     std::function<void(std::wstring)> on_done,
@@ -64,16 +63,9 @@ QStringList FileSelector::get_dir_contents(QString root, QString prefix) {
 
         for (auto file : all_directory_files) {
             std::string encoded_file = utf8_encode(file.toStdWString());
-            int score = 0;
-            if (FUZZY_SEARCHING) {
-                score = static_cast<int>(
-                    rapidfuzz::fuzz::partial_ratio(encoded_prefix, encoded_file)
-                );
-            } else {
-                fts::fuzzy_match(
-                    encoded_prefix.c_str(), encoded_file.c_str(), score
-                );
-            }
+            int score = static_cast<int>(
+                rapidfuzz::fuzz::partial_ratio(encoded_prefix, encoded_file)
+            );
             file_scores.push_back(std::make_pair(file, score));
         }
         std::sort(
