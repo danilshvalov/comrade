@@ -367,7 +367,6 @@ std::vector<std::unique_ptr<Command>> InputHandler::handle_key(
     std::vector<std::unique_ptr<Command>> res;
 
     int key = 0;
-    if (!USE_LEGACY_KEYBINDS) {
         std::vector<QString> special_texts = {"\b", "\t", " ", "\r", "\n"};
         if (((key_event->key() >= 'A') && (key_event->key() <= 'Z')) ||
             ((key_event->text().size() > 0) &&
@@ -392,12 +391,6 @@ std::vector<std::unique_ptr<Command>> InputHandler::handle_key(
                 key = Qt::Key::Key_Tab;
             }
         }
-    } else {
-        key = key_event->key();
-        if (key >= 'A' && key <= 'Z') {
-            key = key - 'A' + 'a';
-        }
-    }
 
     if (current_node == root && is_digit(key)) {
         if (!(key == '0' && (number_stack.size() == 0)) && (!control_pressed) &&
