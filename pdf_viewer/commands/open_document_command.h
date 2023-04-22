@@ -19,14 +19,12 @@ class OpenDocumentCommand : public Command {
         }
     }
 
-    void set_file_requirement(std::wstring value) override {
-        file_name = value;
-    }
+    void set_file_requirement(std::string value) override { file_name = value; }
 
   protected:
     void perform(MainWidget& widget) override {
         widget.open_document(file_name);
     }
 
-    std::wstring file_name;
+    std::string file_name;
 };

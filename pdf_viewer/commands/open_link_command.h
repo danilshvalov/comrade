@@ -23,7 +23,7 @@ class OpenLinkCommand : public TextCommand {
     std::string get_name() const override { return "open_link"; }
 
     void set_symbol_requirement(char value) override {
-        std::wstring val;
+        std::string val;
         val.push_back(value);
         this->text = val;
     }

@@ -10,7 +10,7 @@ class EnterPasswordCommand : public TextCommand {
 
   protected:
     void perform(MainWidget& widget) override {
-        std::string password = utf8_encode(text.value());
+        std::string password = text.value();
         widget.pdf_renderer->add_password(
             widget.main_document_view->get_document()->get_path(), password
         );

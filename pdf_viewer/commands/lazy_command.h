@@ -6,12 +6,12 @@
 
 class LazyCommand : public Command {
   public:
-    LazyCommand(CommandManager* manager, std::wstring command_text) {
+    LazyCommand(CommandManager* manager, std::string command_text) {
         command_manager = manager;
         parse_command_text(command_text);
     }
 
-    void set_text_requirement(std::wstring value) override {
+    void set_text_requirement(std::string value) override {
         get_command().set_text_requirement(value);
     }
 
@@ -19,7 +19,7 @@ class LazyCommand : public Command {
         get_command().set_symbol_requirement(value);
     }
 
-    void set_file_requirement(std::wstring value) override {
+    void set_file_requirement(std::string value) override {
         get_command().set_file_requirement(value);
     }
 
@@ -49,14 +49,14 @@ class LazyCommand : public Command {
     void perform(MainWidget& w) override { get_command().run(w); }
 
   private:
-    void parse_command_text(std::wstring command_text) {
-        int index = command_text.find(L"(");
+    void parse_command_text(std::string command_text) {
+        int index = command_text.find('(');
         if (index != -1) {
-            command_name = utf8_encode(command_text.substr(0, index));
+            command_name = command_text.substr(0, index);
             command_params =
                 command_text.substr(index + 1, command_text.size() - index - 2);
         } else {
-            command_name = utf8_encode(command_text);
+            command_name = command_text;
         }
     }
 
@@ -130,7 +130,7 @@ class LazyCommand : public Command {
     CommandManager* command_manager;
     MainWidget* widget;
     std::string command_name;
-    std::wstring command_params;
+    std::string command_params;
     mutable std::unique_ptr<Command> actual_command = nullptr;
     NoopCommand noop;
 };

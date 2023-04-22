@@ -85,22 +85,22 @@ class Config {
     std::string log_file_name = "sioyek_log.txt";
     std::ofstream LOG_FILE;
 
-    std::wstring SEARCH_URLS[26];
-    std::wstring EXECUTE_COMMANDS[26];
-    std::wstring TEXT_HIGHLIGHT_URL = L"http://localhost:5000/";
-    std::wstring MIDDLE_CLICK_SEARCH_ENGINE = L"s";
-    std::wstring SHIFT_MIDDLE_CLICK_SEARCH_ENGINE = L"l";
-    std::wstring PAPERS_FOLDER_PATH = L"";
-    std::wstring STATUS_BAR_FORMAT =
-        L"Page %{current_page} / "
-        L"%{num_pages}%{chapter_name}%{search_results}%{search_progress}%{link_"
-        L"status}%{waiting_for_symbol}%{indexing}%{preview_index}%{synctex}%{"
-        L"drag}%"
-        L"{presentation}%{visual_scroll}%{locked_scroll}%{highlight}%{closest_"
-        L"bookmark}%{close_portal}%{rect_select}%{custom_message}";
+    std::string SEARCH_URLS[26];
+    std::string EXECUTE_COMMANDS[26];
+    std::string TEXT_HIGHLIGHT_URL = "http://localhost:5000/";
+    std::string MIDDLE_CLICK_SEARCH_ENGINE = "s";
+    std::string SHIFT_MIDDLE_CLICK_SEARCH_ENGINE = "l";
+    std::string PAPERS_FOLDER_PATH = "";
+    std::string STATUS_BAR_FORMAT =
+        "Page %{current_page} / "
+        "%{num_pages}%{chapter_name}%{search_results}%{search_progress}%{link_"
+        "status}%{waiting_for_symbol}%{indexing}%{preview_index}%{synctex}%{"
+        "drag}%"
+        "{presentation}%{visual_scroll}%{locked_scroll}%{highlight}%{closest_"
+        "bookmark}%{close_portal}%{rect_select}%{custom_message}";
 
     struct {
-        std::wstring name = L"sioyek";
+        std::string name = "sioyek";
         std::string version = "2.0.0";
         int font_size = -1;
         bool debug = false;
@@ -123,12 +123,14 @@ class Config {
     const int MAX_PENDING_REQUESTS = 31;
     bool FLAT_TABLE_OF_CONTENTS = false;
     bool SORT_BOOKMARKS_BY_LOCATION = false;
-    std::wstring LIBGEN_ADDRESS = L"";
-    std::wstring GOOGLE_SCHOLAR_ADDRESS = L"";
-    std::wstring INVERSE_SEARCH_COMMAND = L"";
-    std::wstring SHARED_DATABASE_PATH = L"";
-    std::wstring UI_FONT_FACE_NAME = L"";
-    std::wstring DEFAULT_OPEN_FILE_PATH = L"";
+    std::string LIBGEN_ADDRESS = "";
+    std::string GOOGLE_SCHOLAR_ADDRESS = "";
+    std::string INVERSE_SEARCH_COMMAND = "";
+    // TODO: use `std::filesystem::path`
+    std::string SHARED_DATABASE_PATH = "";
+    std::string UI_FONT_FACE_NAME = "";
+    // TODO: use `std::filesystem::path`
+    std::string DEFAULT_OPEN_FILE_PATH = "";
     bool HOVER_OVERVIEW = false;
     bool RERENDER_OVERVIEW = false;
     bool LINEAR_TEXTURE_FILTERING = false;
@@ -143,8 +145,8 @@ class Config {
     float VISUAL_MARK_NEXT_PAGE_THRESHOLD = 0.1f;
     float RULER_PADDING = 0.0f;
     float RULER_X_PADDING = 0.0f;
-    std::wstring ITEM_LIST_PREFIX = L">";
-    std::wstring STARTUP_COMMANDS = L"";
+    std::string ITEM_LIST_PREFIX = ">";
+    std::string STARTUP_COMMANDS = "";
     float SMALL_PIXMAP_SCALE = 0.75f;
     float DISPLAY_RESOLUTION_SCALE = -1;
     float FIT_TO_PAGE_WIDTH_RATIO = 1;
@@ -168,8 +170,8 @@ class Config {
     bool SINGLE_CLICK_SELECTS_WORDS = false;
     bool MULTILINE_MENUS = false;
     bool START_WITH_HELPER_WINDOW = false;
-    std::map<std::wstring, std::wstring> ADDITIONAL_COMMANDS;
-    std::map<std::wstring, std::wstring> ADDITIONAL_MACROS;
+    std::map<std::string, std::string> ADDITIONAL_COMMANDS;
+    std::map<std::string, std::string> ADDITIONAL_MACROS;
     bool PRERENDER_NEXT_PAGE = false;
     bool EMACS_MODE = false;
     bool HIGHLIGHT_MIDDLE_CLICK = false;
@@ -217,12 +219,12 @@ class Config {
     fs::path shader_path;
     fs::path auto_config_path;
 
-    std::wstring SHIFT_CLICK_COMMAND = L"overview_under_cursor";
-    std::wstring CONTROL_CLICK_COMMAND = L"smart_jump_under_cursor";
-    std::wstring SHIFT_RIGHT_CLICK_COMMAND = L"";
-    std::wstring CONTROL_RIGHT_CLICK_COMMAND = L"";
-    std::wstring ALT_CLICK_COMMAND = L"";
-    std::wstring ALT_RIGHT_CLICK_COMMAND = L"";
+    std::string SHIFT_CLICK_COMMAND = "overview_under_cursor";
+    std::string CONTROL_CLICK_COMMAND = "smart_jump_under_cursor";
+    std::string SHIFT_RIGHT_CLICK_COMMAND;
+    std::string CONTROL_RIGHT_CLICK_COMMAND;
+    std::string ALT_CLICK_COMMAND;
+    std::string ALT_RIGHT_CLICK_COMMAND;
 
     void configure_paths();
 
@@ -240,11 +242,11 @@ class Config {
 };
 
 struct ConfigEntry {
-    std::wstring name;
+    std::string name;
     void* value = nullptr;
-    void (*serialize)(void*, std::wstringstream&) = nullptr;
-    void* (*deserialize)(std::wstringstream&, void* res) = nullptr;
-    bool (*validator)(const std::wstring& value);
+    void (*serialize)(void*, std::ostream&) = nullptr;
+    void* (*deserialize)(std::istream&, void* res) = nullptr;
+    bool (*validator)(const std::string& value);
 
     void* get_value();
 };
@@ -252,7 +254,7 @@ struct ConfigEntry {
 class ConfigManager {
     std::vector<ConfigEntry> configs;
 
-    ConfigEntry* get_mut_config_with_name(std::wstring config_name);
+    ConfigEntry* get_mut_config_with_name(std::string config_name);
     float DEFAULT_TEXT_HIGHLIGHT_COLOR[3];
     float DEFAULT_VERTICAL_LINE_COLOR[4];
     float DEFAULT_SEARCH_HIGHLIGHT_COLOR[3];
@@ -278,7 +280,7 @@ class ConfigManager {
     );
 
     template <typename T>
-    const T* get_config(std::wstring name) {
+    const T* get_config(std::string name) {
 
         void* raw_pointer = get_mut_config_with_name(name)->get_value();
 
@@ -293,5 +295,5 @@ class ConfigManager {
     std::optional<fs::path> get_or_create_user_config_file();
     std::vector<fs::path> get_all_user_config_files();
     std::vector<ConfigEntry> get_configs();
-    void deserialize_config(std::string config_name, std::wstring config_value);
+    void deserialize_config(std::string config_name, std::string config_value);
 };

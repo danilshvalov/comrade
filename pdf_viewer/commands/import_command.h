@@ -11,7 +11,7 @@ class ImportCommand : public Command {
 
   protected:
     void perform(MainWidget& widget) override {
-        std::wstring import_file_name = select_json_file_name();
+        std::string import_file_name = select_json_file_name();
         widget.db_manager->import_json(import_file_name, widget.checksummer);
     }
 };

@@ -46,7 +46,7 @@ void PdfRenderer::join_threads() {
 }
 
 void PdfRenderer::add_request(
-    std::wstring document_path, int page, float zoom_level
+    std::string document_path, int page, float zoom_level
 ) {
     // fz_document* doc = get_document_with_path(document_path);
     if (document_path.size() > 0) {
@@ -71,14 +71,14 @@ void PdfRenderer::add_request(
         }
         pending_requests_mutex.unlock();
     } else {
-        std::wcout << "Error: could not find documnet" << std::endl;
+        std::cout << "Error: could not find documnet" << std::endl;
     }
 }
 
 void PdfRenderer::add_request(
-    std::wstring document_path,
+    std::string document_path,
     int page,
-    std::wstring term,
+    std::string term,
     std::vector<SearchResult>* out,
     float* percent_done,
     bool* is_searching,
@@ -103,14 +103,14 @@ void PdfRenderer::add_request(
         pending_search_request = req;
         search_request_mutex.unlock();
     } else {
-        std::wcout << "Error: could not find document" << std::endl;
+        std::cout << "Error: could not find document" << std::endl;
     }
 }
 
 // should only be called from the main thread
 
 GLuint PdfRenderer::find_rendered_page(
-    std::wstring path,
+    std::string path,
     int page,
     float zoom_level,
     int* page_width,
@@ -210,7 +210,7 @@ GLuint PdfRenderer::find_rendered_page(
 }
 
 GLuint PdfRenderer::try_closest_rendered_page(
-    std::wstring doc_path,
+    std::string doc_path,
     int page,
     float zoom_level,
     int* page_width,
@@ -378,8 +378,8 @@ void PdfRenderer::run_search(int thread_index) {
                 fz_quad hitboxes[max_hits_per_page];
                 int hit_mark[max_hits_per_page];
                 int num_results = fz_search_page(
-                    mupdf_context, page, utf8_encode(req.search_term).c_str(),
-                    hit_mark, hitboxes, max_hits_per_page
+                    mupdf_context, page, req.search_term.c_str(), hit_mark,
+                    hitboxes, max_hits_per_page
                 );
 
                 if (num_results > 0) {
@@ -429,10 +429,10 @@ void PdfRenderer::run_search(int thread_index) {
 PdfRenderer::~PdfRenderer() {}
 
 fz_document* PdfRenderer::get_document_with_path(
-    int thread_index, fz_context* mupdf_context, std::wstring path
+    int thread_index, fz_context* mupdf_context, std::string path
 ) {
 
-    std::pair<int, std::wstring> document_id =
+    std::pair<int, std::string> document_id =
         std::make_pair(thread_index, path);
 
     if (opened_documents.find(document_id) != opened_documents.end()) {
@@ -441,7 +441,7 @@ fz_document* PdfRenderer::get_document_with_path(
 
     fz_document* ret_val = nullptr;
     fz_try(mupdf_context) {
-        ret_val = fz_open_document(mupdf_context, utf8_encode(path).c_str());
+        ret_val = fz_open_document(mupdf_context, path.c_str());
 
         if (fz_needs_password(mupdf_context, ret_val)) {
             if (document_passwords.find(path) != document_passwords.end()) {
@@ -454,7 +454,7 @@ fz_document* PdfRenderer::get_document_with_path(
         opened_documents[make_pair(thread_index, path)] = ret_val;
     }
     fz_catch(mupdf_context) {
-        std::wcout << "Error: could not open document" << std::endl;
+        std::cout << "Error: could not open document" << std::endl;
     }
 
     return ret_val;
@@ -470,7 +470,7 @@ void PdfRenderer::delete_old_pixmaps(
             fz_drop_pixmap(mupdf_context, pixmaps_to_drop[thread_index][i]);
         }
         fz_catch(mupdf_context) {
-            std::wcout << "Error: could not drop pixmap" << std::endl;
+            std::cout << "Error: could not drop pixmap" << std::endl;
         }
     }
     pixmaps_to_drop[thread_index].clear();
@@ -571,7 +571,7 @@ void PdfRenderer::run(int thread_index) {
     }
 }
 
-void PdfRenderer::add_password(std::wstring path, std::string password) {
+void PdfRenderer::add_password(std::string path, std::string password) {
     document_passwords[path] = password;
     delete_old_pages(true, false);
 }

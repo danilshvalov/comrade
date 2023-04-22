@@ -180,7 +180,7 @@ bool BaseSelector::eventFilter(QObject* obj, QEvent* event) {
                 return true;
             }
             if (((key_event->key() == Qt::Key_C) && is_control_pressed)) {
-                std::wstring text = get_selected_text();
+                std::string text = get_selected_text();
                 if (text.size() > 0) {
                     copy_to_clipboard(text);
                 }
@@ -224,8 +224,8 @@ void BaseSelector::on_config_file_changed() {
             QString("font-size: %1px").arg(config.application.font_size);
     }
 
-    std::wstring ss =
-        (get_status_stylesheet(true) + font_size_stylesheet).toStdWString();
+    std::string ss =
+        (get_status_stylesheet(true) + font_size_stylesheet).toStdString();
     setStyleSheet(get_status_stylesheet(true) + font_size_stylesheet);
     get_view()->setStyleSheet(
         get_view_stylesheet_type_name() + "::item::selected{" +
@@ -279,8 +279,8 @@ bool MySortFilterProxyModel::filterAcceptsRow(
             sourceModel()->data(source_index, filterRole()).toString();
         if (filterString.size() == 0)
             return true;
-        std::wstring s1 = filterString.toStdWString();
-        std::wstring s2 = key.toStdWString();
+        std::string s1 = filterString.toStdString();
+        std::string s2 = key.toStdString();
         int score = static_cast<int>(rapidfuzz::fuzz::partial_ratio(s1, s2));
 
         return score > 50;
@@ -302,10 +302,10 @@ bool MySortFilterProxyModel::lessThan(
     QString rightData = sourceModel()->data(right).toString();
 
     int left_score = static_cast<int>(rapidfuzz::fuzz::partial_ratio(
-        filterString.toStdWString(), leftData.toStdWString()
+        filterString.toStdString(), leftData.toStdString()
     ));
     int right_score = static_cast<int>(rapidfuzz::fuzz::partial_ratio(
-        filterString.toStdWString(), rightData.toStdWString()
+        filterString.toStdString(), rightData.toStdString()
     ));
     return left_score > right_score;
 }

@@ -34,13 +34,13 @@ class Document {
     DatabaseManager* db_manager = nullptr;
     std::vector<TocNode*> top_level_toc_nodes;
     std::vector<TocNode*> created_top_level_toc_nodes;
-    std::vector<std::wstring> flat_toc_names;
+    std::vector<std::string> flat_toc_names;
     std::vector<int> flat_toc_pages;
     std::map<int, std::vector<fz_rect>> cached_page_line_rects;
-    std::map<int, std::vector<std::wstring>> cached_line_texts;
+    std::map<int, std::vector<std::string>> cached_line_texts;
 
     bool super_fast_search_index_ready = false;
-    std::wstring super_fast_search_index;
+    std::string super_fast_search_index;
     std::vector<int> super_fast_search_index_pages;
     std::vector<fz_rect> super_fast_search_rects;
 
@@ -54,7 +54,7 @@ class Document {
     std::map<int, std::optional<std::string>> cached_fastread_highlights;
 
     fz_context* context = nullptr;
-    std::wstring file_name;
+    std::string file_name;
     std::unordered_map<int, fz_link*> cached_page_links;
     std::unordered_map<int, std::vector<fz_rect>> cached_flat_words;
     std::unordered_map<int, std::vector<std::vector<fz_rect>>>
@@ -75,9 +75,9 @@ class Document {
     // reference with that name, but this is not necessarily true for the
     // figures.
     std::vector<IndexedData> generic_indices;
-    std::map<std::wstring, IndexedData> reference_indices;
-    // std::map<std::wstring, IndexedData> equation_indices;
-    std::map<std::wstring, std::vector<IndexedData>> equation_indices;
+    std::map<std::string, IndexedData> reference_indices;
+    // std::map<std::string, IndexedData> equation_indices;
+    std::map<std::string, std::vector<IndexedData>> equation_indices;
 
     std::mutex document_indexing_mutex;
     std::optional<std::thread> document_indexing_thread = {};
@@ -104,7 +104,7 @@ class Document {
 
     Document(
         fz_context* context,
-        std::wstring file_name,
+        std::string file_name,
         DatabaseManager* db_manager,
         CachedChecksummer* checksummer
     );
@@ -114,11 +114,11 @@ class Document {
   public:
     fz_document* doc = nullptr;
 
-    void add_bookmark(const std::wstring& desc, float y_offset);
+    void add_bookmark(const std::string& desc, float y_offset);
     // void add_bookmark_annotation(const BookMark& bookmark);
     // void delete_bookmark_annotation(const BookMark& bookmark);
     void add_highlight(
-        const std::wstring& desc,
+        const std::string& desc,
         const std::vector<fz_rect>& highlight_rects,
         AbsoluteDocumentPos selection_begin,
         AbsoluteDocumentPos selection_end,
@@ -140,7 +140,7 @@ class Document {
     );
     fz_stext_page* get_stext_with_page_number(int page_number);
     void add_portal(Portal link, bool insert_into_database = true);
-    std::wstring get_path();
+    std::string get_path();
     std::string get_checksum();
     std::optional<std::string> get_checksum_fast();
     // int find_closest_bookmark_index(float to_offset_y);
@@ -152,8 +152,9 @@ class Document {
         const std::vector<Highlight>& sorted_highlights, float to_offset_y
     ) const;
 
-    std::optional<Portal>
-    find_closest_portal(float to_offset_y, int* index = nullptr);
+    std::optional<Portal> find_closest_portal(
+        float to_offset_y, int* index = nullptr
+    );
     bool update_portal(Portal new_link);
     void delete_closest_bookmark(float to_y_offset);
     void delete_closest_portal(float to_offset_y);
@@ -163,10 +164,12 @@ class Document {
     const std::vector<Highlight> get_highlights_of_type(char type) const;
     const std::vector<Highlight> get_highlights_sorted(char type = 0) const;
 
-    std::optional<Highlight>
-    get_next_highlight(float abs_y, char type = 0, int offset = 0) const;
-    std::optional<Highlight>
-    get_prev_highlight(float abs_y, char type = 0, int offset = 0) const;
+    std::optional<Highlight> get_next_highlight(
+        float abs_y, char type = 0, int offset = 0
+    ) const;
+    std::optional<Highlight> get_prev_highlight(
+        float abs_y, char type = 0, int offset = 0
+    ) const;
 
     fz_link* get_page_links(int page_number);
     void add_mark(char symbol, float y_offset);
@@ -175,7 +178,7 @@ class Document {
     ~Document();
     const std::vector<TocNode*>& get_toc();
     bool has_toc();
-    const std::vector<std::wstring>& get_flat_toc_names();
+    const std::vector<std::string>& get_flat_toc_names();
     const std::vector<int>& get_flat_toc_pages();
     bool open(
         bool* invalid_flag,
@@ -215,58 +218,65 @@ class Document {
     int get_offset_page_number(float y_offset);
     void index_document(bool* invalid_flag);
     void stop_indexing();
-    std::optional<IndexedData>
-    find_reference_with_string(std::wstring reference_name);
-    std::optional<IndexedData>
-    find_equation_with_string(std::wstring equation_name, int page_number);
+    std::optional<IndexedData> find_reference_with_string(
+        std::string reference_name
+    );
+    std::optional<IndexedData> find_equation_with_string(
+        std::string equation_name, int page_number
+    );
 
-    std::optional<std::wstring> get_text_at_position(
+    std::optional<std::string> get_text_at_position(
         const std::vector<fz_stext_char*>& flat_chars,
         float offset_x,
         float offset_y
     );
-    std::optional<std::wstring> get_reference_text_at_position(
+    std::optional<std::string> get_reference_text_at_position(
         const std::vector<fz_stext_char*>& flat_chars,
         float offset_x,
         float offset_y
     );
-    std::optional<std::wstring> get_paper_name_at_position(
+    std::optional<std::string> get_paper_name_at_position(
         const std::vector<fz_stext_char*>& flat_chars,
         float offset_x,
         float offset_y
     );
-    std::optional<std::wstring> get_equation_text_at_position(
+    std::optional<std::string> get_equation_text_at_position(
         const std::vector<fz_stext_char*>& flat_chars,
         float offset_x,
         float offset_y
     );
-    std::optional<std::pair<std::wstring, std::wstring>>
+    std::optional<std::pair<std::string, std::string>>
     get_generic_link_name_at_position(
         const std::vector<fz_stext_char*>& flat_chars,
         float offset_x,
         float offset_y
     );
-    std::optional<std::wstring> get_regex_match_at_position(
-        const std::wregex& regex,
+    std::optional<std::string> get_regex_match_at_position(
+        const std::regex& regex,
         const std::vector<fz_stext_char*>& flat_chars,
         float offset_x,
         float offset_y
     );
-    std::optional<std::wstring>
-    get_text_at_position(int page, float offset_x, float offset_y);
-    std::optional<std::wstring>
-    get_reference_text_at_position(int page, float offset_x, float offset_y);
-    std::optional<std::wstring>
-    get_paper_name_at_position(int page, float offset_x, float offset_y);
-    std::optional<std::wstring>
-    get_equation_text_at_position(int page, float offset_x, float offset_y);
-    std::optional<std::pair<std::wstring, std::wstring>>
-    get_generic_link_name_at_position(int page, float offset_x, float offset_y);
-    std::optional<std::wstring> get_regex_match_at_position(
-        const std::wregex& regex, int page, float offset_x, float offset_y
+    std::optional<std::string> get_text_at_position(
+        int page, float offset_x, float offset_y
     );
-    std::vector<DocumentPos>
-    find_generic_locations(const std::wstring& type, const std::wstring& name);
+    std::optional<std::string> get_reference_text_at_position(
+        int page, float offset_x, float offset_y
+    );
+    std::optional<std::string> get_paper_name_at_position(
+        int page, float offset_x, float offset_y
+    );
+    std::optional<std::string> get_equation_text_at_position(
+        int page, float offset_x, float offset_y
+    );
+    std::optional<std::pair<std::string, std::string>>
+    get_generic_link_name_at_position(int page, float offset_x, float offset_y);
+    std::optional<std::string> get_regex_match_at_position(
+        const std::regex& regex, int page, float offset_x, float offset_y
+    );
+    std::vector<DocumentPos> find_generic_locations(
+        const std::string& type, const std::string& name
+    );
     bool can_use_highlights();
 
     void get_text_selection(
@@ -276,7 +286,7 @@ class Document {
                                 // words even if the range only partially
                                 // includes the word
         std::vector<fz_rect>& selected_characters,
-        std::wstring& selected_text
+        std::string& selected_text
     );
     void get_text_selection(
         fz_context* ctx,
@@ -284,13 +294,13 @@ class Document {
         AbsoluteDocumentPos selection_end,
         bool is_word_selection,
         std::vector<fz_rect>& selected_characters,
-        std::wstring& selected_text,
+        std::string& selected_text,
         fz_document* doc = nullptr
     );
 
     int get_page_offset();
     void set_page_offset(int new_offset);
-    void embed_annotations(std::wstring new_file_path);
+    void embed_annotations(std::string new_file_path);
     std::vector<fz_rect> get_page_flat_words(int page);
     std::vector<std::vector<fz_rect>> get_page_flat_word_chars(int page);
 
@@ -313,8 +323,9 @@ class Document {
     );
 
     float document_to_absolute_y(int page, float doc_y);
-    AbsoluteDocumentPos
-    document_to_absolute_pos(DocumentPos, bool center_mid = false);
+    AbsoluteDocumentPos document_to_absolute_pos(
+        DocumentPos, bool center_mid = false
+    );
     fz_rect document_to_absolute_rect(
         int page, fz_rect doc_rect, bool center_mid = false
     );
@@ -329,19 +340,20 @@ class Document {
         int* out_index,
         int* out_page
     );
-    const std::vector<fz_rect>&
-    get_page_lines(int page, std::vector<std::wstring>* line_texts = nullptr);
+    const std::vector<fz_rect>& get_page_lines(
+        int page, std::vector<std::string>* line_texts = nullptr
+    );
 
     bool is_super_fast_index_ready();
     std::vector<SearchResult> search_text(
-        std::wstring query,
+        std::string query,
         bool case_sensitive,
         int begin_page,
         int min_page,
         int max_page
     );
     std::vector<SearchResult> search_regex(
-        std::wstring query,
+        std::string query,
         bool case_sensitive,
         int begin_page,
         int min_page,
@@ -357,8 +369,8 @@ class DocumentManager {
     fz_context* mupdf_context = nullptr;
     DatabaseManager* db_manager = nullptr;
     CachedChecksummer* checksummer;
-    std::unordered_map<std::wstring, Document*> cached_documents;
-    std::unordered_map<std::string, std::wstring> hash_to_path;
+    std::unordered_map<std::string, Document*> cached_documents;
+    std::unordered_map<std::string, std::string> hash_to_path;
 
   public:
     DocumentManager(
@@ -367,9 +379,9 @@ class DocumentManager {
         CachedChecksummer* checksummer
     );
 
-    Document* get_document(const std::wstring& path);
+    Document* get_document(const std::string& path);
     void free_document(Document* document);
-    const std::unordered_map<std::wstring, Document*>& get_cached_documents();
+    const std::unordered_map<std::string, Document*>& get_cached_documents();
     void delete_global_mark(char symbol);
     ~DocumentManager();
 };

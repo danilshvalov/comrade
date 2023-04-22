@@ -15,8 +15,8 @@ class ExternalSearchCommand : public SymbolCommand {
                     widget.selected_text, config.SEARCH_URLS[symbol - 'a']
                 );
             } else {
-                std::wcout << L"No search engine defined for symbol " << symbol
-                           << std::endl;
+                std::cout << "No search engine defined for symbol " << symbol
+                          << std::endl;
             }
         }
     }

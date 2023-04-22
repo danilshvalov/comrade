@@ -76,7 +76,7 @@
 
 std::vector<MainWidget*> windows;
 
-std::wstring strip_uri(std::wstring pdf_file_name) {
+std::string strip_uri(std::string pdf_file_name) {
 
     if (pdf_file_name.size() > 1) {
         if ((pdf_file_name[0] == '"') &&
@@ -84,7 +84,7 @@ std::wstring strip_uri(std::wstring pdf_file_name) {
             pdf_file_name = pdf_file_name.substr(1, pdf_file_name.size() - 2);
         }
         // support URIs like this: file:///home/user/file.pdf
-        if (QString::fromStdWString(pdf_file_name).startsWith("file://")) {
+        if (QString::fromStdString(pdf_file_name).startsWith("file://")) {
             return pdf_file_name.substr(7, pdf_file_name.size() - 7);
         }
     }
@@ -110,10 +110,10 @@ QStringList convert_arguments(QStringList input_args) {
         }
 
         if (is_path_argument) {
-            std::wstring path_wstring = strip_uri(path.toStdWString());
-            fs::path path_object(path_wstring);
+            std::string path_string = strip_uri(path.toStdString());
+            fs::path path_object(path_string);
             output_args.push_back(
-                QString::fromStdWString(path_object.generic_wstring())
+                QString::fromStdString(path_object.generic_string())
             );
             input_args.pop_front();
         }
@@ -141,14 +141,14 @@ void configure_paths() {
     fs::path& shader_path = config.shader_path;
     fs::path& auto_config_path = config.auto_config_path;
 
-    fs::path parent_path(QCoreApplication::applicationDirPath().toStdWString());
+    fs::path parent_path(QCoreApplication::applicationDirPath().toStdString());
     std::string exe_path =
-        utf8_encode(QCoreApplication::applicationFilePath().toStdWString());
+        QCoreApplication::applicationFilePath().toStdString();
 
     shader_path = parent_path / "shaders";
 
 #ifdef Q_OS_MACOS
-    fs::path mac_home_path(QDir::homePath().toStdWString());
+    fs::path mac_home_path(QDir::homePath().toStdString());
     fs::path mac_standard_config_path = mac_home_path / ".config" / "sioyek";
     user_keys_paths.push_back(mac_standard_config_path / "keys_user.config");
     user_config_paths.push_back(mac_standard_config_path / "prefs_user.config");
@@ -159,16 +159,15 @@ void configure_paths() {
         QStandardPaths::standardLocations(QStandardPaths::AppConfigLocation);
     for (int i = all_config_paths.size() - 1; i >= 0; i--) {
         user_config_paths.push_back(
-            fs::path(all_config_paths.at(i).toStdWString()) /
-            "prefs_user.config"
+            fs::path(all_config_paths.at(i).toStdString()) / "prefs_user.config"
         );
         user_keys_paths.push_back(
-            fs::path(all_config_paths.at(i).toStdWString()) / "keys_user.config"
+            fs::path(all_config_paths.at(i).toStdString()) / "keys_user.config"
         );
     }
 
 #ifdef LINUX_STANDARD_PATHS
-    fs::path home_path(QDir::homePath().toStdWString());
+    fs::path home_path(QDir::homePath().toStdString());
     fs::path standard_data_path = home_path / ".local" / "share" / "sioyek";
     fs::path standard_config_path = "/etc/sioyek";
     fs::path read_only_data_path = "/usr/share/sioyek";
@@ -186,13 +185,13 @@ void configure_paths() {
     shader_path = read_only_data_path / "shaders";
 #else
     char* APPDIR = std::getenv("XDG_CONFIG_HOME");
-    fs::path linux_home_path = QDir::homePath().toStdWString();
+    fs::path linux_home_path = QDir::homePath().toStdString();
 
     if (!APPDIR) {
         APPDIR = std::getenv("HOME");
     }
 
-    fs::path standard_data_path = utf8_decode(APPDIR);
+    fs::path standard_data_path = APPDIR;
     standard_data_path = standard_data_path / ".local" / "share" / "Sioyek";
     fs::create_directories(standard_data_path);
 
@@ -208,8 +207,8 @@ void configure_paths() {
 
     fs::path linux_standard_config_path =
         linux_home_path / ".config" / "sioyek";
-    // user_keys_paths.push_back(mac_standard_config_path.slash(L"keys_user.config"));
-    // user_config_paths.push_back(mac_standard_config_path.slash(L"prefs_user.config"));
+    // user_keys_paths.push_back(mac_standard_config_path.slash("keys_user.config"));
+    // user_config_paths.push_back(mac_standard_config_path.slash("prefs_user.config"));
     user_keys_paths.push_back(linux_standard_config_path / "keys_user.config");
     user_config_paths.push_back(
         linux_standard_config_path / "prefs_user.config"
@@ -226,7 +225,7 @@ void configure_paths() {
     fs::path standard_data_path(
         QStandardPaths::standardLocations(QStandardPaths::AppDataLocation)
             .at(0)
-            .toStdWString()
+            .toStdString()
     );
     QStringList all_config_paths =
         QStandardPaths::standardLocations(QStandardPaths::AppConfigLocation);
@@ -242,11 +241,10 @@ void configure_paths() {
     user_keys_paths.push_back(standard_data_path / "keys_user.config");
     for (int i = all_config_paths.size() - 1; i > 0; i--) {
         user_config_paths.push_back(
-            fs::path(all_config_paths.at(i).toStdWString()) /
-            "prefs_user.config"
+            fs::path(all_config_paths.at(i).toStdString()) / "prefs_user.config"
         );
         user_keys_paths.push_back(
-            fs::path(all_config_paths.at(i).toStdWString()) / "keys_user.config"
+            fs::path(all_config_paths.at(i).toStdString()) / "keys_user.config"
         );
     }
     database_file_path = standard_data_path / "test.db";
@@ -289,20 +287,18 @@ void add_paths_to_file_system_watcher(
     const std::vector<fs::path>& user_paths
 ) {
     if (fs::exists(default_path)) {
-        watcher.addPath(QString::fromStdWString(default_path.generic_wstring())
-        );
+        watcher.addPath(QString::fromStdString(default_path.generic_string()));
     }
 
     for (const auto& user_path : user_paths) {
         if (fs::exists(user_path)) {
-            watcher.addPath(QString::fromStdWString(user_path.generic_wstring())
-            );
+            watcher.addPath(QString::fromStdString(user_path.generic_string()));
         }
     }
 }
 
-MainWidget* get_window_with_opened_file_path(const std::wstring& file_path) {
-    if (!QFile::exists(QString::fromStdWString(file_path))) {
+MainWidget* get_window_with_opened_file_path(const std::string& file_path) {
+    if (!QFile::exists(QString::fromStdString(file_path))) {
         return nullptr;
     }
 
@@ -313,11 +309,11 @@ MainWidget* get_window_with_opened_file_path(const std::wstring& file_path) {
             if (window->doc()) {
 
 #ifdef Q_OS_WIN
-                std::wstring path1 = window->doc()->get_path();
-                std::wstring path2 = file_path;
+                std::string path1 = window->doc()->get_path();
+                std::string path2 = file_path;
 #else
-                std::string path1 = utf8_encode(window->doc()->get_path());
-                std::string path2 = utf8_encode(file_path);
+                std::string path1 = window->doc()->get_path();
+                std::string path2 = file_path;
 #endif
                 if (std::filesystem::equivalent(path1, path2)) {
                     return window;
@@ -328,7 +324,7 @@ MainWidget* get_window_with_opened_file_path(const std::wstring& file_path) {
     return nullptr;
 }
 
-std::optional<std::wstring> get_last_opened_file_name() {
+std::optional<std::string> get_last_opened_file_name() {
     std::string file_path_;
     std::ifstream last_state_file(
         Config::instance().last_opened_file_address_path
@@ -337,7 +333,7 @@ std::optional<std::wstring> get_last_opened_file_name() {
     last_state_file.close();
 
     if (file_path_.size() > 0) {
-        return utf8_decode(file_path_);
+        return file_path_;
     } else {
         return {};
     }
@@ -355,9 +351,9 @@ MainWidget* handle_args(const QStringList& arguments) {
     std::optional<float> x_loc, y_loc;
     std::optional<float> zoom_level;
 
-    std::vector<std::wstring> aarguments;
+    std::vector<std::string> aarguments;
     for (size_t i = 0; i < arguments.size(); i++) {
-        aarguments.push_back(arguments.at(i).toStdWString());
+        aarguments.push_back(arguments.at(i).toStdString());
     }
 
     // todo: handle out of bounds error
@@ -365,28 +361,28 @@ MainWidget* handle_args(const QStringList& arguments) {
     QCommandLineParser* parser = get_command_line_parser();
 
     if (!parser->parse(arguments)) {
-        std::wcout << parser->errorText().toStdWString() << L"\n";
+        std::cout << parser->errorText().toStdString() << "\n";
         return nullptr;
     }
 
-    std::wstring pdf_file_name = L"";
+    std::string pdf_file_name;
 
     if (parser->positionalArguments().size() > 0) {
-        pdf_file_name = parser->positionalArguments().at(0).toStdWString();
+        pdf_file_name = parser->positionalArguments().at(0).toStdString();
     } else if (windows[0]->doc() == nullptr) {
         // when no file is specified, and no current file is open, use the
         // last opened file or tutorial
         pdf_file_name = get_last_opened_file_name().value_or(
-            config.tutorial_path.generic_wstring()
+            config.tutorial_path.generic_string()
         );
     }
 
-    std::optional<std::wstring> latex_file_name = {};
+    std::optional<std::string> latex_file_name = {};
     std::optional<int> latex_line = {};
     std::optional<int> latex_column = {};
 
     if (parser->isSet("forward-search-file")) {
-        latex_file_name = parser->value("forward-search-file").toStdWString();
+        latex_file_name = parser->value("forward-search-file").toStdString();
     }
 
     if (parser->isSet("forward-search-line")) {
@@ -420,7 +416,7 @@ MainWidget* handle_args(const QStringList& arguments) {
     pdf_file_name = strip_uri(pdf_file_name);
 
     if ((pdf_file_name.size() > 0) &&
-        (!QFile::exists(QString::fromStdWString(pdf_file_name)))) {
+        (!QFile::exists(QString::fromStdString(pdf_file_name)))) {
         return nullptr;
     }
 
@@ -460,7 +456,7 @@ MainWidget* handle_args(const QStringList& arguments) {
 
     if (parser->isSet("inverse-search") && target_window) {
         target_window->set_inverse_search_command(
-            parser->value("inverse-search").toStdWString()
+            parser->value("inverse-search").toStdString()
         );
         target_window->raise();
         // target_window->activateWindow();
@@ -474,7 +470,7 @@ MainWidget* handle_args(const QStringList& arguments) {
         }
 
         auto command = target_window->command_manager->create_macro_command(
-            "", command_string.toStdWString()
+            "", command_string.toStdString()
         );
         command->run(*target_window);
     }
@@ -482,11 +478,11 @@ MainWidget* handle_args(const QStringList& arguments) {
     if (parser->isSet("focus-text")) {
         QString text = parser->value("focus-text");
         int page = parser->value("focus-text-page").toInt();
-        target_window->focus_text(page, text.toStdWString());
+        target_window->focus_text(page, text.toStdString());
     }
 
     // if no file is specified, use the previous file
-    if (pdf_file_name == L"" && (windows[0]->doc() != nullptr)) {
+    if (pdf_file_name == "" && (windows[0]->doc() != nullptr)) {
         if (target_window->doc()) {
             pdf_file_name = target_window->doc()->get_path();
         } else {
@@ -496,7 +492,7 @@ MainWidget* handle_args(const QStringList& arguments) {
                         windows[windows.size() - 2]->doc()->get_path();
                 }
             } else {
-                pdf_file_name = config.tutorial_path.generic_wstring();
+                pdf_file_name = config.tutorial_path.generic_string();
             }
         }
     }
@@ -568,7 +564,7 @@ int main(int argc, char* args[]) {
         get_argv_value(argc, args, "--shared-database-path");
     if (shared_database_path_arg) {
         config.global_database_file_path =
-            utf8_decode(std::string(shared_database_path_arg));
+            std::string(shared_database_path_arg);
     }
 
     config.verify_paths();
@@ -582,7 +578,7 @@ int main(int argc, char* args[]) {
     }
 
     QCoreApplication::setApplicationName(
-        QString::fromStdWString(config.application.name)
+        QString::fromStdString(config.application.name)
     );
     QCoreApplication::setApplicationVersion(
         QString::fromStdString(config.application.version)
@@ -595,18 +591,18 @@ int main(int argc, char* args[]) {
     if (fs::exists(config.local_database_file_path) &&
         fs::exists(config.global_database_file_path)) {
         db_manager.open(
-            config.local_database_file_path.generic_wstring(),
-            config.global_database_file_path.generic_wstring()
+            config.local_database_file_path.generic_string(),
+            config.global_database_file_path.generic_string()
         );
     } else {
         db_manager.open(
-            config.database_file_path.generic_wstring(),
-            config.database_file_path.generic_wstring()
+            config.database_file_path.generic_string(),
+            config.database_file_path.generic_string()
         );
     }
     db_manager.ensure_database_compatibility(
-        config.local_database_file_path.generic_wstring(),
-        config.global_database_file_path.generic_wstring()
+        config.local_database_file_path.generic_string(),
+        config.global_database_file_path.generic_string()
     );
 
     fz_locks_context locks;
@@ -638,7 +634,7 @@ int main(int argc, char* args[]) {
         config.default_keys_path, config.user_keys_paths, command_manager
     );
 
-    std::vector<std::pair<std::wstring, std::wstring>> prev_path_hash_pairs;
+    std::vector<std::pair<std::string, std::string>> prev_path_hash_pairs;
     db_manager.get_prev_path_hash_pairs(prev_path_hash_pairs);
 
     CachedChecksummer checksummer(&prev_path_hash_pairs);
@@ -662,7 +658,7 @@ int main(int argc, char* args[]) {
     windows.push_back(main_widget);
 
     QString startup_commands_list =
-        QString::fromStdWString(config.STARTUP_COMMANDS);
+        QString::fromStdString(config.STARTUP_COMMANDS);
     QStringList startup_commands = startup_commands_list.split(";");
     NewFileChecker new_file_checker(config.PAPERS_FOLDER_PATH, main_widget);
 

@@ -106,7 +106,7 @@ bool CommandSelector::on_text_change(const QString& text) {
     std::vector<std::pair<std::string, int>> match_score_pairs;
 
     for (int i = 0; i < string_elements.size(); i++) {
-        std::string encoded = utf8_encode(string_elements.at(i).toStdWString());
+        std::string encoded = string_elements.at(i).toStdString();
         int score = static_cast<int>(
             rapidfuzz::fuzz::partial_ratio(search_text_string, encoded)
         );

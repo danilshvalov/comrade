@@ -6,11 +6,11 @@ std::optional<Requirement> Command::next_requirement(MainWidget& widget) {
     return {};
 }
 
-void Command::set_text_requirement(std::wstring value) {}
+void Command::set_text_requirement(std::string value) {}
 
 void Command::set_symbol_requirement(char value) {}
 
-void Command::set_file_requirement(std::wstring value) {}
+void Command::set_file_requirement(std::string value) {}
 
 void Command::set_rect_requirement(fz_rect value) {}
 

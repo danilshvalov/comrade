@@ -7,9 +7,7 @@
 #undef FTS_FUZZY_MATCH_IMPLEMENTATION
 
 FileSelector::FileSelector(
-    std::function<void(std::wstring)> on_done,
-    QWidget* parent,
-    QString last_path
+    std::function<void(std::string)> on_done, QWidget* parent, QString last_path
 )
     : BaseSelector(nullptr, new QListView(), parent),
       on_done(on_done) {
@@ -57,12 +55,12 @@ QStringList FileSelector::get_dir_contents(QString root, QString prefix) {
     QDir directory(root);
     QStringList res = directory.entryList({prefix + "*"});
     if (res.size() == 0) {
-        std::string encoded_prefix = utf8_encode(prefix.toStdWString());
+        std::string encoded_prefix = prefix.toStdString();
         QStringList all_directory_files = directory.entryList();
         std::vector<std::pair<QString, int>> file_scores;
 
         for (auto file : all_directory_files) {
-            std::string encoded_file = utf8_encode(file.toStdWString());
+            std::string encoded_file = file.toStdString();
             int score = static_cast<int>(
                 rapidfuzz::fuzz::partial_ratio(encoded_prefix, encoded_file)
             );
@@ -91,7 +89,7 @@ void FileSelector::on_select(const QModelIndex& index) {
     );
 
     if (QFileInfo(full_path).isFile()) {
-        on_done(full_path.toStdWString());
+        on_done(full_path.toStdString());
         hide();
         parentWidget()->setFocus();
     } else {

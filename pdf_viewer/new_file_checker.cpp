@@ -71,20 +71,20 @@ void NewFileChecker::register_subdirectories(QString dirpath) {
     }
 }
 
-NewFileChecker::NewFileChecker(std::wstring dirpath, MainWidget* main_widget) {
+NewFileChecker::NewFileChecker(std::string dirpath, MainWidget* main_widget) {
 
-    path = QString::fromStdWString(dirpath);
+    path = QString::fromStdString(dirpath);
     if (dirpath.size() > 0) {
         update_files();
         register_subdirectories(
-            QString::fromStdWString(Config::instance().PAPERS_FOLDER_PATH)
+            QString::fromStdString(Config::instance().PAPERS_FOLDER_PATH)
         );
         QObject::connect(
             &paper_folder_watcher, &QFileSystemWatcher::directoryChanged,
             [&, main_widget](const QString& path) {
                 auto new_path = get_lastest_new_file_path();
                 if (new_path.size() > 0) {
-                    main_widget->on_new_paper_added(new_path.toStdWString());
+                    main_widget->on_new_paper_added(new_path.toStdString());
                 }
                 update_files();
             }

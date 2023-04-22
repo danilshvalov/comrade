@@ -12,6 +12,6 @@ class PrefsCommand : public Command {
 
   protected:
     void perform(MainWidget& widget) override {
-        open_file(Config::instance().default_config_path.generic_wstring());
+        open_file(Config::instance().default_config_path.generic_string());
     }
 };

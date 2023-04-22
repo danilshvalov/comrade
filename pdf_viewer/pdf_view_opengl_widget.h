@@ -214,7 +214,7 @@ class PdfViewOpenGLWidget : public QOpenGLWidget,
     void render_page(int page_number);
     bool get_is_searching(float* prog);
     void search_text(
-        const std::wstring& text,
+        const std::string& text,
         bool case_sensitive = true,
         bool regex = false,
         std::optional<std::pair<int, int>> range = {}

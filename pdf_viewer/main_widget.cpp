@@ -260,7 +260,7 @@ void MainWidget::persist() {
         );
 
         std::string encoded_file_name_str =
-            utf8_encode(main_document_view->get_document()->get_path());
+            main_document_view->get_document()->get_path();
         last_path_file << encoded_file_name_str.c_str() << std::endl;
         last_path_file.close();
     }
@@ -523,14 +523,14 @@ bool MainWidget::is_pending_link_source_filled() {
     return (pending_link && pending_link.value().first);
 }
 
-std::wstring MainWidget::get_status_string() {
+std::string MainWidget::get_status_string() {
     const Config& config = Config::instance();
 
-    QString status_string = QString::fromStdWString(config.STATUS_BAR_FORMAT);
+    QString status_string = QString::fromStdString(config.STATUS_BAR_FORMAT);
 
     if (main_document_view->get_document() == nullptr)
-        return L"";
-    std::wstring chapter_name = main_document_view->get_current_chapter_name();
+        return "";
+    std::string chapter_name = main_document_view->get_current_chapter_name();
 
     status_string.replace(
         "%{current_page}", QString::number(get_current_page_number() + 1)
@@ -543,19 +543,19 @@ std::wstring MainWidget::get_status_string() {
     if (chapter_name.size() > 0) {
         status_string.replace(
             "%{chapter_name}",
-            " [ " + QString::fromStdWString(chapter_name) + " ] "
+            " [ " + QString::fromStdString(chapter_name) + " ] "
         );
     }
 
     if (config.SHOW_DOCUMENT_NAME_IN_STATUSBAR) {
-        std::optional<std::wstring> file_name =
+        std::optional<std::string> file_name =
             fs::path(main_document_view->get_document()->get_path())
                 .filename()
-                .generic_wstring();
+                .generic_string();
         if (file_name) {
             status_string.replace(
                 "%{document_name}",
-                " [ " + QString::fromStdWString(file_name.value()) + " ] "
+                " [ " + QString::fromStdString(file_name.value()) + " ] "
             );
         }
     }
@@ -601,9 +601,8 @@ std::wstring MainWidget::get_status_string() {
     // if (current_pending_command &&
     // current_pending_command.value().requires_symbol) {
     if (is_waiting_for_symbol()) {
-        std::wstring wcommand_name =
-            utf8_decode(pending_command_instance->next_requirement(*this)->name
-            );
+        std::string wcommand_name =
+            pending_command_instance->next_requirement(*this)->name;
         status_string.replace(
             "%{waiting_for_symbol}",
             " " + QString::fromStdString(pending_command_instance->get_name()) +
@@ -643,15 +642,14 @@ std::wstring MainWidget::get_status_string() {
             "%{locked_scroll}", " [ locked horizontal scroll ]"
         );
     }
-    std::wstring highlight_select_char = L"";
+    std::string highlight_select_char;
 
     if (is_select_highlight_mode) {
-        highlight_select_char = L"s";
+        highlight_select_char = "s";
     }
 
     status_string.replace(
-        "%{highlight}", " [ h" +
-                            QString::fromStdWString(highlight_select_char) +
+        "%{highlight}", " [ h" + QString::fromStdString(highlight_select_char) +
                             ":" + select_highlight_type + " ]"
     );
 
@@ -662,7 +660,7 @@ std::wstring MainWidget::get_status_string() {
             status_string.replace(
                 "%{closest_bookmark}",
                 " [ " +
-                    QString::fromStdWString(closest_bookmark.value().description
+                    QString::fromStdString(closest_bookmark.value().description
                     ) +
                     " ]"
             );
@@ -684,7 +682,7 @@ std::wstring MainWidget::get_status_string() {
     if (custom_status_message.size() > 0) {
         status_string.replace(
             "%{custom_message}",
-            " [ " + QString::fromStdWString(custom_status_message) + " ]"
+            " [ " + QString::fromStdString(custom_status_message) + " ]"
         );
     }
 
@@ -709,7 +707,7 @@ std::wstring MainWidget::get_status_string() {
     status_string.replace("%{search_progress}", "");
 
     // return ss.str();
-    return status_string.toStdWString();
+    return status_string.toStdString();
 }
 
 void MainWidget::handle_escape() {
@@ -895,7 +893,7 @@ void MainWidget::validate_render() {
 }
 
 void MainWidget::validate_ui() {
-    status_label->setText(QString::fromStdWString(get_status_string()));
+    status_label->setText(QString::fromStdString(get_status_string()));
     is_ui_invalidated = false;
 }
 
@@ -980,12 +978,12 @@ void MainWidget::do_synctex_forward_search(
     int column
 ) {
 
-    std::wstring latex_file_path_with_redundant_dot =
-        add_redundant_dot_to_path(latex_file_path.generic_wstring());
+    std::string latex_file_path_with_redundant_dot =
+        add_redundant_dot_to_path(latex_file_path.generic_string());
 
     std::string latex_file_string = latex_file_path.generic_string();
     std::string latex_file_with_redundant_dot_string =
-        utf8_encode(latex_file_path_with_redundant_dot);
+        latex_file_path_with_redundant_dot;
     std::string pdf_file_string = pdf_file_path.generic_string();
 
     synctex_scanner_p scanner = synctex_scanner_new_with_output_file(
@@ -1062,7 +1060,7 @@ void MainWidget::do_synctex_forward_search(
 void MainWidget::update_link_with_opened_book_state(
     Portal lnk, const OpenedBookState& new_state
 ) {
-    std::wstring docpath = main_document_view->get_document()->get_path();
+    std::string docpath = main_document_view->get_document()->get_path();
     Document* link_owner = document_manager->get_document(docpath);
 
     lnk.dst.book_state = new_state;
@@ -1112,7 +1110,7 @@ void MainWidget::open_document_with_hash(
     std::optional<float> offset_y,
     std::optional<float> zoom_level
 ) {
-    std::optional<std::wstring> maybe_path = checksummer->get_path(path);
+    std::optional<std::string> maybe_path = checksummer->get_path(path);
     if (maybe_path) {
         fs::path path(maybe_path.value());
         open_document(path, offset_x, offset_y, zoom_level);
@@ -1141,23 +1139,23 @@ void MainWidget::open_document(
         main_window_width, main_window_height
     );
     main_document_view->open_document(
-        path.generic_wstring(), &this->is_render_invalidated
+        path.generic_string(), &this->is_render_invalidated
     );
     bool has_document = main_document_view_has_document();
 
     if (has_document) {
-        // setWindowTitle(QString::fromStdWString(path.get_path()));
+        // setWindowTitle(QString::fromStdString(path.get_path()));
         if (!path.filename().empty()) {
             setWindowTitle(
-                QString::fromStdWString(path.filename().generic_wstring())
+                QString::fromStdString(path.filename().generic_string())
             );
         } else {
-            setWindowTitle(QString::fromStdWString(path.generic_wstring()));
+            setWindowTitle(QString::fromStdString(path.generic_string()));
         }
     }
 
     if (!path.empty() && !has_document) {
-        show_error_message(L"Could not open file: " + path.generic_wstring());
+        show_error_message("Could not open file: " + path.generic_string());
     }
 
     if (offset_x) {
@@ -1196,18 +1194,18 @@ void MainWidget::open_document_at_location(
     if (main_document_view) {
         main_document_view->persist();
     }
-    std::wstring path = path_.generic_wstring();
+    std::string path = path_.generic_string();
 
     open_document(path, &this->is_render_invalidated, true, {}, true);
     bool has_document = main_document_view_has_document();
 
     if (has_document) {
-        // setWindowTitle(QString::fromStdWString(path));
+        // setWindowTitle(QString::fromStdString(path));
         push_state();
     }
 
     if ((path.size() > 0) && (!has_document)) {
-        show_error_message(L"Could not open file: " + path);
+        show_error_message("Could not open file: " + path);
     }
 
     main_document_view->on_view_size_change(
@@ -1327,7 +1325,7 @@ void MainWidget::key_event(bool released, QKeyEvent* kevent) {
                 text_command_line_edit_container->hide();
                 setFocus();
                 handle_pending_text_command(
-                    text_command_line_edit->text().toStdWString()
+                    text_command_line_edit->text().toStdString()
                 );
                 return;
             }
@@ -1621,9 +1619,9 @@ void MainWidget::prev_state() {
         */
         if (link_to_edit) {
 
-            // std::wstring link_document_path =
+            // std::string link_document_path =
             // checksummer->get_path(link_to_edit.value().dst.document_checksum).value();
-            std::wstring link_document_path =
+            std::string link_document_path =
                 history[current_history_index].document_path;
             Document* link_owner =
                 document_manager->get_document(link_document_path);
@@ -1679,7 +1677,7 @@ void MainWidget::set_main_document_view_state(DocumentViewState new_view_state
          new_view_state.document_path)) {
         open_document(new_view_state.document_path, &this->is_ui_invalidated);
 
-        // setwindowtitle(qstring::fromstdwstring(new_view_state.document_path));
+        // setwindowtitle(qstring::fromstdstring(new_view_state.document_path));
     }
 
     main_document_view->on_view_size_change(
@@ -1734,16 +1732,16 @@ bool MainWidget::find_location_of_text_under_pointer(
     std::vector<fz_stext_char*> flat_chars;
     get_flat_chars_from_stext_page(stext_page, flat_chars);
 
-    std::optional<std::pair<std::wstring, std::wstring>> generic_pair =
+    std::optional<std::pair<std::string, std::string>> generic_pair =
         main_document_view->get_document()->get_generic_link_name_at_position(
             flat_chars, offset_x, offset_y
         );
 
-    std::optional<std::wstring> reference_text_on_pointer =
+    std::optional<std::string> reference_text_on_pointer =
         main_document_view->get_document()->get_reference_text_at_position(
             flat_chars, offset_x, offset_y
         );
-    std::optional<std::wstring> equation_text_on_pointer =
+    std::optional<std::string> equation_text_on_pointer =
         main_document_view->get_document()->get_equation_text_at_position(
             flat_chars, offset_x, offset_y
         );
@@ -2057,14 +2055,13 @@ void MainWidget::wheelEvent(QWheelEvent* wevent) {
 }
 
 void MainWidget::show_textbar(
-    const std::wstring& command_name, bool should_fill_with_selected_text
+    const std::string& command_name, bool should_fill_with_selected_text
 ) {
     text_command_line_edit->clear();
     if (should_fill_with_selected_text) {
-        text_command_line_edit->setText(QString::fromStdWString(selected_text));
+        text_command_line_edit->setText(QString::fromStdString(selected_text));
     }
-    text_command_line_edit_label->setText(QString::fromStdWString(command_name)
-    );
+    text_command_line_edit_label->setText(QString::fromStdString(command_name));
     text_command_line_edit_container->show();
     text_command_line_edit->setFocus();
 }
@@ -2116,7 +2113,7 @@ void MainWidget::toggle_two_window_mode() {
     }
 }
 
-std::optional<std::wstring> MainWidget::get_paper_name_under_cursor() {
+std::optional<std::string> MainWidget::get_paper_name_under_cursor() {
     QPoint mouse_pos = mapFromGlobal(QCursor::pos());
     WindowPos window_pos = {mouse_pos.x(), mouse_pos.y()};
     auto normal_pos =
@@ -2153,7 +2150,7 @@ void MainWidget::smart_jump_under_pos(WindowPos pos) {
     if (opengl_widget->is_window_point_in_overview({normal_x, normal_y})) {
         auto [doc_page, doc_x, doc_y] =
             opengl_widget->window_pos_to_overview_pos({normal_x, normal_y});
-        std::optional<std::wstring> paper_name =
+        std::optional<std::string> paper_name =
             main_document_view->get_document()->get_paper_name_at_position(
                 doc_page, doc_x, doc_y
             );
@@ -2178,7 +2175,7 @@ void MainWidget::smart_jump_under_pos(WindowPos pos) {
         )) {
         long_jump_to_destination(target_page, target_y_offset);
     } else {
-        std::optional<std::wstring> paper_name_on_pointer =
+        std::optional<std::string> paper_name_on_pointer =
             main_document_view->get_document()->get_paper_name_at_position(
                 flat_chars, offset_x, offset_y
             );
@@ -2189,16 +2186,16 @@ void MainWidget::smart_jump_under_pos(WindowPos pos) {
         }
     }
 
-    //std::optional<std::pair<std::wstring, std::wstring>> generic_pair =\
+    //std::optional<std::pair<std::string, std::string>> generic_pair =\
     //        main_document_view->get_document()->get_generic_link_name_at_position(flat_chars, offset_x, offset_y);
 
-    // std::optional<std::wstring> text_on_pointer =
+    // std::optional<std::string> text_on_pointer =
     // main_document_view->get_document()->get_text_at_position(flat_chars,
-    // offset_x, offset_y); std::optional<std::wstring>
+    // offset_x, offset_y); std::optional<std::string>
     // reference_text_on_pointer
     // =
     // main_document_view->get_document()->get_reference_text_at_position(flat_chars,
-    // offset_x, offset_y); std::optional<std::wstring> equation_text_on_pointer
+    // offset_x, offset_y); std::optional<std::string> equation_text_on_pointer
     // =
     // main_document_view->get_document()->get_equation_text_at_position(flat_chars,
     // offset_x, offset_y);
@@ -2341,7 +2338,7 @@ void MainWidget::handle_portal() {
 
         pending_link = {};
     } else {
-        pending_link = std::make_pair<std::wstring, Portal>(
+        pending_link = std::make_pair<std::string, Portal>(
             main_document_view->get_document()->get_path(),
             Portal::with_src_offset(main_document_view->get_offset_y())
         );
@@ -2352,7 +2349,7 @@ void MainWidget::handle_portal() {
     validate_render();
 }
 
-void MainWidget::handle_pending_text_command(std::wstring text) {
+void MainWidget::handle_pending_text_command(std::string text) {
     if (pending_command_instance) {
         pending_command_instance->set_text_requirement(text);
         advance_command(std::move(pending_command_instance));
@@ -2475,7 +2472,7 @@ void MainWidget::toggle_visual_scroll_mode() {
     visual_scroll_mode = !visual_scroll_mode;
 }
 
-std::optional<std::wstring> MainWidget::get_current_file_name() {
+std::optional<std::string> MainWidget::get_current_file_name() {
     if (main_document_view) {
         if (main_document_view->get_document()) {
             return main_document_view->get_document()->get_path();
@@ -2487,18 +2484,18 @@ std::optional<std::wstring> MainWidget::get_current_file_name() {
 CommandManager* MainWidget::get_command_manager() { return command_manager; }
 
 void MainWidget::execute_command(
-    std::wstring command, std::wstring text, bool wait
+    std::string command, std::string text, bool wait
 ) {
     const Config& config = Config::instance();
 
-    std::wstring file_path = main_document_view->get_document()->get_path();
-    QString qfile_path = QString::fromStdWString(file_path);
-    std::vector<std::wstring> path_parts;
+    std::string file_path = main_document_view->get_document()->get_path();
+    QString qfile_path = QString::fromStdString(file_path);
+    std::vector<std::string> path_parts;
     split_path(file_path, path_parts);
-    std::wstring file_name = path_parts.back();
-    QString qfile_name = QString::fromStdWString(file_name);
+    std::string file_name = path_parts.back();
+    QString qfile_name = QString::fromStdString(file_name);
 
-    QString qtext = QString::fromStdWString(command);
+    QString qtext = QString::fromStdString(command);
 
     qtext.arg(qfile_path);
 
@@ -2536,18 +2533,18 @@ void MainWidget::execute_command(
             command_parts[i].replace("%1", qfile_path);
             command_parts[i].replace("%2", qfile_name);
             command_parts[i].replace(
-                "%3", QString::fromStdWString(selected_text)
+                "%3", QString::fromStdString(selected_text)
             );
             command_parts[i].replace(
                 "%4", QString::number(get_current_page_number())
             );
-            command_parts[i].replace("%5", QString::fromStdWString(text));
+            command_parts[i].replace("%5", QString::fromStdString(text));
 
             // new named macros
             command_parts[i].replace("%{file_path}", qfile_path);
             command_parts[i].replace("%{file_name}", qfile_name);
             command_parts[i].replace(
-                "%{selected_text}", QString::fromStdWString(selected_text)
+                "%{selected_text}", QString::fromStdString(selected_text)
             );
             if (selected_text.size() > 0) {
                 auto selection_begin_document =
@@ -2575,7 +2572,7 @@ void MainWidget::execute_command(
                 "%{page_number}", QString::number(get_current_page_number())
             );
             command_parts[i].replace(
-                "%{command_text}", QString::fromStdWString(text)
+                "%{command_text}", QString::fromStdString(text)
             );
 
             command_parts[i].replace(
@@ -2594,12 +2591,12 @@ void MainWidget::execute_command(
             // %3").arg(mouse_pos_document.page, mouse_pos_document.x,
             // mouse_pos_document.y));
             if (command_parts[i].indexOf("%{paper_name}") != -1) {
-                std::optional<std::wstring> maybe_paper_name =
+                std::optional<std::string> maybe_paper_name =
                     get_paper_name_under_cursor();
                 if (maybe_paper_name) {
                     command_parts[i].replace(
                         "%{paper_name}",
-                        QString::fromStdWString(maybe_paper_name.value())
+                        QString::fromStdString(maybe_paper_name.value())
                     );
                 }
             }
@@ -2609,14 +2606,14 @@ void MainWidget::execute_command(
             );
             command_parts[i].replace(
                 "%{local_database}",
-                QString::fromStdWString(
-                    config.local_database_file_path.generic_wstring()
+                QString::fromStdString(
+                    config.local_database_file_path.generic_string()
                 )
             );
             command_parts[i].replace(
                 "%{shared_database}",
-                QString::fromStdWString(
-                    config.global_database_file_path.generic_wstring()
+                QString::fromStdString(
+                    config.global_database_file_path.generic_string()
                 )
             );
 
@@ -2635,10 +2632,10 @@ void MainWidget::execute_command(
                 command_parts[i].replace("%{selected_rect}", rect_string);
             }
 
-            std::wstring selected_line_text;
+            std::string selected_line_text;
             if (main_document_view) {
                 selected_line_text =
-                    main_document_view->get_selected_line_text().value_or(L"");
+                    main_document_view->get_selected_line_text().value_or("");
                 command_parts[i].replace(
                     "%{zoom_level}",
                     QString::number(main_document_view->get_zoom_level())
@@ -2647,23 +2644,23 @@ void MainWidget::execute_command(
 
             if (selected_line_text.size() > 0) {
                 command_parts[i].replace(
-                    "%6", QString::fromStdWString(selected_line_text)
+                    "%6", QString::fromStdString(selected_line_text)
                 );
                 command_parts[i].replace(
-                    "%{line_text}", QString::fromStdWString(selected_line_text)
+                    "%{line_text}", QString::fromStdString(selected_line_text)
                 );
             }
 
-            std::wstring command_parts_ = command_parts[i].toStdWString();
+            std::string command_parts_ = command_parts[i].toStdString();
             command_args.push_back(command_parts[i]);
         }
 
-        run_command(command_name.toStdWString(), command_args, wait);
+        run_command(command_name.toStdString(), command_args, wait);
     }
 }
 
 void MainWidget::handle_paper_name_on_pointer(
-    std::wstring paper_name, bool is_shift_pressed
+    std::string paper_name, bool is_shift_pressed
 ) {
     const Config& config = Config::instance();
     if (paper_name.size() > 5) {
@@ -2717,11 +2714,10 @@ void MainWidget::move_horizontal(float amount) {
 
 std::optional<std::string> MainWidget::get_last_opened_file_checksum() {
 
-    std::vector<std::wstring> opened_docs_hashes;
-    std::wstring current_checksum = L"";
+    std::vector<std::string> opened_docs_hashes;
+    std::string current_checksum = "";
     if (main_document_view_has_document()) {
-        current_checksum =
-            utf8_decode(main_document_view->get_document()->get_checksum());
+        current_checksum = main_document_view->get_document()->get_checksum();
     }
 
     db_manager->select_opened_books_path_values(opened_docs_hashes);
@@ -2731,7 +2727,7 @@ std::optional<std::string> MainWidget::get_last_opened_file_checksum() {
         if (opened_docs_hashes[index] == current_checksum) {
             index++;
         } else {
-            return utf8_encode(opened_docs_hashes[index]);
+            return opened_docs_hashes[index];
         }
     }
 
@@ -2885,7 +2881,7 @@ QRect MainWidget::get_helper_window_rect() {
 }
 
 void MainWidget::open_document(
-    const std::wstring& doc_path,
+    const std::string& doc_path,
     bool* invalid_flag,
     bool load_prev_state,
     std::optional<OpenedBookState> prev_state,
@@ -2898,10 +2894,10 @@ void MainWidget::open_document(
         force_load_dimensions
     );
 
-    std::optional<std::wstring> filename =
-        fs::path(doc_path).filename().generic_wstring();
+    std::optional<std::string> filename =
+        fs::path(doc_path).filename().generic_string();
     if (filename) {
-        setWindowTitle(QString::fromStdWString(filename.value()));
+        setWindowTitle(QString::fromStdString(filename.value()));
     }
 }
 
@@ -2913,7 +2909,7 @@ void MainWidget::dragEnterEvent(QDragEnterEvent* e) {
 void MainWidget::dropEvent(QDropEvent* event) {
     if (event->mimeData()->hasUrls()) {
         auto urls = event->mimeData()->urls();
-        std::wstring path = urls.at(0).toString().toStdWString();
+        std::string path = urls.at(0).toString().toStdString();
         // ignore file:/// at the beginning of the URL
 #ifdef Q_OS_WIN
         path = path.substr(8, path.size() - 8);
@@ -2921,7 +2917,7 @@ void MainWidget::dropEvent(QDropEvent* event) {
         path = path.substr(7, path.size() - 7);
 #endif
         // handle_args(QStringList() << QApplication::applicationFilePath() <<
-        // QString::fromStdWString(path));
+        // QString::fromStdString(path));
         push_state();
         open_document(path, &is_render_invalidated);
     }
@@ -3040,7 +3036,7 @@ void MainWidget::show_password_prompt_if_required() {
     }
 }
 
-void MainWidget::on_new_paper_added(const std::wstring& file_path) {
+void MainWidget::on_new_paper_added(const std::string& file_path) {
     if (is_pending_link_source_filled()) {
         PortalViewState dst_view_state;
 
@@ -3073,7 +3069,7 @@ void MainWidget::on_new_paper_added(const std::wstring& file_path) {
 void MainWidget::handle_link_click(const PdfLink& link) {
 
     if (link.uri.substr(0, 4).compare("http") == 0) {
-        open_web_url(utf8_decode(link.uri));
+        open_web_url(link.uri);
         return;
     }
 
@@ -3081,7 +3077,7 @@ void MainWidget::handle_link_click(const PdfLink& link) {
         QString path_uri =
             QString::fromStdString(link.uri.substr(7, link.uri.size() - 7));
         auto parts = path_uri.split('#');
-        std::wstring path_part = parts.at(0).toStdWString();
+        std::string path_part = parts.at(0).toStdString();
         auto docpath = doc()->get_path();
         fs::path linked_file_path =
             fs::path(doc()->get_path()).parent_path() / path_part;
@@ -3110,12 +3106,12 @@ void MainWidget::handle_link_click(const PdfLink& link) {
 }
 
 void MainWidget::save_auto_config() {
-    std::wofstream outfile(Config::instance().auto_config_path);
+    std::ofstream outfile(Config::instance().auto_config_path);
     outfile << get_serialized_configuration_string();
     outfile.close();
 }
 
-std::wstring MainWidget::get_serialized_configuration_string() {
+std::string MainWidget::get_serialized_configuration_string() {
     float overview_size[2];
     float overview_offset[2];
     opengl_widget->get_overview_offsets(
@@ -3124,7 +3120,7 @@ std::wstring MainWidget::get_serialized_configuration_string() {
     opengl_widget->get_overview_size(&overview_size[0], &overview_size[1]);
 
     QString overview_config = "overview_size %1 %2\noverview_offset %3 %4\n";
-    std::wstring overview_config_string =
+    std::string overview_config_string =
         overview_config
             .arg(
                 QString::number(overview_size[0]),
@@ -3132,11 +3128,11 @@ std::wstring MainWidget::get_serialized_configuration_string() {
                 QString::number(overview_offset[0]),
                 QString::number(overview_offset[1])
             )
-            .toStdWString();
+            .toStdString();
     return overview_config_string + get_window_configuration_string();
 }
 
-std::wstring MainWidget::get_window_configuration_string() {
+std::string MainWidget::get_window_configuration_string() {
 
     QString config_string_multi =
         "main_window_size    %1 %2\nmain_window_move     %3 "
@@ -3168,14 +3164,14 @@ std::wstring MainWidget::get_window_configuration_string() {
                         helper_window_size_w, helper_window_size_h,
                         helper_window_move_x, helper_window_move_y
                     )
-                    .toStdWString());
+                    .toStdString());
     } else {
         return (config_string_single
                     .arg(
                         main_window_size_w, main_window_size_h,
                         main_window_move_x, main_window_move_y
                     )
-                    .toStdWString());
+                    .toStdString());
     }
 }
 
@@ -3254,7 +3250,7 @@ int MainWidget::get_current_page_number() const {
     }
 }
 
-void MainWidget::set_inverse_search_command(const std::wstring& new_command) {
+void MainWidget::set_inverse_search_command(const std::string& new_command) {
     inverse_search_command = new_command;
 }
 
@@ -3292,19 +3288,19 @@ void MainWidget::toggle_titlebar() {
     show();
 }
 
-void MainWidget::focus_text(int page, const std::wstring& text) {
-    std::vector<std::wstring> line_texts;
+void MainWidget::focus_text(int page, const std::string& text) {
+    std::vector<std::string> line_texts;
     std::vector<fz_rect> line_rects;
     line_rects =
         main_document_view->get_document()->get_page_lines(page, &line_texts);
 
-    std::string encoded_text = utf8_encode(text);
+    std::string encoded_text = text;
 
     int max_score = -1;
     int max_index = -1;
 
     for (int i = 0; i < line_texts.size(); i++) {
-        std::string encoded_line = utf8_encode(line_texts[i]);
+        std::string encoded_line = line_texts[i];
         int score =
             lcs(encoded_text.c_str(), encoded_line.c_str(), encoded_text.size(),
                 encoded_line.size());
@@ -3354,8 +3350,8 @@ void MainWidget::reload() {
 void MainWidget::synctex_under_pos(WindowPos position) {
     auto [page, doc_x, doc_y] =
         main_document_view->window_to_document_pos(position);
-    std::wstring docpath = main_document_view->get_document()->get_path();
-    std::string docpath_utf8 = utf8_encode(docpath);
+    std::string docpath = main_document_view->get_document()->get_path();
+    std::string docpath_utf8 = docpath;
     synctex_scanner_p scanner =
         synctex_scanner_new_with_output_file(docpath_utf8.c_str(), nullptr, 1);
 
@@ -3392,23 +3388,22 @@ void MainWidget::synctex_under_pos(WindowPos position) {
             if (inverse_search_command.size() > 0) {
 #ifdef Q_OS_WIN
                 QString command =
-                    QString::fromStdWString(inverse_search_command)
+                    QString::fromStdString(inverse_search_command)
                         .arg(
                             new_path, line_string.c_str(), column_string.c_str()
                         );
 #else
-                QString command =
-                    QString::fromStdWString(inverse_search_command)
-                        .arg(
-                            file_name, line_string.c_str(),
-                            column_string.c_str()
-                        );
+                QString command = QString::fromStdString(inverse_search_command)
+                                      .arg(
+                                          file_name, line_string.c_str(),
+                                          column_string.c_str()
+                                      );
 #endif
-                std::wstring res = command.toStdWString();
+                std::string res = command.toStdString();
                 QProcess::startDetached(command);
             } else {
                 show_error_message(
-                    L"inverse_search_command is not set in prefs_user.config"
+                    "inverse_search_command is not set in prefs_user.config"
                 );
             }
         }
@@ -3416,7 +3411,7 @@ void MainWidget::synctex_under_pos(WindowPos position) {
     synctex_scanner_free(scanner);
 }
 
-void MainWidget::set_status_message(std::wstring new_status_string) {
+void MainWidget::set_status_message(std::string new_status_string) {
     custom_status_message = new_status_string;
 }
 
@@ -3442,11 +3437,11 @@ std::optional<DocumentPos> MainWidget::get_overview_position() {
     return {};
 }
 
-void MainWidget::add_portal(std::wstring source_path, Portal new_link) {
+void MainWidget::add_portal(std::string source_path, Portal new_link) {
     if (source_path == main_document_view->get_document()->get_path()) {
         main_document_view->get_document()->add_portal(new_link);
     } else {
-        const std::unordered_map<std::wstring, Document*> cached_documents =
+        const std::unordered_map<std::string, Document*> cached_documents =
             document_manager->get_cached_documents();
         for (auto [doc_path, doc] : cached_documents) {
             if (source_path == doc_path) {
@@ -3463,13 +3458,13 @@ void MainWidget::add_portal(std::wstring source_path, Portal new_link) {
     }
 }
 
-void MainWidget::handle_keyboard_select(const std::wstring& text) {
+void MainWidget::handle_keyboard_select(const std::string& text) {
     if (text[0] == '#') {
         // we can select text using window-space coordinates.
         // this is not something that the user should be able to do, but it's
         // useful for scripts.
         QStringList parts =
-            QString::fromStdWString(text.substr(1, text.size() - 1)).split(' ');
+            QString::fromStdString(text.substr(1, text.size() - 1)).split(' ');
         if (parts.size() == 2) {
             QString begin_text = parts.at(0);
             QString end_text = parts.at(1);
@@ -3508,7 +3503,7 @@ void MainWidget::handle_keyboard_select(const std::wstring& text) {
     } else {
         // here we select with "user-friendly" tags
 
-        QStringList parts = QString::fromStdWString(text).split(' ');
+        QStringList parts = QString::fromStdString(text).split(' ');
 
         if (parts.size() == 1) {
             std::vector<fz_irect> schar_rects;
@@ -3643,7 +3638,7 @@ QString MainWidget::get_font_face_name() {
         font.setStyleHint(QFont::SansSerif);
         return font.defaultFamily();
     } else {
-        return QString::fromStdWString(config.UI_FONT_FACE_NAME);
+        return QString::fromStdString(config.UI_FONT_FACE_NAME);
     }
 }
 
@@ -3829,7 +3824,7 @@ void MainWidget::goto_mark(char symbol) {
             assert(
                 mark_vector.size() == 1
             ); // we can not have more than one global mark with the same name
-            std::wstring doc_path =
+            std::string doc_path =
                 checksummer->get_path(mark_vector[0].first).value();
             open_document(doc_path, 0.0f, mark_vector[0].second);
         }
@@ -3855,10 +3850,10 @@ void MainWidget::advance_command(std::unique_ptr<Command> new_command) {
 
     switch (requirement->type) {
         case RequirementType::Text:
-            show_textbar(utf8_decode(requirement->name), true);
+            show_textbar(requirement->name, true);
             break;
         case RequirementType::File: {
-            std::wstring file_name =
+            std::string file_name =
                 select_command_file_name(pending_command_instance->get_name());
             if (file_name.size() > 0) {
                 pending_command_instance->set_file_requirement(file_name);
@@ -3878,14 +3873,14 @@ void MainWidget::advance_command(std::unique_ptr<Command> new_command) {
     }
 }
 
-void MainWidget::perform_search(std::wstring text, bool is_regex) {
+void MainWidget::perform_search(std::string text, bool is_regex) {
     const Config& config = Config::instance();
     // When searching, the start position before search is saved in a mark named
     // '0'
     main_document_view->add_mark('/');
 
     int range_begin, range_end;
-    std::wstring search_term;
+    std::string search_term;
     std::optional<std::pair<int, int>> search_range = {};
     if (parse_search_command(text, &range_begin, &range_end, &search_term)) {
         search_range = std::make_pair(range_begin, range_end);
@@ -3895,13 +3890,13 @@ void MainWidget::perform_search(std::wstring text, bool is_regex) {
         // in mupdf RTL documents are reversed, so we reverse the search string
         // todo: better (or any!) handling of mixed RTL and LTR text
         if (is_rtl(search_term[0])) {
-            search_term = reverse_wstring(search_term);
+            search_term = reverse_string(search_term);
         }
     }
 
     if (is_regex && (!config.SUPER_FAST_SEARCH)) {
-        show_error_message(L"regex search only works when super_fast_search is "
-                           L"enabled in prefs_user.config");
+        show_error_message("regex search only works when super_fast_search is "
+                           "enabled in prefs_user.config");
     }
     opengl_widget->search_text(
         search_term, config.CASE_SENSITIVE_SEARCH, is_regex, search_range
@@ -3985,8 +3980,8 @@ void MainWidget::handle_horizontal_move(int amount) {
 
 void MainWidget::handle_goto_bookmark() {
     const Config& config = Config::instance();
-    std::vector<std::wstring> option_names;
-    std::vector<std::wstring> option_location_strings;
+    std::vector<std::string> option_names;
+    std::vector<std::string> option_location_strings;
     std::vector<float> option_locations;
     std::vector<BookMark> bookmarks;
     if (config.SORT_BOOKMARKS_BY_LOCATION) {
@@ -3997,7 +3992,7 @@ void MainWidget::handle_goto_bookmark() {
 
     for (auto bookmark : bookmarks) {
         option_names.push_back(
-            config.ITEM_LIST_PREFIX + L" " + bookmark.description
+            config.ITEM_LIST_PREFIX + " " + bookmark.description
         );
         option_locations.push_back(bookmark.y_offset);
         auto [page, _, __] =
@@ -4037,19 +4032,19 @@ void MainWidget::handle_goto_bookmark() {
 void MainWidget::handle_goto_bookmark_global() {
     std::vector<std::pair<std::string, BookMark>> global_bookmarks;
     db_manager->global_select_bookmark(global_bookmarks);
-    std::vector<std::wstring> descs;
-    std::vector<std::wstring> file_names;
+    std::vector<std::string> descs;
+    std::vector<std::string> file_names;
     std::vector<BookState> book_states;
 
     for (const auto& desc_bm_pair : global_bookmarks) {
         std::string checksum = desc_bm_pair.first;
-        std::optional<std::wstring> path = checksummer->get_path(checksum);
+        std::optional<std::string> path = checksummer->get_path(checksum);
         if (path) {
             BookMark bm = desc_bm_pair.second;
-            std::wstring file_name =
-                fs::path(path.value()).filename().generic_wstring();
+            std::string file_name =
+                fs::path(path.value()).filename().generic_string();
             descs.push_back(
-                Config::instance().ITEM_LIST_PREFIX + L" " + bm.description
+                Config::instance().ITEM_LIST_PREFIX + " " + bm.description
             );
             file_names.push_back(truncate_string(file_name, 50));
             book_states.push_back({path.value(), bm.y_offset});
@@ -4099,8 +4094,8 @@ void MainWidget::handle_add_highlight(char symbol) {
 }
 
 void MainWidget::handle_goto_highlight() {
-    std::vector<std::wstring> option_names;
-    std::vector<std::wstring> option_location_strings;
+    std::vector<std::string> option_names;
+    std::vector<std::string> option_location_strings;
     std::vector<Highlight> highlights =
         main_document_view->get_document()->get_highlights_sorted();
 
@@ -4110,10 +4105,10 @@ void MainWidget::handle_goto_highlight() {
         );
 
     for (auto highlight : highlights) {
-        std::wstring type_name = L"a";
+        std::string type_name = "a";
         type_name[0] = highlight.type;
         option_names.push_back(
-            L"[" + type_name + L"] " + highlight.description + L"]"
+            "[" + type_name + "] " + highlight.description + "]"
         );
         auto [page, _, __] =
             main_document_view->get_document()->absolute_to_page_pos(
@@ -4145,27 +4140,25 @@ void MainWidget::handle_goto_highlight() {
 void MainWidget::handle_goto_highlight_global() {
     std::vector<std::pair<std::string, Highlight>> global_highlights;
     db_manager->global_select_highlight(global_highlights);
-    std::vector<std::wstring> descs;
-    std::vector<std::wstring> file_names;
+    std::vector<std::string> descs;
+    std::vector<std::string> file_names;
     std::vector<BookState> book_states;
 
     for (const auto& desc_hl_pair : global_highlights) {
         std::string checksum = desc_hl_pair.first;
-        std::optional<std::wstring> path = checksummer->get_path(checksum);
+        std::optional<std::string> path = checksummer->get_path(checksum);
         if (path) {
             Highlight hl = desc_hl_pair.second;
 
-            std::wstring file_name =
-                fs::path(path.value()).filename().generic_wstring();
+            std::string file_name =
+                fs::path(path.value()).filename().generic_string();
 
-            std::wstring highlight_type_string = L"a";
+            std::string highlight_type_string = "a";
             highlight_type_string[0] = hl.type;
 
-            // descs.push_back(L"[" + highlight_type_string + L"]" +
-            // hl.description + L" {" + file_name + L"}");
-            descs.push_back(
-                L"[" + highlight_type_string + L"]" + hl.description
-            );
+            // descs.push_back("[" + highlight_type_string + "]" +
+            // hl.description + " {" + file_name + "}");
+            descs.push_back("[" + highlight_type_string + "]" + hl.description);
 
             file_names.push_back(truncate_string(file_name, 50));
 
@@ -4191,7 +4184,7 @@ void MainWidget::handle_goto_toc() {
     const Config& config = Config::instance();
     if (main_document_view->get_document()->has_toc()) {
         if (config.FLAT_TABLE_OF_CONTENTS) {
-            std::vector<std::wstring> flat_toc;
+            std::vector<std::string> flat_toc;
             std::vector<int> current_document_toc_pages;
             get_flat_toc(
                 main_document_view->get_document()->get_toc(), flat_toc,
@@ -4241,30 +4234,29 @@ void MainWidget::handle_goto_toc() {
         }
 
     } else {
-        show_error_message(L"This document doesn't have a table of contents");
+        show_error_message("This document doesn't have a table of contents");
     }
 }
 
 void MainWidget::handle_open_prev_doc() {
 
-    std::vector<std::wstring> opened_docs_names;
-    std::vector<std::wstring> opened_docs_hashes_;
+    std::vector<std::string> opened_docs_names;
+    std::vector<std::string> opened_docs_hashes_;
     std::vector<std::string> opened_docs_hashes;
 
     db_manager->select_opened_books_path_values(opened_docs_hashes_);
 
     for (const auto& doc_hash_ : opened_docs_hashes_) {
-        std::optional<std::wstring> path =
-            checksummer->get_path(utf8_encode(doc_hash_));
+        std::optional<std::string> path = checksummer->get_path(doc_hash_);
         if (path) {
             if (Config::instance().SHOW_DOC_PATH) {
-                opened_docs_names.push_back(path.value_or(L"<ERROR>"));
+                opened_docs_names.push_back(path.value_or("<ERROR>"));
             } else {
                 opened_docs_names.push_back(
-                    fs::path(path.value()).filename().generic_wstring()
+                    fs::path(path.value()).filename().generic_string()
                 );
             }
-            opened_docs_hashes.push_back(utf8_encode(doc_hash_));
+            opened_docs_hashes.push_back(doc_hash_);
         }
     }
 
@@ -4310,7 +4302,7 @@ void MainWidget::handle_new_window() {
 }
 
 std::optional<std::pair<int, fz_link*>> MainWidget::get_selected_link(
-    const std::wstring& text
+    const std::string& text
 ) {
     const Config& config = Config::instance();
     std::vector<std::pair<int, fz_link*>> visible_page_links;
@@ -4319,7 +4311,7 @@ std::optional<std::pair<int, fz_link*>> MainWidget::get_selected_link(
         int link_index = 0;
 
         if (config.ALPHABETIC_LINK_TAGS) {
-            link_index = get_index_from_tag(utf8_encode(text));
+            link_index = get_index_from_tag(text);
         } else {
             link_index = std::stoi(text);
         }
@@ -4335,7 +4327,7 @@ std::optional<std::pair<int, fz_link*>> MainWidget::get_selected_link(
     return std::nullopt;
 }
 
-void MainWidget::handle_overview_link(const std::wstring& text) {
+void MainWidget::handle_overview_link(const std::string& text) {
 
     auto selected_link_ = get_selected_link(text);
     if (selected_link_) {
@@ -4347,7 +4339,7 @@ void MainWidget::handle_overview_link(const std::wstring& text) {
     reset_highlight_links();
 }
 
-void MainWidget::handle_portal_to_link(const std::wstring& text) {
+void MainWidget::handle_portal_to_link(const std::string& text) {
 
     auto selected_link_ = get_selected_link(text);
     if (selected_link_) {
@@ -4383,15 +4375,15 @@ void MainWidget::handle_portal_to_link(const std::wstring& text) {
     reset_highlight_links();
 }
 
-void MainWidget::handle_open_link(const std::wstring& text, bool copy) {
+void MainWidget::handle_open_link(const std::string& text, bool copy) {
     auto selected_link_ = get_selected_link(text);
     if (selected_link_) {
         auto [selected_page, selected_link] = selected_link_.value();
         if (copy) {
-            copy_to_clipboard(utf8_decode(selected_link->uri));
+            copy_to_clipboard(selected_link->uri);
         } else {
             if (QString(selected_link->uri).startsWith("http")) {
-                open_web_url(utf8_decode(selected_link->uri));
+                open_web_url(selected_link->uri);
             } else {
                 auto [page, offset_x, offset_y] =
                     parse_uri(mupdf_context, selected_link->uri);
@@ -4404,14 +4396,14 @@ void MainWidget::handle_open_link(const std::wstring& text, bool copy) {
 
 void MainWidget::handle_keys_user_all() {
     std::vector<fs::path> keys_paths = input_handler->get_all_user_keys_paths();
-    std::vector<std::wstring> keys_paths_wstring;
+    std::vector<std::string> keys_paths_string;
     for (const auto& path : keys_paths) {
-        keys_paths_wstring.push_back(path.generic_wstring());
+        keys_paths_string.push_back(path.generic_string());
     }
 
-    set_current_widget(new FilteredWindowSelector<std::wstring>(
-        keys_paths_wstring, keys_paths_wstring,
-        [&](std::wstring* path) {
+    set_current_widget(new FilteredWindowSelector<std::string>(
+        keys_paths_string, keys_paths_string,
+        [&](std::string* path) {
             if (path) {
                 open_file(*path);
             }
@@ -4424,14 +4416,14 @@ void MainWidget::handle_keys_user_all() {
 void MainWidget::handle_prefs_user_all() {
     std::vector<fs::path> prefs_paths =
         config_manager->get_all_user_config_files();
-    std::vector<std::wstring> prefs_paths_wstring;
+    std::vector<std::string> prefs_paths_string;
     for (auto path : prefs_paths) {
-        prefs_paths_wstring.push_back(path.generic_wstring());
+        prefs_paths_string.push_back(path.generic_string());
     }
 
-    set_current_widget(new FilteredWindowSelector<std::wstring>(
-        prefs_paths_wstring, prefs_paths_wstring,
-        [&](std::wstring* path) {
+    set_current_widget(new FilteredWindowSelector<std::string>(
+        prefs_paths_string, prefs_paths_string,
+        [&](std::string* path) {
             if (path) {
                 open_file(*path);
             }
@@ -4461,10 +4453,10 @@ void MainWidget::handle_portal_to_overview() {
     }
 }
 
-void MainWidget::handle_focus_text(const std::wstring& text) {
+void MainWidget::handle_focus_text(const std::string& text) {
     if ((text.size() > 0) && (text[0] == '#')) {
-        std::wstringstream ss(text.substr(1, text.size() - 1));
-        std::wstring actual_text;
+        std::stringstream ss(text.substr(1, text.size() - 1));
+        std::string actual_text;
         int page_number;
         ss >> page_number;
         std::getline(ss, actual_text);
@@ -4477,10 +4469,10 @@ void MainWidget::handle_focus_text(const std::wstring& text) {
 }
 
 void MainWidget::handle_goto_window() {
-    std::vector<std::wstring> window_names;
+    std::vector<std::string> window_names;
     std::vector<int> window_ids;
     for (int i = 0; i < windows.size(); i++) {
-        window_names.push_back(windows[i]->windowTitle().toStdWString());
+        window_names.push_back(windows[i]->windowTitle().toStdString());
         window_ids.push_back(i);
     }
     set_current_widget(new FilteredWindowSelector<int>(

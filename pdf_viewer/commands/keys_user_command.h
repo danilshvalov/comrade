@@ -14,7 +14,7 @@ class KeysUserCommand : public Command {
         std::optional<fs::path> key_file_path =
             widget.input_handler->get_or_create_user_keys_path();
         if (key_file_path) {
-            open_file(key_file_path.value().generic_wstring());
+            open_file(key_file_path.value().generic_string());
         }
     }
 };

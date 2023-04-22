@@ -240,8 +240,8 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     const Config& config = Config::instance();
 
     for (auto [command_name_, command_value] : config.ADDITIONAL_COMMANDS) {
-        std::string command_name = utf8_encode(command_name_);
-        std::wstring local_command_value = command_value;
+        std::string command_name = command_name_;
+        std::string local_command_value = command_value;
         new_commands[command_name] = [command_name, local_command_value]() {
             return std::make_unique<CustomCommand>(
                 command_name, local_command_value
@@ -250,8 +250,8 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     }
 
     for (auto [command_name_, macro_value] : config.ADDITIONAL_MACROS) {
-        std::string command_name = utf8_encode(command_name_);
-        std::wstring local_macro_value = macro_value;
+        std::string command_name = command_name_;
+        std::string local_macro_value = macro_value;
         new_commands[command_name] = [command_name, local_macro_value, this]() {
             return std::make_unique<MacroCommand>(
                 this, command_name, local_macro_value
@@ -262,7 +262,7 @@ CommandManager::CommandManager(ConfigManager* config_manager) {
     std::vector<ConfigEntry> configs = config_manager->get_configs();
 
     for (auto conf : configs) {
-        std::string confname = utf8_encode(conf.name);
+        std::string confname = conf.name;
         std::string config_set_command_name = "setconfig_" + confname;
         new_commands[config_set_command_name] = [confname]() {
             return std::make_unique<ConfigCommand>(confname);
@@ -287,7 +287,7 @@ QStringList CommandManager::get_all_command_names() const {
 }
 
 std::unique_ptr<Command> CommandManager::create_macro_command(
-    std::string name, std::wstring macro_string
+    std::string name, std::string macro_string
 ) {
     return std::make_unique<MacroCommand>(this, name, macro_string);
 }

@@ -30,12 +30,12 @@ GLuint PdfViewOpenGLWidget::LoadShaders(
     GLuint FragmentShaderID = glCreateShader(GL_FRAGMENT_SHADER);
 
     // Read the Vertex Shader code from the file
-    std::wstring VertexShaderCode;
+    std::string VertexShaderCode;
     std::string vertex_shader_code_utf8;
 
-    std::wifstream VertexShaderStream(vertex_file_path);
+    std::ifstream VertexShaderStream(vertex_file_path);
     if (VertexShaderStream.is_open()) {
-        std::wstringstream sstr;
+        std::stringstream sstr;
         sstr << VertexShaderStream.rdbuf();
         VertexShaderCode = sstr.str();
         VertexShaderStream.close();
@@ -44,12 +44,12 @@ GLuint PdfViewOpenGLWidget::LoadShaders(
     }
 
     // Read the Fragment Shader code from the file
-    std::wstring FragmentShaderCode;
+    std::string FragmentShaderCode;
     std::string fragment_shader_code_utf8;
 
-    std::wifstream FragmentShaderStream(fragment_file_path);
+    std::ifstream FragmentShaderStream(fragment_file_path);
     if (FragmentShaderStream.is_open()) {
-        std::wstringstream sstr;
+        std::stringstream sstr;
         sstr << FragmentShaderStream.rdbuf();
         FragmentShaderCode = sstr.str();
         FragmentShaderStream.close();
@@ -61,7 +61,7 @@ GLuint PdfViewOpenGLWidget::LoadShaders(
     int InfoLogLength;
 
     // Compile Vertex Shader
-    vertex_shader_code_utf8 = utf8_encode(VertexShaderCode);
+    vertex_shader_code_utf8 = VertexShaderCode;
     const char* VertexSourcePointer = vertex_shader_code_utf8.c_str();
     glShaderSource(VertexShaderID, 1, &VertexSourcePointer, NULL);
     glCompileShader(VertexShaderID);
@@ -78,7 +78,7 @@ GLuint PdfViewOpenGLWidget::LoadShaders(
     }
 
     // Compile Fragment Shader
-    fragment_shader_code_utf8 = utf8_encode(FragmentShaderCode);
+    fragment_shader_code_utf8 = FragmentShaderCode;
     const char* FragmentSourcePointer = fragment_shader_code_utf8.c_str();
     glShaderSource(FragmentShaderID, 1, &FragmentSourcePointer, NULL);
     glCompileShader(FragmentShaderID);
@@ -136,23 +136,23 @@ void PdfViewOpenGLWidget::initializeGL() {
         shared_gl_objects.is_initialized = true;
 
         // shared_gl_objects.rendered_program =
-        // LoadShaders(concatenate_path(shader_path , L"simple.vertex"),
-        // concatenate_path(shader_path, L"simple.fragment"));
+        // LoadShaders(concatenate_path(shader_path , "simple.vertex"),
+        // concatenate_path(shader_path, "simple.fragment"));
         // shared_gl_objects.rendered_dark_program =
-        // LoadShaders(concatenate_path(shader_path , L"simple.vertex"),
-        // concatenate_path(shader_path, L"dark_mode.fragment"));
+        // LoadShaders(concatenate_path(shader_path , "simple.vertex"),
+        // concatenate_path(shader_path, "dark_mode.fragment"));
         // shared_gl_objects.unrendered_program =
-        // LoadShaders(concatenate_path(shader_path , L"simple.vertex"),
-        // concatenate_path(shader_path, L"unrendered_page.fragment"));
+        // LoadShaders(concatenate_path(shader_path , "simple.vertex"),
+        // concatenate_path(shader_path, "unrendered_page.fragment"));
         // shared_gl_objects.highlight_program = LoadShaders(
-        // concatenate_path(shader_path , L"simple.vertex"),
-        // concatenate_path(shader_path , L"highlight.fragment"));
+        // concatenate_path(shader_path , "simple.vertex"),
+        // concatenate_path(shader_path , "highlight.fragment"));
         // shared_gl_objects.vertical_line_program =
-        // LoadShaders(concatenate_path(shader_path , L"simple.vertex"),
-        // concatenate_path(shader_path , L"vertical_bar.fragment"));
+        // LoadShaders(concatenate_path(shader_path , "simple.vertex"),
+        // concatenate_path(shader_path , "vertical_bar.fragment"));
         // shared_gl_objects.vertical_line_dark_program =
-        // LoadShaders(concatenate_path(shader_path , L"simple.vertex"),
-        // concatenate_path(shader_path , L"vertical_bar_dark.fragment"));
+        // LoadShaders(concatenate_path(shader_path , "simple.vertex"),
+        // concatenate_path(shader_path , "vertical_bar_dark.fragment"));
 
         shared_gl_objects.rendered_program = LoadShaders(
             config.shader_path / "simple.vertex",
@@ -265,7 +265,7 @@ void PdfViewOpenGLWidget::render_line_window(
     glUseProgram(program);
 
     const float* vertical_line_color =
-        config_manager->get_config<float>(L"vertical_line_color");
+        config_manager->get_config<float>("vertical_line_color");
     if (vertical_line_color != nullptr) {
         glUniform4fv(
             shared_gl_objects.line_color_uniform_location, 1,
@@ -651,7 +651,7 @@ void PdfViewOpenGLWidget::render_overview(OverviewState overview) {
             glUseProgram(shared_gl_objects.highlight_program);
             glUniform3fv(
                 shared_gl_objects.highlight_color_uniform_location, 1,
-                config_manager->get_config<float>(L"search_highlight_color")
+                config_manager->get_config<float>("search_highlight_color")
             );
             // glUniform3fv(g_shared_resources.highlight_color_uniform_location,
             // 1, highlight_color_temp);
@@ -831,7 +831,7 @@ void PdfViewOpenGLWidget::render(QPainter* painter) {
                 glUseProgram(shared_gl_objects.highlight_program);
                 glUniform3fv(
                     shared_gl_objects.highlight_color_uniform_location, 1,
-                    config_manager->get_config<float>(L"link_highlight_color")
+                    config_manager->get_config<float>("link_highlight_color")
                 );
             }
         }
@@ -874,7 +874,7 @@ void PdfViewOpenGLWidget::render(QPainter* painter) {
         glUseProgram(shared_gl_objects.highlight_program);
         glUniform3fv(
             shared_gl_objects.highlight_color_uniform_location, 1,
-            config_manager->get_config<float>(L"link_highlight_color")
+            config_manager->get_config<float>("link_highlight_color")
         );
 
         int page = last_selected_block_page.value();
@@ -921,7 +921,7 @@ void PdfViewOpenGLWidget::render(QPainter* painter) {
 
         glUniform3fv(
             shared_gl_objects.highlight_color_uniform_location, 1,
-            config_manager->get_config<float>(L"search_highlight_color")
+            config_manager->get_config<float>("search_highlight_color")
         );
         for (auto rect : current_search_result.rects) {
             render_highlight_document(
@@ -935,7 +935,7 @@ void PdfViewOpenGLWidget::render(QPainter* painter) {
     glUseProgram(shared_gl_objects.highlight_program);
     glUniform3fv(
         shared_gl_objects.highlight_color_uniform_location, 1,
-        config_manager->get_config<float>(L"text_highlight_color")
+        config_manager->get_config<float>("text_highlight_color")
     );
     std::vector<fz_rect> bounding_rects;
     merge_selected_character_rects(
@@ -950,7 +950,7 @@ void PdfViewOpenGLWidget::render(QPainter* painter) {
 
     glUniform3fv(
         shared_gl_objects.highlight_color_uniform_location, 1,
-        config_manager->get_config<float>(L"synctex_highlight_color")
+        config_manager->get_config<float>("synctex_highlight_color")
     );
     for (auto [page, rect] : synctex_highlights) {
         render_highlight_document(
@@ -1182,7 +1182,7 @@ bool PdfViewOpenGLWidget::get_is_searching(float* prog) {
 }
 
 void PdfViewOpenGLWidget::search_text(
-    const std::wstring& text,
+    const std::string& text,
     bool case_sensitive,
     bool regex,
     std::optional<std::pair<int, int>> range

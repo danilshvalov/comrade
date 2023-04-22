@@ -12,7 +12,7 @@ class FocusTextCommand : public TextCommand {
 
   protected:
     void perform(MainWidget& widget) override {
-        std::wstring text_ = text.value();
+        std::string text_ = text.value();
         widget.handle_focus_text(text_);
     }
 };

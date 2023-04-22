@@ -12,6 +12,6 @@ class KeysCommand : public Command {
 
   protected:
     void perform(MainWidget& widget) override {
-        open_file(Config::instance().default_keys_path.generic_wstring());
+        open_file(Config::instance().default_keys_path.generic_string());
     }
 };
