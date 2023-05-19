@@ -12,6 +12,7 @@
 #include <regex>
 #include <qcryptographichash.h>
 #include <qjsondocument.h>
+#include <codecvt>
 
 #include <mupdf/pdf.h>
 
@@ -1481,6 +1482,8 @@ void Document::get_text_selection(
         selecting = true;
     }
 
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> conv;
+
     for (int i = page_begin; i <= page_end; i++) {
 
         // for now, let's assume there is only one page
@@ -1559,7 +1562,7 @@ void Document::get_text_selection(
 
             if (selecting || word_selecting) {
                 if (!(current_char->c == ' ' && selected_text.size() == 0)) {
-                    selected_text.push_back(current_char->c);
+                    selected_text.append(conv.to_bytes(current_char->c));
                     fz_rect charrect = document_to_absolute_rect(
                         i, fz_rect_from_quad(current_char->quad), true
                     );

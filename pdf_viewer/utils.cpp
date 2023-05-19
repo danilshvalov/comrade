@@ -163,6 +163,23 @@ void rect_to_quad(fz_rect rect, float quad[8]) {
     quad[7] = rect.y1;
 }
 
+// FIXME: remove
+std::string utf8_decode(const std::string& encoded_str) {
+    std::string res;
+    utf8::utf8to32(
+        encoded_str.begin(), encoded_str.end(), std::back_inserter(res)
+    );
+    return res;
+}
+
+std::string utf8_encode(const std::string& decoded_str) {
+    std::string res;
+    utf8::utf32to8(
+        decoded_str.begin(), decoded_str.end(), std::back_inserter(res)
+    );
+    return res;
+}
+
 void copy_to_clipboard(const std::string& text, bool selection) {
     auto clipboard = QGuiApplication::clipboard();
     auto qtext = QString::fromStdString(text);
@@ -238,23 +255,6 @@ void show_error_message(const std::string& error_message) {
     msgBox.setDefaultButton(QMessageBox::Ok);
     msgBox.exec();
 }
-
-// FIXME: remove
-// std::string utf8_decode(const std::string& encoded_str) {
-//     std::string res;
-//     utf8::utf8to32(
-//         encoded_str.begin(), encoded_str.end(), std::back_inserter(res)
-//     );
-//     return res;
-// }
-
-// std::string utf8_encode(const std::string& decoded_str) {
-//     std::string res;
-//     utf8::utf32to8(
-//         decoded_str.begin(), decoded_str.end(), std::back_inserter(res)
-//     );
-//     return res;
-// }
 
 bool is_rtl(int c) {
     if ((c == 0x05BE) || (c == 0x05C0) || (c == 0x05C3) || (c == 0x05C6) ||
