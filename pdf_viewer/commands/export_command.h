@@ -11,7 +11,7 @@ class ExportCommand : public Command {
 
   protected:
     void perform(MainWidget& widget) override {
-        std::wstring export_file_name = select_new_json_file_name();
+        std::string export_file_name = select_new_json_file_name();
         widget.db_manager->export_json(export_file_name, widget.checksummer);
     }
 };

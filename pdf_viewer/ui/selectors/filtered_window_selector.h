@@ -9,7 +9,7 @@ template <typename T>
 class FilteredWindowSelector : public BaseSelector {
   public:
     FilteredWindowSelector(
-        std::vector<std::wstring> std_string_list,
+        std::vector<std::string> std_string_list,
         std::vector<T> values,
         std::function<void(T*)> on_done,
         QWidget* parent,
@@ -21,7 +21,7 @@ class FilteredWindowSelector : public BaseSelector {
           on_delete_function(on_delete_function) {
         QVector<QString> q_string_list;
         for (const auto& s : std_string_list) {
-            q_string_list.push_back(QString::fromStdWString(s));
+            q_string_list.push_back(QString::fromStdString(s));
         }
         QStringList string_list = QStringList::fromVector(q_string_list);
 

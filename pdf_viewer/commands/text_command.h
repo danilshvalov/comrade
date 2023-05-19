@@ -15,10 +15,10 @@ class TextCommand : public Command {
         }
     }
 
-    void set_text_requirement(std::wstring value) override {
+    void set_text_requirement(std::string value) override {
         this->text = value;
     }
 
   protected:
-    std::optional<std::wstring> text = {};
+    std::optional<std::string> text = {};
 };

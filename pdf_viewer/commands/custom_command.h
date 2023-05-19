@@ -6,7 +6,7 @@
 class CustomCommand : public Command {
 
   public:
-    CustomCommand(std::string name_, std::wstring command_)
+    CustomCommand(std::string name_, std::string command_)
         : name(std::move(name_)),
           raw_command(std::move(command_)) {}
 
@@ -24,18 +24,18 @@ class CustomCommand : public Command {
 
     void set_rect_requirement(fz_rect rect) override { command_rect = rect; }
 
-    void set_text_requirement(std::wstring txt) override { command_text = txt; }
+    void set_text_requirement(std::string txt) override { command_text = txt; }
 
     std::string get_name() const override { return name; }
 
   protected:
     void perform(MainWidget& widget) override {
-        widget.execute_command(raw_command, command_text.value_or(L""));
+        widget.execute_command(raw_command, command_text.value_or(""));
     }
 
   private:
     std::string name;
-    std::wstring raw_command;
+    std::string raw_command;
     std::optional<fz_rect> command_rect;
-    std::optional<std::wstring> command_text;
+    std::optional<std::string> command_text;
 };

@@ -10,7 +10,7 @@ class EmbedAnnotationsCommand : public Command {
 
   protected:
     void perform(MainWidget& widget) override {
-        std::wstring embedded_pdf_file_name = select_new_pdf_file_name();
+        std::string embedded_pdf_file_name = select_new_pdf_file_name();
         if (embedded_pdf_file_name.size() > 0) {
             widget.main_document_view->get_document()->embed_annotations(
                 embedded_pdf_file_name

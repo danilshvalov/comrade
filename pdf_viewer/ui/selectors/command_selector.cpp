@@ -1,6 +1,7 @@
 #include "ui/selectors/command_selector.h"
 #include "rapidfuzz_amalgamated.hpp"
 #include "utils.h"
+#include "config.h"
 
 #define FTS_FUZZY_MATCH_IMPLEMENTATION
 #include "fts_fuzzy_match.h"
@@ -9,8 +10,6 @@
 #include <QTableView>
 #include <QLineEdit>
 #include <QHeaderView>
-
-extern bool FUZZY_SEARCHING;
 
 QList<QStandardItem*> CommandSelector::get_item(std::string command_name) {
 
@@ -107,17 +106,10 @@ bool CommandSelector::on_text_change(const QString& text) {
     std::vector<std::pair<std::string, int>> match_score_pairs;
 
     for (int i = 0; i < string_elements.size(); i++) {
-        std::string encoded = utf8_encode(string_elements.at(i).toStdWString());
-        int score = 0;
-        if (FUZZY_SEARCHING) {
-            score = static_cast<int>(
-                rapidfuzz::fuzz::partial_ratio(search_text_string, encoded)
-            );
-        } else {
-            fts::fuzzy_match(
-                search_text_string.c_str(), encoded.c_str(), score
-            );
-        }
+        std::string encoded = string_elements.at(i).toStdString();
+        int score = static_cast<int>(
+            rapidfuzz::fuzz::partial_ratio(search_text_string, encoded)
+        );
         match_score_pairs.push_back(std::make_pair(encoded, score));
     }
     std::sort(

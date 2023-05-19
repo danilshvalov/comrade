@@ -38,13 +38,13 @@ void Mark::from_json(const QJsonObject& json_object) {
 QJsonObject BookMark::to_json() const {
     QJsonObject res;
     res["y_offset"] = y_offset;
-    res["description"] = QString::fromStdWString(description);
+    res["description"] = QString::fromStdString(description);
     return res;
 }
 
 void BookMark::from_json(const QJsonObject& json_object) {
     y_offset = json_object["y_offset"].toDouble();
-    description = json_object["description"].toString().toStdWString();
+    description = json_object["description"].toString().toStdString();
 }
 
 QJsonObject Highlight::to_json() const {
@@ -53,7 +53,7 @@ QJsonObject Highlight::to_json() const {
     res["selection_begin_y"] = selection_begin.y;
     res["selection_end_x"] = selection_end.x;
     res["selection_end_y"] = selection_end.y;
-    res["description"] = QString::fromStdWString(description);
+    res["description"] = QString::fromStdString(description);
     res["type"] = type;
     return res;
 }
@@ -63,7 +63,7 @@ void Highlight::from_json(const QJsonObject& json_object) {
     selection_begin.y = json_object["selection_begin_y"].toDouble();
     selection_end.x = json_object["selection_end_x"].toDouble();
     selection_end.y = json_object["selection_end_y"].toDouble();
-    description = json_object["description"].toString().toStdWString();
+    description = json_object["description"].toString().toStdString();
     type = static_cast<char>(json_object["type"].toInt());
 }
 

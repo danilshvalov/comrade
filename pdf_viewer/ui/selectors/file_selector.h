@@ -11,7 +11,7 @@
 class FileSelector : public BaseSelector {
   public:
     FileSelector(
-        std::function<void(std::wstring)> on_done,
+        std::function<void(std::string)> on_done,
         QWidget* parent,
         QString last_path
     );
@@ -26,6 +26,6 @@ class FileSelector : public BaseSelector {
 
   private:
     QStringListModel* list_model = nullptr;
-    std::function<void(std::wstring)> on_done = nullptr;
+    std::function<void(std::string)> on_done = nullptr;
     QString last_root = "";
 };

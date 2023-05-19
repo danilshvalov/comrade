@@ -7,16 +7,16 @@
 class MacroCommand : public Command {
   public:
     MacroCommand(
-        CommandManager* manager, std::string name_, std::wstring commands_
+        CommandManager* manager, std::string name_, std::string commands_
     ) {
         command_manager = manager;
         name = name_;
 
-        auto parts = QString::fromStdWString(commands_).split(';');
+        auto parts = QString::fromStdString(commands_).split(';');
         for (int i = 0; i < parts.size(); i++) {
             if (parts.at(i).size() > 0) {
                 commands.push_back(std::make_unique<LazyCommand>(
-                    manager, parts.at(i).toStdWString()
+                    manager, parts.at(i).toStdString()
                 ));
             }
         }

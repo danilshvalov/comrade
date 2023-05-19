@@ -14,7 +14,7 @@ class GotoPageWithPageNumberCommand : public TextCommand {
 
   protected:
     void perform(MainWidget& widget) override {
-        std::wstring text_ = text.value();
+        std::string text_ = text.value();
         if (is_string_numeric(text_.c_str()) &&
             text_.size() < 6) { // make sure the page number is valid
             int dest = std::stoi(text_.c_str()) - 1;

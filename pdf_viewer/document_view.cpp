@@ -4,13 +4,6 @@
 #include <algorithm>
 #include <optional>
 
-extern float MOVE_SCREEN_PERCENTAGE;
-extern float FIT_TO_PAGE_WIDTH_RATIO;
-extern float RULER_PADDING;
-extern float RULER_X_PADDING;
-extern bool EXACT_HIGHLIGHT_SELECT;
-extern bool IGNORE_STATUSBAR_IN_PRESENTATION_MODE;
-
 DocumentView::DocumentView(
     fz_context* mupdf_context,
     DatabaseManager* db_manager,
@@ -33,7 +26,7 @@ DocumentView::DocumentView(
     ConfigManager* config_manager,
     CachedChecksummer* checksummer,
     bool* invalid_flag,
-    std::wstring path,
+    std::string path,
     int view_width,
     int view_height,
     float offset_x,
@@ -284,7 +277,7 @@ void DocumentView::add_mark(char symbol) {
     }
 }
 
-void DocumentView::add_bookmark(std::wstring desc) {
+void DocumentView::add_bookmark(std::string desc) {
     // assert(current_document);
     if (current_document) {
         current_document->add_bookmark(desc, offset_y);
@@ -300,11 +293,12 @@ void DocumentView::add_highlight(
     if (current_document) {
         std::vector<fz_rect> selected_characters;
         std::vector<fz_rect> merged_characters;
-        std::wstring selected_text;
+        std::string selected_text;
 
         get_text_selection(
-            selection_begin, selection_end, !EXACT_HIGHLIGHT_SELECT,
-            selected_characters, selected_text
+            selection_begin, selection_end,
+            !Config::instance().EXACT_HIGHLIGHT_SELECT, selected_characters,
+            selected_text
         );
         merge_selected_character_rects(selected_characters, merged_characters);
         if (selected_text.size() > 0) {
@@ -679,16 +673,16 @@ void DocumentView::move_pages(int num_pages) {
         current_page = 0;
     }
     move_absolute(
-        0, num_pages *
-               (current_document->get_page_height(current_page) + PAGE_PADDINGS)
+        0, num_pages * (current_document->get_page_height(current_page) +
+                        Config::instance().PAGE_PADDINGS)
     );
 }
 
 void DocumentView::move_screens(int num_screens) {
     float screen_height_in_doc_space = view_height / zoom_level;
     set_offset_y(
-        get_offset_y() +
-        num_screens * screen_height_in_doc_space * MOVE_SCREEN_PERCENTAGE
+        get_offset_y() + num_screens * screen_height_in_doc_space *
+                             Config::instance().MOVE_SCREEN_PERCENTAGE
     );
     // return move_amount;
 }
@@ -699,16 +693,16 @@ void DocumentView::reset_doc_state() {
 }
 
 void DocumentView::open_document(
-    const std::wstring& doc_path,
+    const std::string& doc_path,
     bool* invalid_flag,
     bool load_prev_state,
     std::optional<OpenedBookState> prev_state,
     bool force_load_dimensions
 ) {
 
-    std::wstring canonical_path = get_canonical_path(doc_path);
+    std::string canonical_path = get_canonical_path(doc_path);
 
-    if (canonical_path == L"") {
+    if (canonical_path == "") {
         current_document = nullptr;
         return;
     }
@@ -853,7 +847,8 @@ void DocumentView::fit_to_page_width(bool smart, bool ratio) {
         int virtual_view_width = view_width;
         if (ratio) {
             virtual_view_width = static_cast<int>(
-                static_cast<float>(view_width) * FIT_TO_PAGE_WIDTH_RATIO
+                static_cast<float>(view_width) *
+                Config::instance().FIT_TO_PAGE_WIDTH_RATIO
             );
         }
         set_offset_x(0);
@@ -873,7 +868,7 @@ void DocumentView::fit_to_page_height_width_minimum() {
 
     float x_zoom_level = static_cast<float>(view_width) / page_width;
     float y_zoom_level;
-    if (IGNORE_STATUSBAR_IN_PRESENTATION_MODE) {
+    if (Config::instance().IGNORE_STATUSBAR_IN_PRESENTATION_MODE) {
         y_zoom_level = (static_cast<float>(view_height)) / page_height;
     } else {
         y_zoom_level =
@@ -916,14 +911,14 @@ int DocumentView::get_current_chapter_index() {
     return current_chapter_index;
 }
 
-std::wstring DocumentView::get_current_chapter_name() {
-    const std::vector<std::wstring>& chapter_names =
+std::string DocumentView::get_current_chapter_name() {
+    const std::vector<std::string>& chapter_names =
         current_document->get_flat_toc_names();
     int current_chapter_index = get_current_chapter_index();
     if (current_chapter_index > 0) {
         return chapter_names[current_chapter_index];
     }
-    return L"";
+    return "";
 }
 
 std::optional<std::pair<int, int>> DocumentView::get_current_page_range() {
@@ -1003,10 +998,6 @@ void DocumentView::set_vertical_line_pos(float pos) {
 
 void DocumentView::set_vertical_line_rect(fz_rect rect) { ruler_rect = rect; }
 
-// float DocumentView::get_vertical_line_pos() {
-//	return vertical_line_pos;
-// }
-
 float DocumentView::get_ruler_pos() {
     if (ruler_rect.has_value()) {
         return ruler_rect.value().y1;
@@ -1020,10 +1011,9 @@ std::optional<fz_rect> DocumentView::get_ruler_rect() { return ruler_rect; }
 bool DocumentView::has_ruler_rect() { return ruler_rect.has_value(); }
 
 float DocumentView::get_ruler_window_y() {
-
     float absol_end_y = get_ruler_pos();
 
-    absol_end_y += RULER_PADDING;
+    absol_end_y += Config::instance().RULER_PADDING;
 
     float window_end_x, window_end_y;
     absolute_to_window_pos(0.0, absol_end_y, &window_end_x, &window_end_y);
@@ -1032,31 +1022,20 @@ float DocumentView::get_ruler_window_y() {
 }
 
 std::optional<fz_rect> DocumentView::get_ruler_window_rect() {
-    if (has_ruler_rect()) {
-        fz_rect absol_ruler_rect = get_ruler_rect().value();
-
-        absol_ruler_rect.y0 -= RULER_PADDING;
-        absol_ruler_rect.y1 += RULER_PADDING;
-
-        absol_ruler_rect.x0 -= RULER_X_PADDING;
-        absol_ruler_rect.x1 += RULER_X_PADDING;
-        return absolute_to_window_rect(absol_ruler_rect);
+    if (!has_ruler_rect()) {
+        return std::nullopt;
     }
-    return {};
-}
 
-// float DocumentView::get_vertical_line_window_y() {
-//
-//	float absol_end_y = get_vertical_line_pos();
-//
-//	absol_end_y += RULER_PADDING;
-//
-//	float window_begin_x, window_begin_y;
-//	float window_end_x, window_end_y;
-//	absolute_to_window_pos(0.0, absol_end_y, &window_end_x, &window_end_y);
-//
-//	return window_end_y;
-// }
+    const Config& config = Config::instance();
+    fz_rect absol_ruler_rect = get_ruler_rect().value();
+
+    absol_ruler_rect.y0 -= config.RULER_PADDING;
+    absol_ruler_rect.y1 += config.RULER_PADDING;
+
+    absol_ruler_rect.x0 -= config.RULER_X_PADDING;
+    absol_ruler_rect.x1 += config.RULER_X_PADDING;
+    return absolute_to_window_rect(absol_ruler_rect);
+}
 
 void DocumentView::goto_vertical_line_pos() {
     if (current_document) {
@@ -1073,7 +1052,7 @@ void DocumentView::get_text_selection(
         is_word_selection, // when in word select mode, we select entire words
                            // even if the range only partially includes the word
     std::vector<fz_rect>& selected_characters,
-    std::wstring& selected_text
+    std::string& selected_text
 ) {
 
     if (current_document) {
@@ -1175,13 +1154,13 @@ int DocumentView::get_vertical_line_page() {
     return current_document->absolute_to_page_pos({0, get_ruler_pos()}).page;
 }
 
-std::optional<std::wstring> DocumentView::get_selected_line_text() {
+std::optional<std::string> DocumentView::get_selected_line_text() {
     if (line_index > 0) {
-        std::vector<std::wstring> lines;
+        std::vector<std::string> lines;
         std::vector<fz_rect> line_rects =
             current_document->get_page_lines(get_center_page_number(), &lines);
         if ((size_t)line_index < lines.size()) {
-            std::wstring content = lines[line_index];
+            std::string content = lines[line_index];
             return content;
         } else {
             return {};
@@ -1198,21 +1177,21 @@ std::vector<DocumentPos> DocumentView::find_line_definitions() {
     std::vector<DocumentPos> result;
 
     if (line_index > 0) {
-        std::vector<std::wstring> lines;
+        std::vector<std::string> lines;
         std::vector<fz_rect> line_rects =
             current_document->get_page_lines(get_center_page_number(), &lines);
         if ((size_t)line_index < lines.size()) {
-            std::wstring content = lines[line_index];
+            std::string content = lines[line_index];
 
-            std::wstring item_regex(L"[a-zA-Z]{2,}[ \t]+[0-9]+(\\.[0-9]+)*");
-            std::wstring reference_regex(L"\\[[a-zA-Z0-9]+\\]");
-            std::wstring equation_regex(L"\\([0-9]+(\\.[0-9]+)*\\)");
+            std::string item_regex("[a-zA-Z]{2,}[ \t]+[0-9]+(\\.[0-9]+)*");
+            std::string reference_regex("\\[[a-zA-Z0-9]+\\]");
+            std::string equation_regex("\\([0-9]+(\\.[0-9]+)*\\)");
 
-            std::vector<std::wstring> generic_item_texts =
+            std::vector<std::string> generic_item_texts =
                 find_all_regex_matches(content, item_regex);
-            std::vector<std::wstring> reference_texts =
+            std::vector<std::string> reference_texts =
                 find_all_regex_matches(content, reference_regex);
-            std::vector<std::wstring> equation_texts =
+            std::vector<std::string> equation_texts =
                 find_all_regex_matches(content, equation_regex);
 
             std::vector<DocumentPos> generic_positions;
@@ -1233,11 +1212,11 @@ std::vector<DocumentPos> DocumentView::find_line_definitions() {
             }
 
             for (auto generic_item_text : generic_item_texts) {
-                auto qtext = QString::fromStdWString(generic_item_text);
+                auto qtext = QString::fromStdString(generic_item_text);
                 QStringList parts = qtext.split(' ');
                 if (parts.size() == 2) {
-                    std::wstring type = parts.at(0).toStdWString();
-                    std::wstring ref = parts.at(1).toStdWString();
+                    std::string type = parts.at(0).toStdString();
+                    std::string ref = parts.at(1).toStdString();
                     generic_positions =
                         current_document->find_generic_locations(type, ref);
                 }

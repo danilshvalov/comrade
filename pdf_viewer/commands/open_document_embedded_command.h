@@ -14,7 +14,7 @@ class OpenDocumentEmbeddedCommand : public Command {
   protected:
     void perform(MainWidget& widget) override {
         widget.set_current_widget(new FileSelector(
-            [&widget](std::wstring doc_path) {
+            [&widget](std::string doc_path) {
                 widget.validate_render();
                 widget.open_document(doc_path);
             },

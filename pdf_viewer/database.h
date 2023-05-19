@@ -23,8 +23,8 @@ class DatabaseManager {
 
   public:
     bool open(
-        const std::wstring& local_db_file_path,
-        const std::wstring& global_db_file_path
+        const std::string& local_db_file_path,
+        const std::string& global_db_file_path
     );
     bool select_opened_book(
         const std::string& book_path, std::vector<OpenedBookState>& out_result
@@ -37,10 +37,11 @@ class DatabaseManager {
         float offset_x,
         float offset_y
     );
-    bool
-    select_mark(const std::string& checksum, std::vector<Mark>& out_result);
+    bool select_mark(
+        const std::string& checksum, std::vector<Mark>& out_result
+    );
     bool insert_bookmark(
-        const std::string& checksum, const std::wstring& desc, float offset_y
+        const std::string& checksum, const std::string& desc, float offset_y
     );
     bool select_bookmark(
         const std::string& checksum, std::vector<BookMark>& out_result
@@ -71,7 +72,7 @@ class DatabaseManager {
         float dst_zoom_level,
         float src_offset_y
     );
-    bool select_opened_books_path_values(std::vector<std::wstring>& out_result);
+    bool select_opened_books_path_values(std::vector<std::string>& out_result);
     bool delete_mark_with_symbol(char symbol);
     bool select_global_mark(
         char symbol, std::vector<std::pair<std::string, float>>& out_result
@@ -94,7 +95,7 @@ class DatabaseManager {
     );
     bool insert_highlight(
         const std::string& checksum,
-        const std::wstring& desc,
+        const std::string& desc,
         float begin_x,
         float begin_y,
         float end_x,
@@ -102,28 +103,31 @@ class DatabaseManager {
         char type
     );
     bool get_path_from_hash(
-        const std::string& checksum, std::vector<std::wstring>& out_paths
+        const std::string& checksum, std::vector<std::string>& out_paths
     );
     bool get_hash_from_path(
-        const std::string& path, std::vector<std::wstring>& out_checksum
+        const std::string& path, std::vector<std::string>& out_checksum
     );
     bool get_prev_path_hash_pairs(
-        std::vector<std::pair<std::wstring, std::wstring>>& out_pairs
+        std::vector<std::pair<std::string, std::string>>& out_pairs
     );
-    bool
-    insert_document_hash(const std::wstring& path, const std::string& checksum);
+    bool insert_document_hash(
+        const std::string& path, const std::string& checksum
+    );
     void upgrade_database_hashes();
     void split_database(
-        const std::wstring& local_database_path,
-        const std::wstring& global_database_path,
+        const std::string& local_database_path,
+        const std::string& global_database_path,
         bool was_using_hashes
     );
-    void
-    export_json(std::wstring json_file_path, CachedChecksummer* checksummer);
-    void
-    import_json(std::wstring json_file_path, CachedChecksummer* checksummer);
+    void export_json(
+        std::string json_file_path, CachedChecksummer* checksummer
+    );
+    void import_json(
+        std::string json_file_path, CachedChecksummer* checksummer
+    );
     void ensure_database_compatibility(
-        const std::wstring& local_db_file_path,
-        const std::wstring& global_db_file_path
+        const std::string& local_db_file_path,
+        const std::string& global_db_file_path
     );
 };

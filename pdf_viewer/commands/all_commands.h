@@ -123,8 +123,6 @@
 #include "symbol_command.h"
 #include "synctex_under_cursor_command.h"
 #include "text_command.h"
-#include "toggle_custom_color_command.h"
-#include "toggle_dark_mode_command.h"
 #include "toggle_drag_mouse_mode_command.h"
 #include "toggle_fastread_command.h"
 #include "toggle_fullscreen_command.h"

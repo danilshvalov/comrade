@@ -18,9 +18,9 @@ class ConfigFileChangeListener {
     static void notify_config_file_changed(ConfigManager* new_config_manager);
 };
 
-std::wstring select_document_file_name();
-std::wstring select_json_file_name();
-std::wstring select_any_file_name();
-std::wstring select_command_file_name(std::string command_name);
-std::wstring select_new_json_file_name();
-std::wstring select_new_pdf_file_name();
+std::string select_document_file_name();
+std::string select_json_file_name();
+std::string select_any_file_name();
+std::string select_command_file_name(std::string command_name);
+std::string select_new_json_file_name();
+std::string select_new_pdf_file_name();

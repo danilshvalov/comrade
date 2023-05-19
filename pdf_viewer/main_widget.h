@@ -27,9 +27,6 @@
 #include "pdf_view_opengl_widget.h"
 #include "checksum.h"
 
-extern float VERTICAL_MOVE_AMOUNT;
-extern float HORIZONTAL_MOVE_AMOUNT;
-
 class MainWidget : public QWidget, ConfigFileChangeListener {
 
   public:
@@ -61,7 +58,7 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     std::vector<DocumentViewState> history;
     int current_history_index = -1;
 
-    std::wstring custom_status_message = L"";
+    std::string custom_status_message;
 
     bool* should_quit = nullptr;
     // last position when mouse was clicked in absolute document space
@@ -90,7 +87,7 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     // is the user in word select mode? (happens when we double left click and
     // move the cursor)
     bool is_word_selecting = false;
-    std::wstring selected_text;
+    std::string selected_text;
 
     bool is_select_highlight_mode = false;
     char select_highlight_type = 'a';
@@ -103,7 +100,7 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     std::optional<Portal> link_to_edit = {};
     int selected_highlight_index = -1;
 
-    std::optional<std::pair<std::optional<std::wstring>, Portal>> pending_link;
+    std::optional<std::pair<std::optional<std::string>, Portal>> pending_link;
 
     bool mouse_drag_mode = false;
     bool synctex_mode = false;
@@ -126,10 +123,10 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
 
     bool should_show_last_command = false;
 
-    // std::optional<std::pair<std::wstring, int>> last_smart_fit_state = {};
+    // std::optional<std::pair<std::string, int>> last_smart_fit_state = {};
     std::optional<int> last_smart_fit_page = {};
 
-    std::wstring inverse_search_command;
+    std::string inverse_search_command;
 
     std::optional<PdfViewOpenGLWidget::OverviewMoveData> overview_move_data =
         {};
@@ -148,7 +145,7 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     std::optional<std::string> get_last_opened_file_checksum();
 
     void open_document(
-        const std::wstring& doc_path,
+        const std::string& doc_path,
         bool* invalid_flag,
         bool load_prev_state = true,
         std::optional<OpenedBookState> prev_state = {},
@@ -158,12 +155,12 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     void toggle_statusbar();
     void toggle_titlebar();
     void handle_paper_name_on_pointer(
-        std::wstring paper_name, bool is_shift_pressed
+        std::string paper_name, bool is_shift_pressed
     );
     // void paintEvent(QPaintEvent* paint_event) override;
     void persist();
     bool is_pending_link_source_filled();
-    std::wstring get_status_string();
+    std::string get_status_string();
     void handle_escape();
     bool is_waiting_for_symbol();
     void key_event(bool released, QKeyEvent* kevent);
@@ -191,13 +188,13 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
 
     // bool eventFilter(QObject* obj, QEvent* event) override;
     void show_textbar(
-        const std::wstring& command_name,
+        const std::string& command_name,
         bool should_fill_with_selected_text = false
     );
     void toggle_two_window_mode();
     void toggle_window_configuration();
     void handle_portal();
-    void add_portal(std::wstring source_path, Portal new_link);
+    void add_portal(std::string source_path, Portal new_link);
     void toggle_fullscreen();
     void toggle_presentation_mode();
     void set_presentation_mode(bool mode);
@@ -208,7 +205,7 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     void long_jump_to_destination(int page, float offset_y);
     void long_jump_to_destination(float abs_offset_y);
     void execute_command(
-        std::wstring command, std::wstring text = L"", bool wait = false
+        std::string command, std::string text = "", bool wait = false
     );
     // QString get_status_stylesheet();
     void smart_jump_under_pos(WindowPos pos);
@@ -221,8 +218,8 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     void show_password_prompt_if_required();
     void handle_link_click(const PdfLink& link);
 
-    std::wstring get_window_configuration_string();
-    std::wstring get_serialized_configuration_string();
+    std::string get_window_configuration_string();
+    std::string get_serialized_configuration_string();
     void save_auto_config();
 
     void handle_close_event();
@@ -260,7 +257,7 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     void handle_command_types(
         std::unique_ptr<Command> command, int num_repeats
     );
-    void handle_pending_text_command(std::wstring text);
+    void handle_pending_text_command(std::string text);
 
     void invalidate_render();
     void invalidate_ui();
@@ -290,12 +287,11 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     void zoom(WindowPos pos, float zoom_factor, bool zoom_in);
     void move_document(float dx, float dy);
     void move_document_screens(int num_screens);
-    void focus_text(int page, const std::wstring& text);
+    void focus_text(int page, const std::string& text);
 
     void move_visual_mark(int offset);
     void on_config_file_changed(ConfigManager* new_config) override;
     void toggle_mouse_drag_mode();
-    void toggle_dark_mode();
     void do_synctex_forward_search(
         const fs::path& pdf_file_path,
         const fs::path& latex_file_path,
@@ -320,7 +316,7 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
         float* out_offset,
         bool update_candidates = false
     );
-    std::optional<std::wstring> get_current_file_name();
+    std::optional<std::string> get_current_file_name();
     CommandManager* get_command_manager();
 
     void move_vertical(float amount);
@@ -351,21 +347,21 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     );
 
     bool is_rotated();
-    void on_new_paper_added(const std::wstring& file_path);
+    void on_new_paper_added(const std::string& file_path);
     void scroll_overview(int amount);
     int get_current_page_number() const;
-    void set_inverse_search_command(const std::wstring& new_command);
+    void set_inverse_search_command(const std::string& new_command);
     int get_current_monitor_width();
     int get_current_monitor_height();
     void synctex_under_pos(WindowPos position);
-    std::optional<std::wstring> get_paper_name_under_cursor();
-    void set_status_message(std::wstring new_status_string);
+    std::optional<std::string> get_paper_name_under_cursor();
+    void set_status_message(std::string new_status_string);
     void remove_self_from_windows();
-    // void handle_additional_command(std::wstring command_name, bool
+    // void handle_additional_command(std::string command_name, bool
     // wait=false);
     std::optional<DocumentPos> get_overview_position();
-    void handle_keyboard_select(const std::wstring& text);
-    // void run_multiple_commands(const std::wstring& commands);
+    void handle_keyboard_select(const std::string& text);
+    // void run_multiple_commands(const std::string& commands);
     void push_state(bool update = true);
     void toggle_scrollbar();
     void update_scrollbar();
@@ -375,7 +371,7 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     void set_mark_in_current_location(char symbol);
     void goto_mark(char symbol);
     void advance_command(std::unique_ptr<Command> command);
-    void perform_search(std::wstring text, bool is_regex = false);
+    void perform_search(std::string text, bool is_regex = false);
     void overview_to_definition();
     void portal_to_definition();
     void move_visual_mark_command(int amount);
@@ -391,13 +387,13 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     void handle_open_prev_doc();
     void handle_move_screen(int amount);
     void handle_new_window();
-    void handle_open_link(const std::wstring& text, bool copy = false);
-    void handle_overview_link(const std::wstring& text);
-    void handle_portal_to_link(const std::wstring& text);
+    void handle_open_link(const std::string& text, bool copy = false);
+    void handle_overview_link(const std::string& text);
+    void handle_portal_to_link(const std::string& text);
     void handle_keys_user_all();
     void handle_prefs_user_all();
     void handle_portal_to_overview();
-    void handle_focus_text(const std::wstring& text);
+    void handle_focus_text(const std::string& text);
     void handle_goto_window();
     void handle_toggle_smooth_scroll_mode();
     void handle_overview_to_portal();
@@ -406,7 +402,7 @@ class MainWidget : public QWidget, ConfigFileChangeListener {
     void synchronize_pending_link();
     void refresh_all_windows();
     std::optional<std::pair<int, fz_link*>> get_selected_link(
-        const std::wstring& text
+        const std::string& text
     );
 
     int num_visible_links();

@@ -29,20 +29,21 @@ std::string compute_checksum(
 }
 
 CachedChecksummer::CachedChecksummer(
-    const std::vector<std::pair<std::wstring, std::wstring>>* loaded_checksums
+    const std::vector<std::pair<std::string, std::string>>* loaded_checksums
 ) {
     if (loaded_checksums) {
         for (const auto& [path, checksum_] : *loaded_checksums) {
             std::string checksum =
-                QString::fromStdWString(checksum_).toStdString();
+                QString::fromStdString(checksum_).toStdString();
             cached_checksums[path] = checksum;
             cached_paths[checksum].push_back(path);
         }
     }
 }
 
-std::optional<std::string>
-CachedChecksummer::get_checksum_fast(std::wstring file_path) {
+std::optional<std::string> CachedChecksummer::get_checksum_fast(
+    std::string file_path
+) {
     // return the checksum only if it is alreay precomputed in cache
     if (cached_checksums.find(file_path) != cached_checksums.end()) {
         return cached_checksums[file_path];
@@ -50,13 +51,13 @@ CachedChecksummer::get_checksum_fast(std::wstring file_path) {
     return {};
 }
 
-std::string CachedChecksummer::get_checksum(std::wstring file_path) {
+std::string CachedChecksummer::get_checksum(std::string file_path) {
 
     auto cached_checksum = get_checksum_fast(file_path);
 
     if (!cached_checksum) {
         std::string checksum = compute_checksum(
-            QString::fromStdWString(file_path), QCryptographicHash::Md5
+            QString::fromStdString(file_path), QCryptographicHash::Md5
         );
         cached_checksums[file_path] = checksum;
         cached_paths[checksum].push_back(file_path);
@@ -64,11 +65,11 @@ std::string CachedChecksummer::get_checksum(std::wstring file_path) {
     return cached_checksums[file_path];
 }
 
-std::optional<std::wstring> CachedChecksummer::get_path(std::string checksum) {
-    const std::vector<std::wstring> paths = cached_paths[checksum];
+std::optional<std::string> CachedChecksummer::get_path(std::string checksum) {
+    const std::vector<std::string> paths = cached_paths[checksum];
 
     for (const auto& path_string : paths) {
-        if (QFile::exists(QString::fromStdWString(path_string))) {
+        if (QFile::exists(QString::fromStdString(path_string))) {
             return path_string;
         }
     }

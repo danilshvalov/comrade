@@ -10,7 +10,5 @@ class ClearStatusStringCommand : public Command {
     bool requires_document() const override { return false; }
 
   protected:
-    void perform(MainWidget& widget) override {
-        widget.set_status_message(L"");
-    }
+    void perform(MainWidget& widget) override { widget.set_status_message(""); }
 };
