@@ -27,6 +27,11 @@ class FilteredWindowSelector : public BaseSelector {
 
         string_list_model = new QStringListModel(string_list);
         this->proxy_model->setSourceModel(string_list_model);
+
+        QListView* list_view = dynamic_cast<QListView*>(get_view());
+        if (proxy_model->rowCount() > 0) {
+            list_view->setCurrentIndex(proxy_model->index(0, 0));
+        }
     }
 
     QString get_view_stylesheet_type_name() override { return "QListView"; }

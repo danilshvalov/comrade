@@ -96,6 +96,10 @@ CommandSelector::CommandSelector(
     table_view->horizontalHeader()->setSectionResizeMode(QHeaderView::Stretch);
     table_view->horizontalHeader()->hide();
     table_view->verticalHeader()->hide();
+
+    if (table_view->model()->rowCount() > 0) {
+        table_view->selectRow(0);
+    }
 }
 
 bool CommandSelector::on_text_change(const QString& text) {
@@ -134,8 +138,16 @@ bool CommandSelector::on_text_change(const QString& text) {
 
     QStandardItemModel* new_standard_item_model =
         get_standard_item_model(matching_element_names);
-    dynamic_cast<QTableView*>(get_view())->setModel(new_standard_item_model);
+
+    QTableView* table_view = dynamic_cast<QTableView*>(get_view());
+    table_view->setModel(new_standard_item_model);
+
     delete standard_item_model;
     standard_item_model = new_standard_item_model;
+
+    if (table_view->model()->rowCount() > 0) {
+        table_view->selectRow(0);
+    }
+
     return true;
 }

@@ -24,7 +24,12 @@ FileSelector::FileSelector(
     last_root = root_path;
     line_edit->setText(last_root);
 
-    dynamic_cast<QListView*>(get_view())->setModel(list_model);
+    QListView* list_view = dynamic_cast<QListView*>(get_view());
+    list_view->setModel(list_model);
+
+    if (list_model->rowCount() > 0) {
+        list_view->setCurrentIndex(list_model->index(0, 0));
+    }
 }
 
 QString FileSelector::get_view_stylesheet_type_name() { return "QListView"; }
@@ -43,9 +48,17 @@ bool FileSelector::on_text_change(const QString& text) {
 
     QStringList match_list = get_dir_contents(root_path, partial_name);
     QStringListModel* new_list_model = new QStringListModel(match_list);
-    dynamic_cast<QListView*>(get_view())->setModel(new_list_model);
+
+    QListView* list_view = dynamic_cast<QListView*>(get_view());
+    list_view->setModel(new_list_model);
+
     delete list_model;
     list_model = new_list_model;
+
+    if (list_model->rowCount() > 0) {
+        list_view->setCurrentIndex(list_model->index(0, 0));
+    }
+
     return true;
 }
 
