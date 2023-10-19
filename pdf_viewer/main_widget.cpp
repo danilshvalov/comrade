@@ -4239,16 +4239,17 @@ void MainWidget::handle_goto_toc() {
 }
 
 void MainWidget::handle_open_prev_doc() {
-
     std::vector<std::string> opened_docs_names;
     std::vector<std::string> opened_docs_hashes_;
     std::vector<std::string> opened_docs_hashes;
+
+    Document* document = main_document_view->get_document();
 
     db_manager->select_opened_books_path_values(opened_docs_hashes_);
 
     for (const auto& doc_hash_ : opened_docs_hashes_) {
         std::optional<std::string> path = checksummer->get_path(doc_hash_);
-        if (path) {
+        if (path && (!document || path != document->get_path())) {
             if (Config::instance().SHOW_DOC_PATH) {
                 opened_docs_names.push_back(path.value_or("<ERROR>"));
             } else {
