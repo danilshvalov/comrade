@@ -35,6 +35,7 @@
 
 #include "input.h"
 #include "database.h"
+#include "utils.h"
 #include "book.h"
 #include "utils.h"
 #include "ui.h"
@@ -1332,7 +1333,8 @@ void MainWidget::key_event(bool released, QKeyEvent* kevent) {
         }
 
         std::vector<int> ignored_codes = {
-            Qt::Key::Key_Shift, Qt::Key::Key_Control, Qt::Key::Key_Alt};
+            Qt::Key::Key_Shift, Qt::Key::Key_Control, Qt::Key::Key_Alt
+        };
         if (std::find(
                 ignored_codes.begin(), ignored_codes.end(), kevent->key()
             ) != ignored_codes.end()) {
@@ -3481,9 +3483,11 @@ void MainWidget::handle_keyboard_select(const std::string& text) {
                 float end_offset_y = end_parts.at(2).toFloat();
 
                 DocumentPos begin_doc_pos = {
-                    begin_page_number, begin_offset_x, begin_offset_y};
+                    begin_page_number, begin_offset_x, begin_offset_y
+                };
                 DocumentPos end_doc_pos = {
-                    end_page_number, end_offset_x, end_offset_y};
+                    end_page_number, end_offset_x, end_offset_y
+                };
 
                 WindowPos begin_window_pos =
                     main_document_view->document_to_window_pos_in_pixels(
@@ -4253,9 +4257,11 @@ void MainWidget::handle_open_prev_doc() {
             if (Config::instance().SHOW_DOC_PATH) {
                 opened_docs_names.push_back(path.value_or("<ERROR>"));
             } else {
-                opened_docs_names.push_back(
-                    fs::path(path.value()).filename().generic_string()
+                std::string doc_path = fs::path(path.value()).generic_string();
+                replace_first(
+                    doc_path, QDir::home().absolutePath().toStdString(), "~"
                 );
+                opened_docs_names.push_back(std::move(doc_path));
             }
             opened_docs_hashes.push_back(doc_hash_);
         }

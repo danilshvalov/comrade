@@ -2416,3 +2416,13 @@ void convert_color4(float* in_color, int* out_color) {
     out_color[2] = (int)(in_color[2] * 255);
     out_color[3] = (int)(in_color[3] * 255);
 }
+
+void replace_first(
+    std::string& str, const std::string& from, const std::string& to
+) {
+    std::size_t pos = str.find(from);
+    if (pos == std::string::npos) {
+        return;
+    }
+    str.replace(pos, from.length(), to);
+}
