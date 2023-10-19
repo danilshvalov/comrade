@@ -52,7 +52,6 @@ struct OpenGLSharedResources {
     GLuint separator_program;
     GLuint stencil_program;
 
-    GLint dark_mode_contrast_uniform_location;
     GLint highlight_color_uniform_location;
     GLint line_color_uniform_location;
     GLint line_time_uniform_location;
@@ -89,8 +88,6 @@ class PdfViewOpenGLWidget : public QOpenGLWidget,
         NormalizedWindowPos original_normal_mouse_pos;
     };
 
-    enum class ColorPalette { Normal, Dark, Custom };
-
   private:
     static OpenGLSharedResources shared_gl_objects;
 
@@ -107,7 +104,6 @@ class PdfViewOpenGLWidget : public QOpenGLWidget,
     bool should_highlight_links = false;
     bool should_highlight_words = false;
     bool should_show_numbers = false;
-    ColorPalette color_mode = ColorPalette::Normal;
     bool is_helper = false;
     float percent_done = 0.0f;
     std::optional<int> visible_page_number = {};
@@ -192,7 +188,6 @@ class PdfViewOpenGLWidget : public QOpenGLWidget,
         bool is_helper,
         QWidget* parent = nullptr
     );
-    ~PdfViewOpenGLWidget();
 
     // void set_vertical_line_pos(float pos);
     // float get_vertical_line_pos();
@@ -219,15 +214,11 @@ class PdfViewOpenGLWidget : public QOpenGLWidget,
     void render_page(int page_number);
     bool get_is_searching(float* prog);
     void search_text(
-        const std::wstring& text,
+        const std::string& text,
         bool case_sensitive = true,
         bool regex = false,
         std::optional<std::pair<int, int>> range = {}
     );
-    void set_dark_mode(bool mode);
-    void toggle_dark_mode();
-    void set_custom_color_mode(bool mode);
-    void toggle_custom_color_mode();
     void set_synctex_highlights(std::vector<std::pair<int, fz_rect>> highlights
     );
     void on_document_view_reset();

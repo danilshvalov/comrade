@@ -13,7 +13,7 @@ class KeyboardOverviewCommand : public TextCommand {
   protected:
     void perform(MainWidget& widget) override {
         std::optional<fz_irect> rect_ =
-            widget.get_tag_window_rect(utf8_encode(text.value()));
+            widget.get_tag_window_rect(text.value());
         if (rect_) {
             fz_irect rect = rect_.value();
             widget.overview_under_pos(

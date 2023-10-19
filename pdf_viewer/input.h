@@ -32,7 +32,7 @@ struct InputParseTreeNode {
     bool is_final = false;
 
     // TODO: use a pointer to reduce allocation
-    std::wstring defining_file_path;
+    std::string defining_file_path;
     int defining_file_line;
 
     bool is_same(const InputParseTreeNode* other);

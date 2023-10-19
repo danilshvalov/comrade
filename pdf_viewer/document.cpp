@@ -1,31 +1,20 @@
 #include "document.h"
+#include "config.h"
+#include "utf8.h"
+#include "checksum.h"
+
 #include <algorithm>
 #include <thread>
 #include <cmath>
-#include "utf8.h"
 #include <qfileinfo.h>
 #include <qdatetime.h>
 #include <map>
 #include <regex>
 #include <qcryptographichash.h>
 #include <qjsondocument.h>
+#include <codecvt>
 
 #include <mupdf/pdf.h>
-
-#include "checksum.h"
-
-extern float SMALL_PIXMAP_SCALE;
-extern float HIGHLIGHT_COLORS[26 * 3];
-extern std::wstring TEXT_HIGHLIGHT_URL;
-extern bool TEXT_SUMMARY_HIGHLIGHT_SHOULD_REFINE;
-extern bool TEXT_SUMMARY_HIGHLIGHT_SHOULD_FILL;
-extern int TEXT_SUMMARY_CONTEXT_SIZE;
-extern bool USE_HEURISTIC_IF_TEXT_SUMMARY_NOT_AVAILABLE;
-extern bool ENABLE_EXPERIMENTAL_FEATURES;
-extern bool CREATE_TABLE_OF_CONTENTS_IF_NOT_EXISTS;
-extern int MAX_CREATED_TABLE_OF_CONTENTS_SIZE;
-extern bool FORCE_CUSTOM_LINE_ALGORITHM;
-extern bool SUPER_FAST_SEARCH;
 
 int Document::get_mark_index(char symbol) {
     for (size_t i = 0; i < marks.size(); i++) {
@@ -61,7 +50,7 @@ void Document::load_document_metadata_from_db() {
     }
 }
 
-void Document::add_bookmark(const std::wstring& desc, float y_offset) {
+void Document::add_bookmark(const std::string& desc, float y_offset) {
     BookMark bookmark{y_offset, desc};
     bookmarks.push_back(bookmark);
     db_manager->insert_bookmark(get_checksum(), desc, y_offset);
@@ -77,7 +66,7 @@ void Document::fill_highlight_rects(fz_context* ctx, fz_document* doc_) {
         const Highlight highlight = highlights[i];
         std::vector<fz_rect> highlight_rects;
         std::vector<fz_rect> merged_rects;
-        std::wstring highlight_text;
+        std::string highlight_text;
         get_text_selection(
             ctx, highlight.selection_begin, highlight.selection_end, true,
             highlight_rects, highlight_text, doc_
@@ -93,7 +82,7 @@ void Document::fill_highlight_rects(fz_context* ctx, fz_document* doc_) {
 }
 
 void Document::add_highlight(
-    const std::wstring& desc,
+    const std::string& desc,
     const std::vector<fz_rect>& highlight_rects,
     AbsoluteDocumentPos selection_begin,
     AbsoluteDocumentPos selection_end,
@@ -130,10 +119,9 @@ void Document::add_portal(Portal portal, bool insert_into_database) {
     }
 }
 
-std::wstring Document::get_path() { return file_name; }
+std::string Document::get_path() { return file_name; }
 
 std::string Document::get_checksum() {
-
     return checksummer->get_checksum(get_path());
 }
 
@@ -146,10 +134,10 @@ int Document::find_closest_bookmark_index(
     const std::vector<BookMark>& sorted_bookmarks, float to_offset_y
 ) const {
 
-    int min_index = argminf<BookMark>(
-        sorted_bookmarks,
-        [to_offset_y](BookMark bm) { return abs(bm.y_offset - to_offset_y); }
-    );
+    int min_index =
+        argminf<BookMark>(sorted_bookmarks, [to_offset_y](BookMark bm) {
+            return abs(bm.y_offset - to_offset_y);
+        });
 
     return min_index;
 }
@@ -158,10 +146,10 @@ int Document::find_closest_highlight_index(
     const std::vector<Highlight>& sorted_highlights, float to_offset_y
 ) const {
 
-    int min_index = argminf<Highlight>(
-        sorted_highlights, [to_offset_y](Highlight hl
-                           ) { return abs(hl.selection_begin.y - to_offset_y); }
-    );
+    int min_index =
+        argminf<Highlight>(sorted_highlights, [to_offset_y](Highlight hl) {
+            return abs(hl.selection_begin.y - to_offset_y);
+        });
 
     return min_index;
 }
@@ -312,7 +300,7 @@ bool Document::get_mark_location_if_exists(char symbol, float* y_offset) {
 
 Document::Document(
     fz_context* context,
-    std::wstring file_name,
+    std::string file_name,
     DatabaseManager* db,
     CachedChecksummer* checksummer
 )
@@ -358,7 +346,7 @@ bool Document::has_toc() {
            created_top_level_toc_nodes.size() > 0;
 }
 
-const std::vector<std::wstring>& Document::get_flat_toc_names() {
+const std::vector<std::string>& Document::get_flat_toc_names() {
     return flat_toc_names;
 }
 
@@ -452,8 +440,8 @@ float Document::get_page_size_smart(
         standard_size = page_heights[page_index];
     }
 
-    float ratio = static_cast<float>(end_index - start_index) /
-                  histogram.size();
+    float ratio =
+        static_cast<float>(end_index - start_index) / histogram.size();
 
     *normal_page_width = standard_size;
 
@@ -506,14 +494,13 @@ void Document::convert_toc_tree(
         }
 
         TocNode* current_node = new TocNode;
-        current_node->title = utf8_decode(root->title);
+        current_node->title = root->title;
         current_node->x = root->x;
         current_node->y = root->y;
         if (root->page.page == -1) {
             float xp, yp;
-            fz_location loc = fz_resolve_link(
-                context, doc, root->uri, &xp, &yp
-            );
+            fz_location loc =
+                fz_resolve_link(context, doc, root->uri, &xp, &yp);
             int chapter_page = accum_chapter_pages[loc.chapter];
             current_node->page = chapter_page + loc.page;
         } else {
@@ -547,7 +534,7 @@ fz_link* Document::get_page_links(int page_number) {
 }
 
 QDateTime Document::get_last_edit_time() {
-    QFileInfo info(QString::fromStdWString(get_path()));
+    QFileInfo info(QString::fromStdString(get_path()));
     return info.lastModified();
 }
 
@@ -619,12 +606,11 @@ bool Document::open(
     last_update_time = QDateTime::currentDateTime();
     if (doc == nullptr) {
         fz_try(context) {
-            doc = fz_open_document(context, utf8_encode(file_name).c_str());
+            doc = fz_open_document(context, file_name.c_str());
             document_needs_password = fz_needs_password(context, doc);
             if (password.size() > 0) {
-                int auth_res = fz_authenticate_password(
-                    context, doc, password.c_str()
-                );
+                int auth_res =
+                    fz_authenticate_password(context, doc, password.c_str());
                 if (auth_res > 0) {
                     password_was_correct = true;
                 }
@@ -632,7 +618,7 @@ bool Document::open(
             // fz_layout_document(context, doc, 600, 800, 9);
         }
         fz_catch(context) {
-            std::wcerr << "could not open " << file_name << std::endl;
+            std::cerr << "could not open " << file_name << std::endl;
         }
         if ((doc != nullptr) && (!temp)) {
             // load_document_metadata_from_db();
@@ -709,11 +695,11 @@ void Document::load_page_dimensions(bool force_load_now) {
             }
         }
         fz_catch(context) {
-            std::wcout << L"Error: could not load sample page dimensions\n";
+            std::cout << "Error: could not load sample page dimensions\n";
         }
     }
 
-    auto load_page_dimensions_function = [this, n, force_load_now]() {
+    auto load_page_dimensions_function = [this, n]() {
         std::vector<float> accum_page_heights_;
         std::vector<float> page_heights_;
         std::vector<float> page_widths_;
@@ -721,9 +707,7 @@ void Document::load_page_dimensions(bool force_load_now) {
         // clone the main context for use in the background thread
         fz_context* context_ = fz_clone_context(context);
         fz_try(context_) {
-            fz_document* doc_ = fz_open_document(
-                context_, utf8_encode(file_name).c_str()
-            );
+            fz_document* doc_ = fz_open_document(context_, file_name.c_str());
             // fz_layout_document(context_, doc, 600, 800, 20);
             load_document_metadata_from_db();
 
@@ -759,7 +743,7 @@ void Document::load_page_dimensions(bool force_load_now) {
             fz_drop_document(context_, doc_);
         }
         fz_catch(context_) {
-            std::wcout << L"Error: could not load page dimensions\n";
+            std::cout << "Error: could not load page dimensions\n";
         }
 
         fz_drop_context(context_);
@@ -770,9 +754,8 @@ void Document::load_page_dimensions(bool force_load_now) {
     if (force_load_now) {
         load_page_dimensions_function();
     } else {
-        auto background_page_dimensions_loading_thread = std::thread(
-            load_page_dimensions_function
-        );
+        auto background_page_dimensions_loading_thread =
+            std::thread(load_page_dimensions_function);
         background_page_dimensions_loading_thread.detach();
     }
 }
@@ -817,21 +800,20 @@ DocumentManager::DocumentManager(
       db_manager(db),
       checksummer(checksummer) {
     // get_prev_path_hash_pairs(database, const std::string& path,
-    // std::vector<std::pair<std::wstring, std::wstring>>& out_pairs);
+    // std::vector<std::pair<std::string, std::string>>& out_pairs);
 }
 
-Document* DocumentManager::get_document(const std::wstring& path) {
+Document* DocumentManager::get_document(const std::string& path) {
     if (cached_documents.find(path) != cached_documents.end()) {
         return cached_documents.at(path);
     }
-    Document* new_doc = new Document(
-        mupdf_context, path, db_manager, checksummer
-    );
+    Document* new_doc =
+        new Document(mupdf_context, path, db_manager, checksummer);
     cached_documents[path] = new_doc;
     return new_doc;
 }
 
-const std::unordered_map<std::wstring, Document*>& DocumentManager::
+const std::unordered_map<std::string, Document*>& DocumentManager::
     get_cached_documents() {
     return cached_documents;
 }
@@ -873,9 +855,8 @@ fz_stext_page* Document::get_stext_with_page_number(
 
     bool failed = false;
     fz_try(ctx) {
-        stext_page = fz_new_stext_page_from_page_number(
-            ctx, doc_, page_number, nullptr
-        );
+        stext_page =
+            fz_new_stext_page_from_page_number(ctx, doc_, page_number, nullptr);
     }
     fz_catch(ctx) { failed = true; }
     if (failed) {
@@ -906,12 +887,10 @@ fz_rect Document::absolute_to_page_rect(
     const fz_rect& absolute_rect, int* page
 ) {
     int page_number = -1;
-    DocumentPos bottom_left = absolute_to_page_pos(
-        {absolute_rect.x0, absolute_rect.y0}
-    );
-    DocumentPos top_right = absolute_to_page_pos(
-        {absolute_rect.x1, absolute_rect.y1}
-    );
+    DocumentPos bottom_left =
+        absolute_to_page_pos({absolute_rect.x0, absolute_rect.y0});
+    DocumentPos top_right =
+        absolute_to_page_pos({absolute_rect.x1, absolute_rect.y1});
     if (page != nullptr) {
         *page = page_number;
     }
@@ -989,11 +968,12 @@ void Document::index_document(bool* invalid_flag) {
     is_indexing = true;
 
     this->document_indexing_thread = std::thread([this, n, invalid_flag]() {
+        const Config& config = Config::instance();
         std::vector<IndexedData> local_generic_data;
-        std::map<std::wstring, IndexedData> local_reference_data;
-        std::map<std::wstring, std::vector<IndexedData>> local_equation_data;
+        std::map<std::string, IndexedData> local_reference_data;
+        std::map<std::string, std::vector<IndexedData>> local_equation_data;
 
-        std::wstring local_super_fast_search_index;
+        std::string local_super_fast_search_index;
         std::vector<int> local_super_fast_search_pages;
         std::vector<fz_rect> local_super_fast_search_rects;
 
@@ -1004,9 +984,7 @@ void Document::index_document(bool* invalid_flag) {
         fz_context* context_ = fz_clone_context(context);
         fz_try(context_) {
 
-            fz_document* doc_ = fz_open_document(
-                context_, utf8_encode(file_name).c_str()
-            );
+            fz_document* doc_ = fz_open_document(context_, file_name.c_str());
 
             if (document_needs_password) {
                 fz_authenticate_password(
@@ -1015,7 +993,7 @@ void Document::index_document(bool* invalid_flag) {
             }
             for (int i = 0; i < n; i++) {
                 // when we close a document before its indexing is finished, we
-                // should stop indexing as soon as posible
+                // should stop indexing as soon as possible
                 if (!is_document_indexing_required) {
                     break;
                 }
@@ -1029,7 +1007,7 @@ void Document::index_document(bool* invalid_flag) {
                 std::vector<fz_stext_char*> flat_chars;
                 get_flat_chars_from_stext_page(stext_page, flat_chars);
 
-                if (SUPER_FAST_SEARCH) {
+                if (config.SUPER_FAST_SEARCH) {
                     flat_char_prism(
                         flat_chars, i, local_super_fast_search_index,
                         local_super_fast_search_pages,
@@ -1043,10 +1021,10 @@ void Document::index_document(bool* invalid_flag) {
 
                 // if the document doesn't have table of contents, try to create
                 // one
-                if (CREATE_TABLE_OF_CONTENTS_IF_NOT_EXISTS &&
+                if (config.CREATE_TABLE_OF_CONTENTS_IF_NOT_EXISTS &&
                     (top_level_toc_nodes.size() == 0)) {
                     if (num_added_toc_entries <
-                        MAX_CREATED_TABLE_OF_CONTENTS_SIZE) {
+                        config.MAX_CREATED_TABLE_OF_CONTENTS_SIZE) {
                         num_added_toc_entries += add_stext_page_to_created_toc(
                             stext_page, i, toc_stack, top_level_nodes
                         );
@@ -1059,7 +1037,7 @@ void Document::index_document(bool* invalid_flag) {
             fz_drop_document(context_, doc_);
         }
         fz_catch(context_) {
-            std::wcout << L"There was an error in indexing thread.\n";
+            std::cout << "There was an error in indexing thread.\n";
         }
 
         fz_drop_context(context_);
@@ -1071,10 +1049,10 @@ void Document::index_document(bool* invalid_flag) {
         generic_indices = std::move(local_generic_data);
 
         super_fast_search_index = std::move(local_super_fast_search_index);
-        super_fast_search_index_pages = std::move(local_super_fast_search_pages
-        );
+        super_fast_search_index_pages =
+            std::move(local_super_fast_search_pages);
         super_fast_search_rects = std::move(local_super_fast_search_rects);
-        if (SUPER_FAST_SEARCH) {
+        if (config.SUPER_FAST_SEARCH) {
             super_fast_search_index_ready = true;
         }
 
@@ -1092,7 +1070,7 @@ void Document::index_document(bool* invalid_flag) {
 void Document::stop_indexing() { is_document_indexing_required = false; }
 
 std::optional<IndexedData> Document::find_reference_with_string(
-    std::wstring reference_name
+    std::string reference_name
 ) {
     if (reference_indices.find(reference_name) != reference_indices.end()) {
         return reference_indices[reference_name];
@@ -1102,11 +1080,11 @@ std::optional<IndexedData> Document::find_reference_with_string(
 }
 
 std::optional<IndexedData> Document::find_equation_with_string(
-    std::wstring equation_name, int page_number
+    std::string equation_name, int page_number
 ) {
     if (equation_indices.find(equation_name) != equation_indices.end()) {
-        const std::vector<IndexedData>
-            equations = equation_indices[equation_name];
+        const std::vector<IndexedData> equations =
+            equation_indices[equation_name];
         int min_distance = 10000;
         std::optional<IndexedData> res = {};
 
@@ -1124,16 +1102,15 @@ std::optional<IndexedData> Document::find_equation_with_string(
     return {};
 }
 
-std::optional<std::wstring> Document::get_equation_text_at_position(
+std::optional<std::string> Document::get_equation_text_at_position(
     const std::vector<fz_stext_char*>& flat_chars,
     float offset_x,
     float offset_y
 ) {
 
-    std::wregex regex(L"\\([0-9]+(\\.[0-9]+)*\\)");
-    std::optional<std::wstring> match = get_regex_match_at_position(
-        regex, flat_chars, offset_x, offset_y
-    );
+    std::regex regex("\\([0-9]+(\\.[0-9]+)*\\)");
+    std::optional<std::string> match =
+        get_regex_match_at_position(regex, flat_chars, offset_x, offset_y);
 
     if (match) {
         return match.value().substr(1, match.value().size() - 2);
@@ -1142,8 +1119,8 @@ std::optional<std::wstring> Document::get_equation_text_at_position(
     }
 }
 
-std::optional<std::wstring> Document::get_regex_match_at_position(
-    const std::wregex& regex,
+std::optional<std::string> Document::get_regex_match_at_position(
+    const std::regex& regex,
     const std::vector<fz_stext_char*>& flat_chars,
     float offset_x,
     float offset_y
@@ -1155,7 +1132,7 @@ std::optional<std::wstring> Document::get_regex_match_at_position(
     selected_rect.y1 = offset_y + 0.1f;
 
     std::vector<std::pair<int, int>> match_ranges;
-    std::vector<std::wstring> match_texts;
+    std::vector<std::string> match_texts;
 
     find_regex_matches_in_stext_page(
         flat_chars, regex, match_ranges, match_texts
@@ -1175,7 +1152,7 @@ std::optional<std::wstring> Document::get_regex_match_at_position(
 }
 
 std::vector<DocumentPos> Document::find_generic_locations(
-    const std::wstring& type, const std::wstring& name
+    const std::string& type, const std::string& name
 ) {
     // int best_page = -1;
     // int best_y_offset = 0.0f;
@@ -1184,13 +1161,12 @@ std::vector<DocumentPos> Document::find_generic_locations(
     std::vector<std::pair<int, DocumentPos>> pos_scores;
 
     for (size_t i = 0; i < generic_indices.size(); i++) {
-        std::vector<std::wstring> parts = split_whitespace(
-            generic_indices[i].text
-        );
+        std::vector<std::string> parts =
+            split_whitespace(generic_indices[i].text);
 
         if (parts.size() == 2) {
-            std::wstring current_type = parts[0];
-            std::wstring current_name = parts[1];
+            std::string current_type = parts[0];
+            std::string current_name = parts[1];
 
             if (current_name == name) {
                 int score = type_name_similarity_score(current_type, type);
@@ -1230,24 +1206,22 @@ std::vector<DocumentPos> Document::find_generic_locations(
 
 bool Document::can_use_highlights() { return are_highlights_loaded; }
 
-std::optional<std::pair<std::wstring, std::wstring>> Document::
+std::optional<std::pair<std::string, std::string>> Document::
     get_generic_link_name_at_position(
         const std::vector<fz_stext_char*>& flat_chars,
         float offset_x,
         float offset_y
     ) {
-    std::wregex regex(L"[a-zA-Z]{3,}(\\.){0,1}[ \t]+[0-9]+(\\.[0-9]+)*");
-    std::optional<std::wstring> match_string = get_regex_match_at_position(
-        regex, flat_chars, offset_x, offset_y
-    );
+    std::regex regex("[a-zA-Z]{3,}(\\.){0,1}[ \t]+[0-9]+(\\.[0-9]+)*");
+    std::optional<std::string> match_string =
+        get_regex_match_at_position(regex, flat_chars, offset_x, offset_y);
     if (match_string) {
-        std::vector<std::wstring> parts = split_whitespace(match_string.value()
-        );
+        std::vector<std::string> parts = split_whitespace(match_string.value());
         if (parts.size() != 2) {
             return {};
         } else {
-            std::wstring type = parts[0];
-            std::wstring name = parts[1];
+            std::string type = parts[0];
+            std::string name = parts[1];
             return std::make_pair(type, name);
         }
     }
@@ -1259,7 +1233,7 @@ std::optional<std::pair<std::wstring, std::wstring>> Document::
     return {};
 }
 
-std::optional<std::wstring> Document::get_reference_text_at_position(
+std::optional<std::string> Document::get_reference_text_at_position(
     const std::vector<fz_stext_char*>& flat_chars,
     float offset_x,
     float offset_y
@@ -1284,7 +1258,7 @@ std::optional<std::wstring> Document::get_reference_text_at_position(
     //                                              ^
     // then `done` will be true when we reach the second comma
 
-    std::wstring selected_text = L"";
+    std::string selected_text;
 
     for (auto ch : flat_chars) {
         if (fz_contains_rect(fz_rect_from_quad(ch->quad), selected_rect)) {
@@ -1324,11 +1298,11 @@ std::optional<std::wstring> Document::get_reference_text_at_position(
 }
 
 void get_matches(
-    std::wstring haystack,
-    const std::wregex& reg,
+    std::string haystack,
+    const std::regex& reg,
     std::vector<std::pair<int, int>>& indices
 ) {
-    std::wsmatch match;
+    std::smatch match;
 
     int offset = 0;
     while (std::regex_search(haystack, match, reg)) {
@@ -1344,7 +1318,7 @@ void get_matches(
     }
 }
 
-std::optional<std::wstring> Document::get_text_at_position(
+std::optional<std::string> Document::get_text_at_position(
     const std::vector<fz_stext_char*>& flat_chars,
     float offset_x,
     float offset_y
@@ -1358,7 +1332,7 @@ std::optional<std::wstring> Document::get_text_at_position(
     selected_rect.y0 = offset_y - 0.1f;
     selected_rect.y1 = offset_y + 0.1f;
 
-    std::wstring selected_string;
+    std::string selected_string;
     bool reached = false;
 
     for (auto ch : flat_chars) {
@@ -1378,7 +1352,7 @@ std::optional<std::wstring> Document::get_text_at_position(
     return {};
 }
 
-std::optional<std::wstring> Document::get_paper_name_at_position(
+std::optional<std::string> Document::get_paper_name_at_position(
     const std::vector<fz_stext_char*>& flat_chars,
     float offset_x,
     float offset_y
@@ -1391,13 +1365,13 @@ std::optional<std::wstring> Document::get_paper_name_at_position(
     selected_rect.y0 = offset_y - 0.1f;
     selected_rect.y1 = offset_y + 0.1f;
 
-    std::wstring selected_string = L"";
+    std::string selected_string;
     bool reached = false;
 
     for (auto ch : flat_chars) {
         if (ch->c == '.') {
             if (!reached) {
-                selected_string = L"";
+                selected_string = "";
             } else {
                 return selected_string;
             }
@@ -1420,6 +1394,8 @@ std::optional<std::wstring> Document::get_paper_name_at_position(
 }
 
 fz_pixmap* Document::get_small_pixmap(int page) {
+    const Config& config = Config::instance();
+
     for (auto [cached_page, pixmap] : cached_small_pixmaps) {
         if (cached_page == page) {
             return pixmap;
@@ -1427,7 +1403,8 @@ fz_pixmap* Document::get_small_pixmap(int page) {
     }
 
     // fz_matrix ctm = fz_scale(0.5f, 0.5f);
-    fz_matrix ctm = fz_scale(SMALL_PIXMAP_SCALE, SMALL_PIXMAP_SCALE);
+    fz_matrix ctm =
+        fz_scale(config.SMALL_PIXMAP_SCALE, config.SMALL_PIXMAP_SCALE);
     fz_pixmap* res = fz_new_pixmap_from_page_number(
         context, doc, page, ctm, fz_device_rgb(context), 0
     );
@@ -1449,7 +1426,7 @@ void Document::get_text_selection(
         is_word_selection, // when in word select mode, we select entire words
                            // even if the range only partially includes the word
     std::vector<fz_rect>& selected_characters,
-    std::wstring& selected_text
+    std::string& selected_text
 ) {
     get_text_selection(
         context, selection_begin, selection_end, is_word_selection,
@@ -1463,7 +1440,7 @@ void Document::get_text_selection(
     AbsoluteDocumentPos selection_end,
     bool is_word_selection,
     std::vector<fz_rect>& selected_characters,
-    std::wstring& selected_text,
+    std::string& selected_text,
     fz_document* doc_
 ) {
 
@@ -1504,6 +1481,8 @@ void Document::get_text_selection(
     if (is_word_selection) {
         selecting = true;
     }
+
+    std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> conv;
 
     for (int i = page_begin; i <= page_end; i++) {
 
@@ -1583,7 +1562,7 @@ void Document::get_text_selection(
 
             if (selecting || word_selecting) {
                 if (!(current_char->c == ' ' && selected_text.size() == 0)) {
-                    selected_text.push_back(current_char->c);
+                    selected_text.append(conv.to_bytes(current_char->c));
                     fz_rect charrect = document_to_absolute_rect(
                         i, fz_rect_from_quad(current_char->quad), true
                     );
@@ -1606,8 +1585,8 @@ void Document::get_text_selection(
     }
 }
 
-void Document::embed_annotations(std::wstring new_file_path) {
-
+void Document::embed_annotations(std::string new_file_path) {
+    const Config& config = Config::instance();
     std::unordered_map<int, fz_page*> cached_pages;
     std::vector<std::pair<pdf_page*, pdf_annot*>> created_annotations;
 
@@ -1621,10 +1600,9 @@ void Document::embed_annotations(std::wstring new_file_path) {
         }
     };
 
-    std::string new_file_path_utf8 = utf8_encode(new_file_path);
-    fz_output* output_file = fz_new_output_with_path(
-        context, new_file_path_utf8.c_str(), 0
-    );
+    std::string new_file_path_utf8 = new_file_path;
+    fz_output* output_file =
+        fz_new_output_with_path(context, new_file_path_utf8.c_str(), 0);
 
     pdf_document* pdf_doc = pdf_specifics(context, doc);
     const std::vector<Highlight>& doc_highlights = get_highlights();
@@ -1636,7 +1614,7 @@ void Document::embed_annotations(std::wstring new_file_path) {
         std::vector<fz_rect> selected_characters;
         std::vector<fz_rect> merged_characters;
         std::vector<fz_rect> selected_characters_page_rects;
-        std::wstring selected_text;
+        std::string selected_text;
 
         get_text_selection(
             highlight.selection_begin, highlight.selection_end, true,
@@ -1650,19 +1628,20 @@ void Document::embed_annotations(std::wstring new_file_path) {
             );
         }
         // absolute_to_page_pos
-        std::vector<fz_quad> selected_character_quads = quads_from_rects(
-            selected_characters_page_rects
-        );
+        std::vector<fz_quad> selected_character_quads =
+            quads_from_rects(selected_characters_page_rects);
 
         fz_page* page = load_cached_page(page_number);
         pdf_page* pdf_page = pdf_page_from_fz_page(context, page);
-        pdf_annot* highlight_annot = pdf_create_annot(
-            context, pdf_page, PDF_ANNOT_HIGHLIGHT
-        );
+        pdf_annot* highlight_annot =
+            pdf_create_annot(context, pdf_page, PDF_ANNOT_HIGHLIGHT);
         float color[] = {1.0f, 0.0f, 0.0f};
-        color[0] = HIGHLIGHT_COLORS[(highlight.type - 'a') * 3 + 0];
-        color[1] = HIGHLIGHT_COLORS[(highlight.type - 'a') * 3 + 1];
-        color[2] = HIGHLIGHT_COLORS[(highlight.type - 'a') * 3 + 2];
+        color[0] =
+            config.theme.highlight_colors[(highlight.type - 'a') * 3 + 0];
+        color[1] =
+            config.theme.highlight_colors[(highlight.type - 'a') * 3 + 1];
+        color[2] =
+            config.theme.highlight_colors[(highlight.type - 'a') * 3 + 2];
 
         pdf_set_annot_color(context, highlight_annot, 3, color);
         pdf_set_annot_quad_points(
@@ -1676,16 +1655,14 @@ void Document::embed_annotations(std::wstring new_file_path) {
     }
 
     for (auto bookmark : doc_bookmarks) {
-        auto [page_number, doc_x, doc_y] = absolute_to_page_pos(
-            {0, bookmark.y_offset}
-        );
+        auto [page_number, doc_x, doc_y] =
+            absolute_to_page_pos({0, bookmark.y_offset});
 
         fz_page* page = load_cached_page(page_number);
         pdf_page* pdf_page = pdf_page_from_fz_page(context, page);
-        pdf_annot* bookmark_annot = pdf_create_annot(
-            context, pdf_page, PDF_ANNOT_TEXT
-        );
-        std::string encoded_bookmark_text = utf8_encode(bookmark.description);
+        pdf_annot* bookmark_annot =
+            pdf_create_annot(context, pdf_page, PDF_ANNOT_TEXT);
+        std::string encoded_bookmark_text = bookmark.description;
 
         fz_rect annot_rect;
         annot_rect.x0 = 10;
@@ -1716,59 +1693,7 @@ void Document::embed_annotations(std::wstring new_file_path) {
     }
 }
 
-// void Document::add_highlight_annotation(const Highlight& highlight, const
-// std::vector<fz_rect>& selected_rects) {
-//
-//
-//	int page_number = get_offset_page_number(highlight.selection_begin.y);
-//
-//	//todo: refactor this and other instances of this code into a function
-//	std::vector<fz_rect> merged_characters;
-//	std::vector<fz_rect> page_characters;
-//
-//	merge_selected_character_rects(selected_rects, merged_characters);
-//
-//	for (auto absrect : merged_characters) {
-//		page_characters.push_back(absolute_to_page_rect(absrect,
-// nullptr));
-//	}
-//	std::vector<fz_quad> selected_character_quads =
-// quads_from_rects(page_characters);
-//
-//	fz_page* page = fz_load_page(context, doc, page_number);
-//	pdf_page* pdf_page = pdf_page_from_fz_page(context, page);
-//
-//	if (pdf_page) {
-//		pdf_annot* highlight_annot = pdf_create_annot(context, pdf_page,
-// PDF_ANNOT_HIGHLIGHT); 		float color[] = { 1.0f, 0.0f, 0.0f };
-// color[0] =
-// HIGHLIGHT_COLORS[(highlight.type - 'a') * 3 + 0]; 		color[1] =
-// HIGHLIGHT_COLORS[(highlight.type - 'a') * 3 + 1]; 		color[2] =
-// HIGHLIGHT_COLORS[(highlight.type - 'a') * 3 + 2];
-//
-//		pdf_set_annot_color(context, highlight_annot, 3, color);
-//		pdf_set_annot_quad_points(context, highlight_annot,
-// selected_character_quads.size(), &selected_character_quads[0]);
-//		pdf_update_annot(context, highlight_annot);
-//		pdf_update_page(context, pdf_page);
-//	}
-//
-//	fz_drop_page(context, page);
-// }
-//
-// void Document::delete_highlight_annotation(const Highlight& highlight) {
-//
-// }
-//
-// void Document::add_bookmark_annotation(const BookMark& bookmark) {
-//
-// }
-//
-// void Document::delete_bookmark_annotation(const BookMark& bookmark) {
-//
-// }
-
-std::optional<std::wstring> Document::get_text_at_position(
+std::optional<std::string> Document::get_text_at_position(
     int page, float offset_x, float offset_y
 ) {
     fz_stext_page* stext_page = get_stext_with_page_number(page);
@@ -1777,7 +1702,7 @@ std::optional<std::wstring> Document::get_text_at_position(
     return get_text_at_position(flat_chars, offset_x, offset_y);
 }
 
-std::optional<std::wstring> Document::get_paper_name_at_position(
+std::optional<std::string> Document::get_paper_name_at_position(
     int page, float offset_x, float offset_y
 ) {
     fz_stext_page* stext_page = get_stext_with_page_number(page);
@@ -1786,7 +1711,7 @@ std::optional<std::wstring> Document::get_paper_name_at_position(
     return get_paper_name_at_position(flat_chars, offset_x, offset_y);
 }
 
-std::optional<std::wstring> Document::get_reference_text_at_position(
+std::optional<std::string> Document::get_reference_text_at_position(
     int page, float offset_x, float offset_y
 ) {
     fz_stext_page* stext_page = get_stext_with_page_number(page);
@@ -1795,7 +1720,7 @@ std::optional<std::wstring> Document::get_reference_text_at_position(
     return get_reference_text_at_position(flat_chars, offset_x, offset_y);
 }
 
-std::optional<std::wstring> Document::get_equation_text_at_position(
+std::optional<std::string> Document::get_equation_text_at_position(
     int page, float offset_x, float offset_y
 ) {
     fz_stext_page* stext_page = get_stext_with_page_number(page);
@@ -1804,7 +1729,7 @@ std::optional<std::wstring> Document::get_equation_text_at_position(
     return get_equation_text_at_position(flat_chars, offset_x, offset_y);
 }
 
-std::optional<std::pair<std::wstring, std::wstring>> Document::
+std::optional<std::pair<std::string, std::string>> Document::
     get_generic_link_name_at_position(
         int page, float offset_x, float offset_y
     ) {
@@ -1814,8 +1739,8 @@ std::optional<std::pair<std::wstring, std::wstring>> Document::
     return get_generic_link_name_at_position(flat_chars, offset_x, offset_y);
 }
 
-std::optional<std::wstring> Document::get_regex_match_at_position(
-    const std::wregex& regex, int page, float offset_x, float offset_y
+std::optional<std::string> Document::get_regex_match_at_position(
+    const std::regex& regex, int page, float offset_x, float offset_y
 ) {
     fz_stext_page* stext_page = get_stext_with_page_number(page);
     std::vector<fz_stext_char*> flat_chars;
@@ -1931,14 +1856,14 @@ std::vector<fz_rect> Document::get_highlighted_character_masks(int page) {
     std::vector<fz_stext_char*> flat_chars;
     get_flat_chars_from_stext_page(stext_page, flat_chars);
     std::vector<fz_rect> res;
-    std::vector<std::wstring> words;
+    std::vector<std::string> words;
     std::vector<std::vector<fz_rect>> word_rects;
     get_word_rect_list_from_flat_chars(flat_chars, words, word_rects);
 
     for (size_t i = 0; i < words.size(); i++) {
         std::vector<fz_rect> highlighted_characters;
-        int num_highlighted = static_cast<int>(std::ceil(words[i].size() * 0.3f)
-        );
+        int num_highlighted =
+            static_cast<int>(std::ceil(words[i].size() * 0.3f));
         for (int j = 0; j < num_highlighted; j++) {
             highlighted_characters.push_back(word_rects[i][j]);
         }
@@ -1965,7 +1890,7 @@ fz_rect Document::get_page_rect_no_cache(int page_number) {
 
 void DocumentManager::free_document(Document* document) {
     bool found = false;
-    std::wstring path_to_erase;
+    std::string path_to_erase;
 
     for (auto [path, doc] : cached_documents) {
         if (doc == document) {
@@ -2074,7 +1999,7 @@ int Document::add_stext_page_to_created_toc(
         std::vector<fz_stext_char*> chars;
         get_flat_chars_from_block(block, chars);
         if (chars.size() > 0) {
-            std::wstring block_string;
+            std::string block_string;
             std::vector<int> indices;
             get_text_from_flat_chars(chars, block_string, indices);
             if (is_string_titlish(block_string)) {
@@ -2112,12 +2037,10 @@ fz_rect Document::document_to_absolute_rect(
     int page, fz_rect doc_rect, bool center_mid
 ) {
     fz_rect res;
-    AbsoluteDocumentPos x0y0 = document_to_absolute_pos(
-        {page, doc_rect.x0, doc_rect.y0}, center_mid
-    );
-    AbsoluteDocumentPos x1y1 = document_to_absolute_pos(
-        {page, doc_rect.x1, doc_rect.y1}, center_mid
-    );
+    AbsoluteDocumentPos x0y0 =
+        document_to_absolute_pos({page, doc_rect.x0, doc_rect.y0}, center_mid);
+    AbsoluteDocumentPos x1y1 =
+        document_to_absolute_pos({page, doc_rect.x1, doc_rect.y1}, center_mid);
 
     res.x0 = x0y0.x;
     res.y0 = x0y0.y;
@@ -2279,9 +2202,9 @@ fz_rect Document::get_ith_next_line_from_absolute_y(
 }
 
 const std::vector<fz_rect>& Document::get_page_lines(
-    int page, std::vector<std::wstring>* out_line_texts
+    int page, std::vector<std::string>* out_line_texts
 ) {
-
+    const Config& config = Config::instance();
     if (cached_page_line_rects.find(page) != cached_page_line_rects.end()) {
         if (out_line_texts != nullptr) {
             *out_line_texts = cached_line_texts[page];
@@ -2290,7 +2213,7 @@ const std::vector<fz_rect>& Document::get_page_lines(
     } else {
         fz_stext_page* stext_page = get_stext_with_page_number(page);
         if (stext_page && stext_page->first_block &&
-            (!FORCE_CUSTOM_LINE_ALGORITHM)) {
+            (!config.FORCE_CUSTOM_LINE_ALGORITHM)) {
 
             fz_page* mupdf_page = fz_load_page(context, doc, page);
             fz_rect bound = fz_bound_page(context, mupdf_page);
@@ -2301,7 +2224,7 @@ const std::vector<fz_rect>& Document::get_page_lines(
             fz_drop_page(context, mupdf_page);
 
             std::vector<fz_rect> line_rects;
-            std::vector<std::wstring> line_texts;
+            std::vector<std::string> line_texts;
             std::vector<fz_stext_line*> flat_lines;
 
             LL_ITER(block, stext_page->first_block) {
@@ -2315,16 +2238,14 @@ const std::vector<fz_rect>& Document::get_page_lines(
             for (size_t i = 0; i < line_rects.size(); i++) {
                 line_rects[i].x0 = line_rects[i].x0 - page_widths[page] / 2;
                 line_rects[i].x1 = line_rects[i].x1 - page_widths[page] / 2;
-                line_rects[i].y0 = document_to_absolute_y(
-                    page, line_rects[i].y0
-                );
-                line_rects[i].y1 = document_to_absolute_y(
-                    page, line_rects[i].y1
-                );
+                line_rects[i].y0 =
+                    document_to_absolute_y(page, line_rects[i].y0);
+                line_rects[i].y1 =
+                    document_to_absolute_y(page, line_rects[i].y1);
             }
 
             std::vector<fz_rect> line_rects_;
-            std::vector<std::wstring> line_texts_;
+            std::vector<std::string> line_texts_;
 
             for (int i = 0; i < line_rects.size(); i++) {
                 if (fz_contains_rect(bound, line_rects[i])) {
@@ -2342,8 +2263,8 @@ const std::vector<fz_rect>& Document::get_page_lines(
 
         } else {
             fz_pixmap* pixmap = get_small_pixmap(page);
-            std::vector<unsigned int>
-                hist = get_max_width_histogram_from_pixmap(pixmap);
+            std::vector<unsigned int> hist =
+                get_max_width_histogram_from_pixmap(pixmap);
             std::vector<unsigned int> line_locations;
             std::vector<unsigned int> line_locations_begins;
             get_line_begins_and_ends_from_histogram(
@@ -2354,16 +2275,16 @@ const std::vector<fz_rect>& Document::get_page_lines(
             for (size_t i = 0; i < line_locations_begins.size(); i++) {
                 fz_rect line_rect;
                 line_rect.x0 = 0 - page_widths[page] / 2;
-                line_rect.x1 = static_cast<float>(pixmap->w) /
-                                   SMALL_PIXMAP_SCALE -
-                               page_widths[page] / 2;
+                line_rect.x1 =
+                    static_cast<float>(pixmap->w) / config.SMALL_PIXMAP_SCALE -
+                    page_widths[page] / 2;
                 line_rect.y0 = document_to_absolute_y(
                     page, static_cast<float>(line_locations_begins[i]) /
-                              SMALL_PIXMAP_SCALE
+                              config.SMALL_PIXMAP_SCALE
                 );
                 line_rect.y1 = document_to_absolute_y(
-                    page,
-                    static_cast<float>(line_locations[i]) / SMALL_PIXMAP_SCALE
+                    page, static_cast<float>(line_locations[i]) /
+                              config.SMALL_PIXMAP_SCALE
                 );
                 line_rects.push_back(line_rect);
             }
@@ -2407,7 +2328,7 @@ bool pred_case_insensitive(const wchar_t& c1, const wchar_t& c2) {
 }
 
 std::vector<SearchResult> Document::search_text(
-    std::wstring query,
+    std::string query,
     bool case_sensitive,
     int begin_page,
     int min_page,
@@ -2459,7 +2380,7 @@ std::vector<SearchResult> Document::search_text(
 }
 
 std::vector<SearchResult> Document::search_regex(
-    std::wstring query,
+    std::string query,
     bool case_sensitive,
     int begin_page,
     int min_page,
@@ -2467,12 +2388,12 @@ std::vector<SearchResult> Document::search_regex(
 ) {
     std::vector<SearchResult> output;
 
-    std::wregex regex;
+    std::regex regex;
     try {
         if (case_sensitive) {
-            regex = std::wregex(query);
+            regex = std::regex(query);
         } else {
-            regex = std::wregex(query, std::regex_constants::icase);
+            regex = std::regex(query, std::regex_constants::icase);
         }
     } catch (const std::regex_error&) {
         return output;
@@ -2483,8 +2404,8 @@ std::vector<SearchResult> Document::search_regex(
 
     int offset = 0;
 
-    std::wstring::const_iterator search_start(super_fast_search_index.begin());
-    std::wsmatch match;
+    std::string::const_iterator search_start(super_fast_search_index.begin());
+    std::smatch match;
     int empty_tolerance = 1000;
 
     while (std::regex_search(
@@ -2493,8 +2414,8 @@ std::vector<SearchResult> Document::search_regex(
         std::vector<fz_rect> match_rects;
         std::vector<fz_rect> compressed_match_rects;
 
-        int match_page = super_fast_search_index_pages
-            [offset + match.position()];
+        int match_page =
+            super_fast_search_index_pages[offset + match.position()];
 
         if (match_page >= begin_page) {
             is_before = false;

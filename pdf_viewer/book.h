@@ -14,7 +14,7 @@
 class DocumentView;
 
 struct BookState {
-    std::wstring document_path;
+    std::string document_path;
     float offset_y;
 };
 
@@ -44,7 +44,7 @@ struct Mark {
 */
 struct BookMark {
     float y_offset;
-    std::wstring description;
+    std::string description;
 
     QJsonObject to_json() const;
     void from_json(const QJsonObject& json_object);
@@ -53,7 +53,7 @@ struct BookMark {
 struct Highlight {
     AbsoluteDocumentPos selection_begin;
     AbsoluteDocumentPos selection_end;
-    std::wstring description;
+    std::string description;
     char type;
     std::vector<fz_rect> highlight_rects;
 
@@ -67,7 +67,7 @@ struct PdfLink {
 };
 
 struct DocumentViewState {
-    std::wstring document_path;
+    std::string document_path;
     OpenedBookState book_state;
 };
 
@@ -104,7 +104,7 @@ struct SearchResult {
 
 struct TocNode {
     std::vector<TocNode*> children;
-    std::wstring title;
+    std::string title;
     int page;
 
     float y;
@@ -143,6 +143,7 @@ struct CachedPage {
     unsigned int last_access_time;
     GLuint cached_page_texture;
 };
+
 bool operator==(const CachedPageData& lhs, const CachedPageData& rhs);
 
 /*
@@ -154,7 +155,7 @@ bool operator==(const CachedPageData& lhs, const CachedPageData& rhs);
 struct IndexedData {
     int page;
     float y_offset;
-    std::wstring text;
+    std::string text;
 };
 
 bool operator==(const Mark& lhs, const Mark& rhs);

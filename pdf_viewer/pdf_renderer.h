@@ -1,8 +1,9 @@
 #pragma once
 
+#include "book.h"
+
 #include <vector>
 #include <string>
-#include <mupdf/fitz.h>
 #include <mutex>
 #include <variant>
 #include <unordered_map>
@@ -13,27 +14,21 @@
 #include <thread>
 #include <unordered_map>
 #include <map>
-// #include <gl/glew.h>
-// #include <Windows.h>
 
-#include <qobject.h>
-#include <qtimer.h>
-
-#include "book.h"
-
-extern const int MAX_PENDING_REQUESTS;
-extern const unsigned int CACHE_INVALID_MILIES;
+#include <mupdf/fitz.h>
+#include <QObject>
+#include <QTimer>
 
 struct RenderRequest {
-    std::wstring path;
+    std::string path;
     int page;
     float zoom_level;
 };
 
 struct SearchRequest {
-    std::wstring path;
+    std::string path;
     int start_page;
-    std::wstring search_term;
+    std::string search_term;
     std::vector<SearchResult>* search_results;
     std::mutex* search_results_mutex;
     float* percent_done = nullptr;
@@ -66,7 +61,7 @@ class PdfRenderer : public QObject {
     fz_context* context_to_clone;
 
     std::vector<std::vector<fz_pixmap*>> pixmaps_to_drop;
-    std::map<std::pair<int, std::wstring>, fz_document*> opened_documents;
+    std::map<std::pair<int, std::string>, fz_document*> opened_documents;
 
     std::vector<RenderRequest> pending_render_requests;
     std::optional<SearchRequest> pending_search_request;
@@ -87,14 +82,14 @@ class PdfRenderer : public QObject {
     int num_threads = 0;
     float display_scale = 1.0f;
 
-    std::map<std::wstring, std::string> document_passwords;
+    std::map<std::string, std::string> document_passwords;
 
     fz_context* init_context();
     fz_document* get_document_with_path(
-        int thread_index, fz_context* mupdf_context, std::wstring path
+        int thread_index, fz_context* mupdf_context, std::string path
     );
     GLuint try_closest_rendered_page(
-        std::wstring doc_path,
+        std::string doc_path,
         int page,
         float zoom_level,
         int* page_width,
@@ -118,11 +113,11 @@ class PdfRenderer : public QObject {
     void join_threads();
 
     // should only be called from the main thread
-    void add_request(std::wstring document_path, int page, float zoom_level);
+    void add_request(std::string document_path, int page, float zoom_level);
     void add_request(
-        std::wstring document_path,
+        std::string document_path,
         int page,
-        std::wstring term,
+        std::string term,
         std::vector<SearchResult>* out,
         float* percent_done,
         bool* is_searching,
@@ -131,14 +126,14 @@ class PdfRenderer : public QObject {
     );
 
     GLuint find_rendered_page(
-        std::wstring path,
+        std::string path,
         int page,
         float zoom_level,
         int* page_width,
         int* page_height
     );
     void delete_old_pages(bool force_all = false, bool invalidate_all = false);
-    void add_password(std::wstring path, std::string password);
+    void add_password(std::string path, std::string password);
 
   signals:
     void render_advance();

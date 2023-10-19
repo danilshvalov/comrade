@@ -25,9 +25,6 @@
 #include "ui.h"
 #include "checksum.h"
 
-extern float ZOOM_INC_FACTOR;
-extern const int PAGE_PADDINGS;
-
 class DocumentView {
   protected:
   private:
@@ -68,7 +65,7 @@ class DocumentView {
         ConfigManager* config_manager,
         CachedChecksummer* checksummer,
         bool* invalid_flag,
-        std::wstring path,
+        std::string path,
         int view_width,
         int view_height,
         float offset_x,
@@ -107,10 +104,10 @@ class DocumentView {
         AbsoluteDocumentPos selection_end,
         bool is_word_selection,
         std::vector<fz_rect>& selected_characters,
-        std::wstring& text_selection
+        std::string& text_selection
     );
     void add_mark(char symbol);
-    void add_bookmark(std::wstring desc);
+    void add_bookmark(std::string desc);
     void add_highlight(
         AbsoluteDocumentPos selection_begin,
         AbsoluteDocumentPos selection_end,
@@ -146,12 +143,16 @@ class DocumentView {
     float get_min_valid_x();
 
     float set_zoom_level(float zl, bool should_exit_auto_resize_mode);
-    float zoom_in(float zoom_factor = ZOOM_INC_FACTOR);
-    float zoom_out(float zoom_factor = ZOOM_INC_FACTOR);
-    float
-    zoom_in_cursor(WindowPos mouse_pos, float zoom_factor = ZOOM_INC_FACTOR);
-    float
-    zoom_out_cursor(WindowPos mouse_pos, float zoom_factor = ZOOM_INC_FACTOR);
+    float zoom_in(float zoom_factor = Config::instance().ZOOM_INC_FACTOR);
+    float zoom_out(float zoom_factor = Config::instance().ZOOM_INC_FACTOR);
+    float zoom_in_cursor(
+        WindowPos mouse_pos,
+        float zoom_factor = Config::instance().ZOOM_INC_FACTOR
+    );
+    float zoom_out_cursor(
+        WindowPos mouse_pos,
+        float zoom_factor = Config::instance().ZOOM_INC_FACTOR
+    );
     void move_absolute(float dx, float dy);
     void move(float dx, float dy);
     void get_absolute_delta_from_doc_delta(
@@ -163,7 +164,7 @@ class DocumentView {
     void move_screens(int num_screens);
     void reset_doc_state();
     void open_document(
-        const std::wstring& doc_path,
+        const std::string& doc_path,
         bool* invalid_flag,
         bool load_prev_state = true,
         std::optional<OpenedBookState> prev_state = {},
@@ -177,7 +178,7 @@ class DocumentView {
     void fit_to_page_height(bool smart = false);
     void fit_to_page_height_width_minimum();
     void persist();
-    std::wstring get_current_chapter_name();
+    std::string get_current_chapter_name();
     std::optional<std::pair<int, int>> get_current_page_range();
     int get_current_chapter_index();
     void goto_chapter(int diff);
@@ -210,14 +211,14 @@ class DocumentView {
     int get_vertical_line_page();
     bool goto_definition();
     std::vector<DocumentPos> find_line_definitions();
-    std::optional<std::wstring> get_selected_line_text();
+    std::optional<std::string> get_selected_line_text();
     bool get_is_auto_resize_mode();
     void disable_auto_resize_mode();
     void readjust_to_screen();
     float get_half_screen_offset();
     void scroll_mid_to_top();
-    void
-    get_visible_links(std::vector<std::pair<int, fz_link*>>& visible_page_links
+    void get_visible_links(
+        std::vector<std::pair<int, fz_link*>>& visible_page_links
     );
 
     std::vector<fz_rect>* get_selected_character_rects();

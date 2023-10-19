@@ -1,19 +1,18 @@
 #pragma once
 
+#include "config.h"
 #include "ui/selectors/base_selector.h"
 
 #include <QTableView>
 #include <QHeaderView>
 #include <QStringListModel>
 
-extern bool MULTILINE_MENUS;
-
 template <typename T>
 class FilteredTableWindowSelector : public BaseSelector {
   public:
     FilteredTableWindowSelector(
-        std::vector<std::wstring> std_string_list,
-        std::vector<std::wstring> std_string_list_right,
+        std::vector<std::string> std_string_list,
+        std::vector<std::string> std_string_list_right,
         std::vector<T> values,
         int selected_index,
         std::function<void(T*)> on_done,
@@ -27,16 +26,16 @@ class FilteredTableWindowSelector : public BaseSelector {
         item_strings = std_string_list;
         QVector<QString> q_string_list;
         for (const auto& s : std_string_list) {
-            q_string_list.push_back(QString::fromStdWString(s));
+            q_string_list.push_back(QString::fromStdString(s));
         }
 
         QStandardItemModel* model = new QStandardItemModel();
 
         for (size_t i = 0; i < std_string_list.size(); i++) {
             QStandardItem* name_item =
-                new QStandardItem(QString::fromStdWString(std_string_list[i]));
+                new QStandardItem(QString::fromStdString(std_string_list[i]));
             QStandardItem* key_item = new QStandardItem(
-                QString::fromStdWString(std_string_list_right[i])
+                QString::fromStdString(std_string_list_right[i])
             );
             key_item->setTextAlignment(Qt::AlignVCenter | Qt::AlignRight);
             model->appendRow(QList<QStandardItem*>() << name_item << key_item);
@@ -70,7 +69,7 @@ class FilteredTableWindowSelector : public BaseSelector {
         table_view->horizontalHeader()->hide();
         table_view->verticalHeader()->hide();
 
-        if (MULTILINE_MENUS) {
+        if (Config::instance().MULTILINE_MENUS) {
             table_view->setWordWrap(true);
             table_view->verticalHeader()->setSectionResizeMode(
                 QHeaderView::ResizeToContents
@@ -87,7 +86,7 @@ class FilteredTableWindowSelector : public BaseSelector {
 
     QString get_view_stylesheet_type_name() override { return "QTableView"; }
 
-    std::wstring get_selected_text() override {
+    std::string get_selected_text() override {
         auto index = this->get_selected_index();
 
         if (index) {
@@ -96,7 +95,7 @@ class FilteredTableWindowSelector : public BaseSelector {
             return item_strings[source_index.row()];
         }
 
-        return L"";
+        return "";
     }
 
     virtual void on_delete(
@@ -119,7 +118,7 @@ class FilteredTableWindowSelector : public BaseSelector {
   private:
     QStringListModel* string_list_model = nullptr;
     std::vector<T> values;
-    std::vector<std::wstring> item_strings;
+    std::vector<std::string> item_strings;
     std::function<void(T*)> on_done = nullptr;
     std::function<void(T*)> on_delete_function = nullptr;
 };

@@ -1,10 +1,10 @@
-// #include <Windows.h>
-#include <cwctype>
+#include "utils.h"
+#include "config.h"
 
+#include <cwctype>
 #include <cmath>
 #include <filesystem>
 #include <cassert>
-#include "utils.h"
 #include <optional>
 #include <cstring>
 #include <sstream>
@@ -30,22 +30,12 @@
 
 namespace fs = std::filesystem;
 
-extern std::wstring LIBGEN_ADDRESS;
-extern std::wstring GOOGLE_SCHOLAR_ADDRESS;
-extern std::ofstream LOG_FILE;
-extern int STATUS_BAR_FONT_SIZE;
-extern float STATUS_BAR_COLOR[3];
-extern float STATUS_BAR_TEXT_COLOR[3];
-extern float UI_SELECTED_TEXT_COLOR[3];
-extern float UI_SELECTED_BACKGROUND_COLOR[3];
-extern bool NUMERIC_TAGS;
-
 #ifdef Q_OS_WIN
 #include <windows.h>
 #endif
 
-std::wstring to_lower(const std::wstring& inp) {
-    std::wstring res;
+std::string to_lower(const std::string& inp) {
+    std::string res;
     for (char c : inp) {
         res.push_back(::tolower(c));
     }
@@ -54,7 +44,7 @@ std::wstring to_lower(const std::wstring& inp) {
 
 void get_flat_toc(
     const std::vector<TocNode*>& roots,
-    std::vector<std::wstring>& output,
+    std::vector<std::string>& output,
     std::vector<int>& pages
 ) {
     // Enumerate ToC nodes in DFS order
@@ -94,12 +84,10 @@ QStandardItem* get_item_tree_from_toc_helper(
 ) {
 
     for (const auto* child : children) {
-        QStandardItem* child_item = new QStandardItem(
-            QString::fromStdWString(child->title)
-        );
-        QStandardItem* page_item = new QStandardItem(
-            "[ " + QString::number(child->page) + " ]"
-        );
+        QStandardItem* child_item =
+            new QStandardItem(QString::fromStdString(child->title));
+        QStandardItem* page_item =
+            new QStandardItem("[ " + QString::number(child->page) + " ]");
         child_item->setData(child->page);
         page_item->setTextAlignment(Qt::AlignVCenter | Qt::AlignRight);
 
@@ -175,9 +163,26 @@ void rect_to_quad(fz_rect rect, float quad[8]) {
     quad[7] = rect.y1;
 }
 
-void copy_to_clipboard(const std::wstring& text, bool selection) {
+// FIXME: remove
+std::string utf8_decode(const std::string& encoded_str) {
+    std::string res;
+    utf8::utf8to32(
+        encoded_str.begin(), encoded_str.end(), std::back_inserter(res)
+    );
+    return res;
+}
+
+std::string utf8_encode(const std::string& decoded_str) {
+    std::string res;
+    utf8::utf32to8(
+        decoded_str.begin(), decoded_str.end(), std::back_inserter(res)
+    );
+    return res;
+}
+
+void copy_to_clipboard(const std::string& text, bool selection) {
     auto clipboard = QGuiApplication::clipboard();
-    auto qtext = QString::fromStdWString(text);
+    auto qtext = QString::fromStdString(text);
     if (!selection) {
         clipboard->setText(qtext);
     } else {
@@ -225,7 +230,7 @@ void install_app(const char* argv0) {
 #endif
 }
 
-int get_f_key(std::wstring name) {
+int get_f_key(std::string name) {
     if (name[0] == '<') {
         name = name.substr(1, name.size() - 2);
     }
@@ -238,33 +243,17 @@ int get_f_key(std::wstring name) {
     }
 
     int num;
-    std::wstringstream ss(name);
+    std::stringstream ss(name);
     ss >> num;
     return num;
 }
 
-void show_error_message(const std::wstring& error_message) {
+void show_error_message(const std::string& error_message) {
     QMessageBox msgBox;
-    msgBox.setText(QString::fromStdWString(error_message));
+    msgBox.setText(QString::fromStdString(error_message));
     msgBox.setStandardButtons(QMessageBox::Ok);
     msgBox.setDefaultButton(QMessageBox::Ok);
     msgBox.exec();
-}
-
-std::wstring utf8_decode(const std::string& encoded_str) {
-    std::wstring res;
-    utf8::utf8to32(
-        encoded_str.begin(), encoded_str.end(), std::back_inserter(res)
-    );
-    return res;
-}
-
-std::string utf8_encode(const std::wstring& decoded_str) {
-    std::string res;
-    utf8::utf32to8(
-        decoded_str.begin(), decoded_str.end(), std::back_inserter(res)
-    );
-    return res;
 }
 
 bool is_rtl(int c) {
@@ -291,8 +280,8 @@ bool is_rtl(int c) {
     return false;
 }
 
-std::wstring reverse_wstring(const std::wstring& inp) {
-    std::wstring res;
+std::string reverse_string(const std::string& inp) {
+    std::string res;
     for (int i = inp.size() - 1; i >= 0; i--) {
         res.push_back(inp[i]);
     }
@@ -300,14 +289,14 @@ std::wstring reverse_wstring(const std::wstring& inp) {
 }
 
 bool parse_search_command(
-    const std::wstring& search_command,
+    const std::string& search_command,
     int* out_begin,
     int* out_end,
-    std::wstring* search_text
+    std::string* search_text
 ) {
-    std::wstringstream ss(search_command);
+    std::stringstream ss(search_command);
     if (search_command[0] == '<') {
-        wchar_t dummy;
+        char dummy;
         ss >> dummy;
         ss >> *out_begin;
         ss >> dummy;
@@ -389,9 +378,8 @@ void get_flat_chars_from_block(
 ) {
     if (block->type == FZ_STEXT_BLOCK_TEXT) {
         LL_ITER(line, block->u.t.first_line) {
-            std::vector<fz_stext_char*> reordered_chars = reorder_stext_line(
-                line
-            );
+            std::vector<fz_stext_char*> reordered_chars =
+                reorder_stext_line(line);
             for (auto ch : reordered_chars) {
                 flat_chars.push_back(ch);
             }
@@ -520,7 +508,7 @@ void get_flat_words_from_flat_chars(
     if (flat_chars.size() == 0)
         return;
 
-    std::vector<std::wstring> res;
+    std::vector<std::string> res;
     std::vector<fz_stext_char*> pending_word;
     pending_word.push_back(flat_chars[0]);
 
@@ -553,7 +541,7 @@ void get_flat_words_from_flat_chars(
 
 void get_word_rect_list_from_flat_chars(
     const std::vector<fz_stext_char*>& flat_chars,
-    std::vector<std::wstring>& words,
+    std::vector<std::string>& words,
     std::vector<std::vector<fz_rect>>& flat_word_rects
 ) {
 
@@ -572,7 +560,7 @@ void get_word_rect_list_from_flat_chars(
     };
 
     auto get_word = [&]() {
-        std::wstring res;
+        std::string res;
         for (auto chr : pending_word) {
             res.push_back(chr->c);
         }
@@ -617,7 +605,7 @@ std::vector<std::string> get_tags(int n) {
     for (int i = 0; i < n; i++) {
         int current_n = i;
         std::string tag;
-        if (!NUMERIC_TAGS) {
+        if (!Config::instance().NUMERIC_TAGS) {
             for (int i = 0; i < n_digits; i++) {
                 tag.push_back('a' + (current_n % 26));
                 current_n = current_n / 26;
@@ -634,7 +622,7 @@ int get_index_from_tag(const std::string& tag) {
     int res = 0;
     int mult = 1;
 
-    if (!NUMERIC_TAGS) {
+    if (!Config::instance().NUMERIC_TAGS) {
         for (size_t i = 0; i < tag.size(); i++) {
             res += (tag[i] - 'a') * mult;
             mult = mult * 26;
@@ -695,9 +683,9 @@ bool is_separator(fz_stext_char* last_char, fz_stext_char* current_char) {
     return false;
 }
 
-std::wstring get_string_from_stext_line(fz_stext_line* line) {
+std::string get_string_from_stext_line(fz_stext_line* line) {
 
-    std::wstring res;
+    std::string res;
     LL_ITER(ch, line->first_char) { res.push_back(ch->c); }
     return res;
 }
@@ -803,9 +791,9 @@ void merge_selected_character_rects(
     }
 }
 
-int next_path_separator_position(const std::wstring& path) {
-    wchar_t sep1 = '/';
-    wchar_t sep2 = '\\';
+int next_path_separator_position(const std::string& path) {
+    char sep1 = '/';
+    char sep2 = '\\';
     int index1 = path.find(sep1);
     int index2 = path.find(sep2);
     if (index2 == -1) {
@@ -818,7 +806,7 @@ int next_path_separator_position(const std::wstring& path) {
     return std::min(index1, index2);
 }
 
-void split_path(std::wstring path, std::vector<std::wstring>& res) {
+void split_path(std::string path, std::vector<std::string>& res) {
 
     size_t loc = -1;
     // overflows
@@ -826,7 +814,7 @@ void split_path(std::wstring path, std::vector<std::wstring>& res) {
 
         int skiplen = loc + 1;
         if (loc != 0) {
-            std::wstring part = path.substr(0, loc);
+            std::string part = path.substr(0, loc);
             res.push_back(part);
         }
         path = path.substr(skiplen, path.size() - skiplen);
@@ -836,25 +824,25 @@ void split_path(std::wstring path, std::vector<std::wstring>& res) {
     }
 }
 
-std::vector<std::wstring> split_whitespace(const std::wstring& input) {
-    std::wistringstream buffer(input);
-    std::vector<std::wstring> ret(
-        (std::istream_iterator<std::wstring, wchar_t>(buffer)),
-        std::istream_iterator<std::wstring, wchar_t>()
+std::vector<std::string> split_whitespace(const std::string& input) {
+    std::istringstream buffer(input);
+    std::vector<std::string> ret(
+        (std::istream_iterator<std::string, char>(buffer)),
+        std::istream_iterator<std::string, char>()
     );
     return ret;
 }
 
 void split_key_string(
-    std::wstring haystack,
-    const std::wstring& needle,
-    std::vector<std::wstring>& res
+    std::string haystack,
+    const std::string& needle,
+    std::vector<std::string>& res
 ) {
     // todo: we can significantly reduce string allocations in this function if
     // it turns out to be a performance bottleneck.
 
     if (haystack == needle) {
-        res.push_back(L"-");
+        res.push_back("-");
         return;
     }
 
@@ -864,7 +852,7 @@ void split_key_string(
 
         int skiplen = loc + needle_size;
         if (loc != 0) {
-            std::wstring part = haystack.substr(0, loc);
+            std::string part = haystack.substr(0, loc);
             res.push_back(part);
         }
         if ((loc < (haystack.size() - 1)) &&
@@ -880,10 +868,10 @@ void split_key_string(
     }
 }
 
-void run_command(std::wstring command, QStringList parameters, bool wait) {
+void run_command(std::string command, QStringList parameters, bool wait) {
 
 #ifdef Q_OS_WIN
-    std::wstring parameters_string = parameters.join(" ").toStdWString();
+    std::string parameters_string = parameters.join(" ").toStdString();
     SHELLEXECUTEINFO ShExecInfo = {0};
     ShExecInfo.cbSize = sizeof(SHELLEXECUTEINFO);
     if (wait) {
@@ -909,13 +897,13 @@ void run_command(std::wstring command, QStringList parameters, bool wait) {
 
 #else
     QProcess* process = new QProcess;
-    QString qcommand = QString::fromStdWString(command);
+    QString qcommand = QString::fromStdString(command);
     QStringList qparameters;
 
     QObject::connect(
         process, &QProcess::errorOccurred,
         [process](QProcess::ProcessError error) {
-            auto msg = process->errorString().toStdWString();
+            auto msg = process->errorString().toStdString();
             show_error_message(msg);
         }
     );
@@ -930,7 +918,7 @@ void run_command(std::wstring command, QStringList parameters, bool wait) {
     for (int i = 0; i < parameters.size(); i++) {
         qparameters.append(parameters[i]);
     }
-    // qparameters.append(QString::fromStdWString(parameters));
+    // qparameters.append(QString::fromStdString(parameters));
 
     if (wait) {
         process->start(qcommand, qparameters);
@@ -945,8 +933,8 @@ void open_file_url(const QString& url_string) {
     QDesktopServices::openUrl(QUrl::fromLocalFile(url_string));
 }
 
-void open_file_url(const std::wstring& url_string) {
-    QString qurl_string = QString::fromStdWString(url_string);
+void open_file_url(const std::string& url_string) {
+    QString qurl_string = QString::fromStdString(url_string);
     open_file_url(qurl_string);
 }
 
@@ -954,39 +942,32 @@ void open_web_url(const QString& url_string) {
     QDesktopServices::openUrl(QUrl(url_string));
 }
 
-void open_web_url(const std::wstring& url_string) {
-    QString qurl_string = QString::fromStdWString(url_string);
+void open_web_url(const std::string& url_string) {
+    QString qurl_string = QString::fromStdString(url_string);
     open_web_url(qurl_string);
 }
 
 void search_custom_engine(
-    const std::wstring& search_string, const std::wstring& custom_engine_url
+    const std::string& search_string, const std::string& custom_engine_url
 ) {
 
     if (search_string.size() > 0) {
-        QString qurl_string = QString::fromStdWString(
-            custom_engine_url + search_string
-        );
+        QString qurl_string =
+            QString::fromStdString(custom_engine_url + search_string);
         open_web_url(qurl_string);
     }
 }
 
-void search_google_scholar(const std::wstring& search_string) {
-    search_custom_engine(search_string, GOOGLE_SCHOLAR_ADDRESS);
+void search_google_scholar(const std::string& search_string) {
+    search_custom_engine(
+        search_string, Config::instance().GOOGLE_SCHOLAR_ADDRESS
+    );
 }
 
-void search_libgen(const std::wstring& search_string) {
-    search_custom_engine(search_string, LIBGEN_ADDRESS);
+void search_libgen(const std::string& search_string) {
+    search_custom_engine(search_string, Config::instance().LIBGEN_ADDRESS);
 }
 
-// void open_url(const std::wstring& url_string) {
-//
-//	if (url_string.size() > 0) {
-//		QString qurl_string = QString::fromStdWString(url_string);
-//		open_url(qurl_string);
-//	}
-// }
-//
 void create_file_if_not_exists(const fs::path& path) {
     if (!fs::exists(path)) {
         std::ofstream outfile(path);
@@ -995,14 +976,13 @@ void create_file_if_not_exists(const fs::path& path) {
     }
 }
 
-void open_file(const std::wstring& path) {
-    std::wstring canon_path = get_canonical_path(path);
-    open_file_url(canon_path);
+void open_file(const std::string& path) {
+    open_file_url(get_canonical_path(path));
 }
 
 void get_text_from_flat_chars(
     const std::vector<fz_stext_char*>& flat_chars,
-    std::wstring& string_res,
+    std::string& string_res,
     std::vector<int>& indices
 ) {
 
@@ -1028,24 +1008,24 @@ void get_text_from_flat_chars(
     }
 }
 
-std::wstring find_first_regex_match(
-    const std::wstring& haystack, const std::wstring& regex_string
+std::string find_first_regex_match(
+    const std::string& haystack, const std::string& regex_string
 ) {
-    std::wregex regex(regex_string);
-    std::wsmatch match;
+    std::regex regex(regex_string);
+    std::smatch match;
     if (std::regex_search(haystack, match, regex)) {
         return match.str();
     }
-    return L"";
+    return "";
 }
 
-std::vector<std::wstring> find_all_regex_matches(
-    const std::wstring& haystack, const std::wstring& regex_string
+std::vector<std::string> find_all_regex_matches(
+    const std::string& haystack, const std::string& regex_string
 ) {
 
-    std::wregex regex(regex_string);
-    std::wsmatch match;
-    std::vector<std::wstring> res;
+    std::regex regex(regex_string);
+    std::smatch match;
+    std::vector<std::string> res;
     if (std::regex_search(haystack, match, regex)) {
         for (size_t i = 0; i < match.size(); i++) {
             res.push_back(match[i].str());
@@ -1056,17 +1036,17 @@ std::vector<std::wstring> find_all_regex_matches(
 
 void find_regex_matches_in_stext_page(
     const std::vector<fz_stext_char*>& flat_chars,
-    const std::wregex& regex,
+    const std::regex& regex,
     std::vector<std::pair<int, int>>& match_ranges,
-    std::vector<std::wstring>& match_texts
+    std::vector<std::string>& match_texts
 ) {
 
-    std::wstring page_string;
+    std::string page_string;
     std::vector<int> indices;
 
     get_text_from_flat_chars(flat_chars, page_string, indices);
 
-    std::wsmatch match;
+    std::smatch match;
 
     int offset = 0;
     while (std::regex_search(page_string, match, regex)) {
@@ -1104,19 +1084,19 @@ bool is_whitespace(int chr) {
     return false;
 }
 
-std::wstring strip_string(std::wstring& input_string) {
+std::string strip_string(std::string& input_string) {
 
-    std::wstring result;
+    std::string result;
     int start_index = 0;
     int end_index = input_string.size() - 1;
     if (input_string.size() == 0) {
-        return L"";
+        return "";
     }
 
     while (is_whitespace(input_string[start_index])) {
         start_index++;
         if ((size_t)start_index == input_string.size()) {
-            return L"";
+            return "";
         }
     }
 
@@ -1132,7 +1112,7 @@ void index_generic(
     std::vector<IndexedData>& indices
 ) {
 
-    std::wstring page_string;
+    std::string page_string;
     std::vector<std::optional<fz_rect>> page_rects;
 
     for (auto ch : flat_chars) {
@@ -1144,20 +1124,19 @@ void index_generic(
         }
     }
 
-    std::wregex index_dst_regex(
-        L"(^|\n)[A-Z][a-zA-Z]{2,}[ \t]+[0-9]+(\\.[0-9]+)*"
+    std::regex index_dst_regex("(^|\n)[A-Z][a-zA-Z]{2,}[ \t]+[0-9]+(\\.[0-9]+)*"
     );
-    // std::wregex index_dst_regex(L"(^|\n)[A-Z][a-zA-Z]{2,}[
-    // \t]+[0-9]+(\-[0-9]+)*"); std::wregex index_src_regex(L"[a-zA-Z]{3,}[
+    // std::regex index_dst_regex("(^|\n)[A-Z][a-zA-Z]{2,}[
+    // \t]+[0-9]+(\-[0-9]+)*"); std::regex index_src_regex("[a-zA-Z]{3,}[
     // \t]+[0-9]+(\.[0-9]+)*");
-    std::wsmatch match;
+    std::smatch match;
 
     int offset = 0;
     while (std::regex_search(page_string, match, index_dst_regex)) {
 
         IndexedData new_data;
         new_data.page = page_number;
-        std::wstring match_string = match.str();
+        std::string match_string = match.str();
         new_data.text = strip_string(match_string);
         new_data.y_offset = 0.0f;
 
@@ -1180,11 +1159,11 @@ void index_generic(
 void index_equations(
     const std::vector<fz_stext_char*>& flat_chars,
     int page_number,
-    std::map<std::wstring, std::vector<IndexedData>>& indices
+    std::map<std::string, std::vector<IndexedData>>& indices
 ) {
-    std::wregex regex(L"\\([0-9]+(\\.[0-9]+)*\\)");
+    std::regex regex("\\([0-9]+(\\.[0-9]+)*\\)");
     std::vector<std::pair<int, int>> match_ranges;
-    std::vector<std::wstring> match_texts;
+    std::vector<std::string> match_texts;
 
     find_regex_matches_in_stext_page(
         flat_chars, regex, match_ranges, match_texts
@@ -1203,9 +1182,8 @@ void index_equations(
                  flat_chars[start_index - 1], flat_chars[start_index]
              ))) {
 
-            std::wstring match_text = match_texts[i].substr(
-                1, match_texts[i].size() - 2
-            );
+            std::string match_text =
+                match_texts[i].substr(1, match_texts[i].size() - 2);
             IndexedData indexed_equation;
             indexed_equation.page = page_number;
             indexed_equation.text = match_text;
@@ -1223,7 +1201,7 @@ void index_equations(
 void index_references(
     fz_stext_page* page,
     int page_number,
-    std::map<std::wstring, IndexedData>& indices
+    std::map<std::string, IndexedData>& indices
 ) {
 
     char start_char = '[';
@@ -1232,7 +1210,7 @@ void index_references(
 
     bool started = false;
     std::vector<IndexedData> temp_indices;
-    std::wstring current_text = L"";
+    std::string current_text = "";
 
     LL_ITER(block, page->first_block) {
         if (block->type != FZ_STEXT_BLOCK_TEXT)
@@ -1488,9 +1466,8 @@ void get_line_begins_and_ends_from_histogram(
 
         for (size_t i = 0; i < res.size(); i++) {
             res[i] += static_cast<unsigned int>(additional_distance / 5.0f);
-            res_begins[i] -= static_cast<unsigned int>(
-                additional_distance / 5.0f
-            );
+            res_begins[i] -=
+                static_cast<unsigned int>(additional_distance / 5.0f);
         }
     }
 }
@@ -1505,9 +1482,8 @@ int find_best_vertical_line_location(fz_pixmap* pixmap, int doc_x, int doc_y) {
     std::vector<int> max_possible_widths;
 
     for (int candid_y = min_candid_y; candid_y <= max_candid_y; candid_y++) {
-        int current_width = find_max_horizontal_line_length_at_pos(
-            pixmap, doc_x, candid_y
-        );
+        int current_width =
+            find_max_horizontal_line_length_at_pos(pixmap, doc_x, candid_y);
         max_possible_widths.push_back(current_width);
     }
 
@@ -1535,7 +1511,7 @@ int find_best_vertical_line_location(fz_pixmap* pixmap, int doc_x, int doc_y) {
     return doc_y + start_index;
 }
 
-bool is_string_numeric_(const std::wstring& str) {
+bool is_string_numeric_(const std::string& str) {
     if (str.size() == 0) {
         return false;
     }
@@ -1547,7 +1523,7 @@ bool is_string_numeric_(const std::wstring& str) {
     return true;
 }
 
-bool is_string_numeric(const std::wstring& str) {
+bool is_string_numeric(const std::string& str) {
     if (str.size() == 0) {
         return false;
     }
@@ -1559,7 +1535,7 @@ bool is_string_numeric(const std::wstring& str) {
     }
 }
 
-bool is_string_numeric_float(const std::wstring& str) {
+bool is_string_numeric_float(const std::string& str) {
     if (str.size() == 0) {
         return false;
     }
@@ -1774,16 +1750,16 @@ QCommandLineParser* get_command_line_parser() {
     return parser;
 }
 
-std::wstring concatenate_path(
-    const std::wstring& prefix, const std::wstring& suffix
+std::string concatenate_path(
+    const std::string& prefix, const std::string& suffix
 ) {
-    std::wstring result = prefix;
+    std::string result = prefix;
 #ifdef Q_OS_WIN
-    wchar_t separator = '\\';
+    char separator = '\\';
 #else
-    wchar_t separator = '/';
+    char separator = '/';
 #endif
-    if (prefix == L"") {
+    if (prefix == "") {
         return suffix;
     }
 
@@ -1794,30 +1770,30 @@ std::wstring concatenate_path(
     return result;
 }
 
-std::wstring get_canonical_path(const std::wstring& path) {
-    QDir dir(QString::fromStdWString(path));
-    // return dir.canonicalPath().toStdWString();
-    return dir.absolutePath().toStdWString();
+std::string get_canonical_path(const std::string& path) {
+    QDir dir(QString::fromStdString(path));
+    // return dir.canonicalPath().toStdString();
+    return dir.absolutePath().toStdString();
 }
 
-std::wstring add_redundant_dot_to_path(const std::wstring& path) {
-    std::vector<std::wstring> parts;
+std::string add_redundant_dot_to_path(const std::string& path) {
+    std::vector<std::string> parts;
     split_path(path, parts);
 
-    std::wstring last = parts[parts.size() - 1];
+    std::string last = parts[parts.size() - 1];
     parts.erase(parts.begin() + parts.size() - 1);
-    parts.push_back(L".");
+    parts.push_back(".");
     parts.push_back(last);
 
-    std::wstring res = L"";
+    std::string res = "";
     if (path[0] == '/') {
-        res = L"/";
+        res = "/";
     }
 
     for (size_t i = 0; i < parts.size(); i++) {
         res.append(parts[i]);
         if (i < parts.size() - 1) {
-            res.append(L"/");
+            res.append("/");
         }
     }
     return res;
@@ -1838,7 +1814,7 @@ QWidget* get_top_level_widget(QWidget* widget) {
     return widget;
 }
 
-float type_name_similarity_score(std::wstring name1, std::wstring name2) {
+float type_name_similarity_score(std::string name1, std::string name2) {
     name1 = to_lower(name1);
     name2 = to_lower(name2);
     size_t common_prefix_index = 0;
@@ -1851,48 +1827,6 @@ float type_name_similarity_score(std::wstring name1, std::wstring name2) {
         }
     }
     return common_prefix_index;
-}
-
-void check_for_updates(QWidget* parent, std::string current_version) {
-
-    QString url = "https://github.com/ahrm/sioyek/releases/latest";
-    QNetworkAccessManager* manager = new QNetworkAccessManager;
-
-    QObject::connect(
-        manager, &QNetworkAccessManager::finished,
-        [=](QNetworkReply* reply) {
-            std::string response_text = reply->readAll().toStdString();
-            int first_index = response_text.find("\"");
-            int last_index = response_text.rfind("\"");
-            std::string url_string = response_text.substr(
-                first_index + 1, last_index - first_index - 1
-            );
-
-            std::vector<std::wstring> parts;
-            split_path(utf8_decode(url_string), parts);
-            if (parts.size() > 0) {
-                std::string version_string = utf8_encode(
-                    parts.back().substr(1, parts.back().size() - 1)
-                );
-
-                if (version_string != current_version) {
-                    int ret = QMessageBox::information(
-                        parent, "Update",
-                        QString::fromStdString(
-                            "Do you want to update from " + current_version +
-                            " to " + version_string + "?"
-                        ),
-                        QMessageBox::Ok | QMessageBox::Cancel,
-                        QMessageBox::Cancel
-                    );
-                    if (ret == QMessageBox::Ok) {
-                        open_web_url(url);
-                    }
-                }
-            }
-        }
-    );
-    manager->get(QNetworkRequest(QUrl(url)));
 }
 
 QString expand_home_dir(QString path) {
@@ -1932,9 +1866,9 @@ void split_root_file(QString path, QString& out_root, QString& out_partial) {
     }
 }
 
-std::wstring lowercase(const std::wstring& input) {
+std::string lowercase(const std::string& input) {
 
-    std::wstring res;
+    std::string res;
     for (int i = 0; i < input.size(); i++) {
         if ((input[i] >= 'A') && (input[i] <= 'Z')) {
             res.push_back(input[i] + 'a' - 'A');
@@ -1953,7 +1887,7 @@ int hex2int(int hex) {
     }
 }
 
-float get_color_component_from_hex(std::wstring hexcolor) {
+float get_color_component_from_hex(std::string hexcolor) {
     hexcolor = lowercase(hexcolor);
 
     if (hexcolor.size() < 2) {
@@ -1983,21 +1917,21 @@ QString get_color_qml_string(float r, float g, float b) {
 }
 
 void hexademical_to_normalized_color(
-    std::wstring color_string, float* color, int n_components
+    std::string color_string, float* color, int n_components
 ) {
     if (color_string[0] == '#') {
         color_string = color_string.substr(1, color_string.size() - 1);
     }
 
     for (int i = 0; i < n_components; i++) {
-        *(color + i
-        ) = get_color_component_from_hex(color_string.substr(i * 2, 2));
+        *(color + i) =
+            get_color_component_from_hex(color_string.substr(i * 2, 2));
     }
 }
 
-void copy_file(std::wstring src_path, std::wstring dst_path) {
-    std::ifstream src(utf8_encode(src_path), std::ios::binary);
-    std::ofstream dst(utf8_encode(dst_path), std::ios::binary);
+void copy_file(std::string src_path, std::string dst_path) {
+    std::ifstream src(src_path, std::ios::binary);
+    std::ofstream dst(dst_path, std::ios::binary);
 
     dst << src.rdbuf();
 }
@@ -2019,26 +1953,26 @@ std::vector<fz_quad> quads_from_rects(const std::vector<fz_rect>& rects) {
     return res;
 }
 
-std::wstring truncate_string(const std::wstring& inp, int size) {
+std::string truncate_string(const std::string& inp, int size) {
     if (inp.size() <= (size_t)size) {
         return inp;
     } else {
-        return inp.substr(0, size - 3) + L"...";
+        return inp.substr(0, size - 3) + "...";
     }
 }
 
-std::wstring get_page_formatted_string(int page) {
-    std::wstringstream ss;
-    ss << L"[ " << page << L" ]";
+std::string get_page_formatted_string(int page) {
+    std::stringstream ss;
+    ss << "[ " << page << " ]";
     return ss.str();
 }
 
-bool is_string_titlish(const std::wstring& str) {
+bool is_string_titlish(const std::string& str) {
     if (str.size() <= 5 || str.size() >= 60) {
         return false;
     }
-    std::wregex regex(L"([0-9IVXC]+\\.)+([0-9IVXC]+)*");
-    std::wsmatch match;
+    std::regex regex("([0-9IVXC]+\\.)+([0-9IVXC]+)*");
+    std::smatch match;
 
     std::regex_search(str, match, regex);
     int pos = match.position();
@@ -2047,8 +1981,8 @@ bool is_string_titlish(const std::wstring& str) {
 }
 
 bool is_title_parent_of(
-    const std::wstring& parent_title,
-    const std::wstring& child_title,
+    const std::string& parent_title,
+    const std::string& child_title,
     bool* are_same
 ) {
     int count = std::min(parent_title.size(), child_title.size());
@@ -2113,8 +2047,8 @@ int find_best_merge_index_for_line_index(
     Range current_range_x = {line_rects[index].x0, line_rects[index].x1};
     float maximum_height = current_range.size();
     float maximum_width = current_range_x.size();
-    float min_cost = current_range.size() * line_num_penalty(1) /
-                     current_range_x.size();
+    float min_cost =
+        current_range.size() * line_num_penalty(1) / current_range_x.size();
     int min_index = index;
 
     for (size_t j = index + 1;
@@ -2133,18 +2067,14 @@ int find_best_merge_index_for_line_index(
             );
         }
 
-        current_range_x = merge_range(
-            current_range, {line_rects[j].x0, line_rects[j].x1}
-        );
+        current_range_x =
+            merge_range(current_range, {line_rects[j].x0, line_rects[j].x1});
 
-        float cost = current_range.size() / (j - index + 1) +
-                     line_num_penalty(j - index + 1) / current_range_x.size() +
-                     height_increase_penalty(
-                         current_range.size() / maximum_height
-                     ) +
-                     width_increase_bonus(
-                         current_range_x.size() / maximum_width
-                     );
+        float cost =
+            current_range.size() / (j - index + 1) +
+            line_num_penalty(j - index + 1) / current_range_x.size() +
+            height_increase_penalty(current_range.size() / maximum_height) +
+            width_increase_bonus(current_range_x.size() / maximum_width);
         if (cost < min_cost) {
             min_cost = cost;
             min_index = j;
@@ -2218,13 +2148,13 @@ int line_num_chars(fz_stext_line* line) {
 void merge_lines(
     const std::vector<fz_stext_line*>& lines_,
     std::vector<fz_rect>& out_rects,
-    std::vector<std::wstring>& out_texts
+    std::vector<std::string>& out_texts
 ) {
 
     std::vector<fz_stext_line*> lines = lines_;
 
     std::vector<fz_rect> temp_rects;
-    std::vector<std::wstring> temp_texts;
+    std::vector<std::string> temp_texts;
 
     std::vector<fz_rect> custom_line_rects;
     std::vector<int> char_counts;
@@ -2250,7 +2180,7 @@ void merge_lines(
         int best_index = find_best_merge_index_for_line_index(
             lines, custom_line_rects, char_counts, i
         );
-        std::wstring text = get_string_from_stext_line(lines[i]);
+        std::string text = get_string_from_stext_line(lines[i]);
         for (int j = i + 1; j <= best_index; j++) {
             rect = fz_union_rect(rect, lines[j]->bbox);
             text = text + get_string_from_stext_line(lines[j]);
@@ -2265,22 +2195,17 @@ void merge_lines(
             fz_rect current_rect = temp_rects[i];
             if ((std::abs(prev_rect.y0 - current_rect.y0) < 1.0f) ||
                 (std::abs(prev_rect.y1 - current_rect.y1) < 1.0f)) {
-                out_rects[out_rects.size() - 1].x0 = std::min(
-                    prev_rect.x0, current_rect.x0
-                );
-                out_rects[out_rects.size() - 1].x1 = std::max(
-                    prev_rect.x1, current_rect.x1
-                );
+                out_rects[out_rects.size() - 1].x0 =
+                    std::min(prev_rect.x0, current_rect.x0);
+                out_rects[out_rects.size() - 1].x1 =
+                    std::max(prev_rect.x1, current_rect.x1);
 
-                out_rects[out_rects.size() - 1].y0 = std::min(
-                    prev_rect.y0, current_rect.y0
-                );
-                out_rects[out_rects.size() - 1].y1 = std::max(
-                    prev_rect.y1, current_rect.y1
-                );
-                out_texts[out_texts.size() - 1] = out_texts
-                                                      [out_texts.size() - 1] +
-                                                  temp_texts[i];
+                out_rects[out_rects.size() - 1].y0 =
+                    std::min(prev_rect.y0, current_rect.y0);
+                out_rects[out_rects.size() - 1].y1 =
+                    std::max(prev_rect.y1, current_rect.y1);
+                out_texts[out_texts.size() - 1] =
+                    out_texts[out_texts.size() - 1] + temp_texts[i];
                 continue;
             }
         }
@@ -2329,46 +2254,44 @@ int lcs(const char* X, const char* Y, int m, int n) {
     return L[m][n];
 }
 
-bool command_requires_text(const std::wstring& command) {
-    if ((command.find(L"%5") != -1) || (command.find(L"command_text") != -1)) {
+bool command_requires_text(const std::string& command) {
+    if ((command.find("%5") != -1) || (command.find("command_text") != -1)) {
         return true;
     }
     return false;
 }
 
-bool command_requires_rect(const std::wstring& command) {
-    if (command.find(L"%{selected_rect}") != -1) {
+bool command_requires_rect(const std::string& command) {
+    if (command.find("%{selected_rect}") != -1) {
         return true;
     }
     return false;
 }
 
 void parse_command_string(
-    std::wstring command_string,
+    std::string command_string,
     std::string& command_name,
-    std::wstring& command_data
+    std::string& command_data
 ) {
-    int lindex = command_string.find(L"(");
-    int rindex = command_string.rfind(L")");
+    int lindex = command_string.find("(");
+    int rindex = command_string.rfind(")");
     if (lindex < rindex) {
-        command_name = utf8_encode(command_string.substr(0, lindex));
+        command_name = command_string.substr(0, lindex);
         command_data = command_string.substr(lindex + 1, rindex - lindex - 1);
     } else {
-        command_data = L"";
-        command_name = utf8_encode(command_string);
+        command_data = "";
+        command_name = command_string;
     }
 }
 
-void parse_color(
-    std::wstring color_string, float* out_color, int n_components
-) {
+void parse_color(std::string color_string, float* out_color, int n_components) {
     if (color_string.size() > 0) {
         if (color_string[0] == '#') {
             hexademical_to_normalized_color(
                 color_string, out_color, n_components
             );
         } else {
-            std::wstringstream ss(color_string);
+            std::stringstream ss(color_string);
 
             for (int i = 0; i < n_components; i++) {
                 ss >> *(out_color + i);
@@ -2378,8 +2301,9 @@ void parse_color(
 }
 
 int get_status_bar_height() {
-    if (STATUS_BAR_FONT_SIZE > 0) {
-        return STATUS_BAR_FONT_SIZE + 5;
+    const Config& config = Config::instance();
+    if (config.theme.status_bar.font_size > 0) {
+        return config.theme.status_bar.font_size + 5;
     } else {
         return 20;
     }
@@ -2388,7 +2312,7 @@ int get_status_bar_height() {
 void flat_char_prism(
     const std::vector<fz_stext_char*> chars,
     int page,
-    std::wstring& output_text,
+    std::string& output_text,
     std::vector<int>& pages,
     std::vector<fz_rect>& rects
 ) {
@@ -2414,18 +2338,21 @@ void flat_char_prism(
 }
 
 QString get_status_stylesheet(bool nofont) {
-    if ((!nofont) && (STATUS_BAR_FONT_SIZE > -1)) {
-        QString font_size_stylesheet = QString("font-size: %1px")
-                                           .arg(STATUS_BAR_FONT_SIZE);
+    const Config& config = Config::instance();
+    if (!nofont && config.theme.status_bar.font_size > -1) {
+        QString font_size_stylesheet =
+            QString("font-size: %1px").arg(config.theme.status_bar.font_size);
         return QString("background-color: %1; color: %2; border: 0; %3;")
             .arg(
                 get_color_qml_string(
-                    STATUS_BAR_COLOR[0], STATUS_BAR_COLOR[1],
-                    STATUS_BAR_COLOR[2]
+                    config.theme.status_bar.background[0],
+                    config.theme.status_bar.background[1],
+                    config.theme.status_bar.background[2]
                 ),
                 get_color_qml_string(
-                    STATUS_BAR_TEXT_COLOR[0], STATUS_BAR_TEXT_COLOR[1],
-                    STATUS_BAR_TEXT_COLOR[2]
+                    config.theme.status_bar.foreground[0],
+                    config.theme.status_bar.foreground[1],
+                    config.theme.status_bar.foreground[2]
                 ),
                 font_size_stylesheet
             );
@@ -2433,31 +2360,36 @@ QString get_status_stylesheet(bool nofont) {
         return QString("background-color: %1; color: %2; border: 0;")
             .arg(
                 get_color_qml_string(
-                    STATUS_BAR_COLOR[0], STATUS_BAR_COLOR[1],
-                    STATUS_BAR_COLOR[2]
+                    config.theme.status_bar.background[0],
+                    config.theme.status_bar.background[1],
+                    config.theme.status_bar.background[2]
                 ),
                 get_color_qml_string(
-                    STATUS_BAR_TEXT_COLOR[0], STATUS_BAR_TEXT_COLOR[1],
-                    STATUS_BAR_TEXT_COLOR[2]
+                    config.theme.status_bar.foreground[0],
+                    config.theme.status_bar.foreground[1],
+                    config.theme.status_bar.foreground[2]
                 )
             );
     }
 }
 
 QString get_selected_stylesheet(bool nofont) {
-    if ((!nofont) && STATUS_BAR_FONT_SIZE > -1) {
-        QString font_size_stylesheet = QString("font-size: %1px")
-                                           .arg(STATUS_BAR_FONT_SIZE);
+    const Config& config = Config::instance();
+
+    if ((!nofont) && config.theme.status_bar.font_size > -1) {
+        QString font_size_stylesheet =
+            QString("font-size: %1px").arg(config.theme.status_bar.font_size);
         return QString("background-color: %1; color: %2; border: 0; %3;")
             .arg(
                 get_color_qml_string(
-                    UI_SELECTED_BACKGROUND_COLOR[0],
-                    UI_SELECTED_BACKGROUND_COLOR[1],
-                    UI_SELECTED_BACKGROUND_COLOR[2]
+                    config.theme.selected.background[0],
+                    config.theme.selected.background[1],
+                    config.theme.selected.background[2]
                 ),
                 get_color_qml_string(
-                    UI_SELECTED_TEXT_COLOR[0], UI_SELECTED_TEXT_COLOR[1],
-                    UI_SELECTED_TEXT_COLOR[2]
+                    config.theme.selected.foreground[0],
+                    config.theme.selected.foreground[1],
+                    config.theme.selected.foreground[2]
                 ),
                 font_size_stylesheet
             );
@@ -2465,13 +2397,14 @@ QString get_selected_stylesheet(bool nofont) {
         return QString("background-color: %1; color: %2; border: 0;")
             .arg(
                 get_color_qml_string(
-                    UI_SELECTED_BACKGROUND_COLOR[0],
-                    UI_SELECTED_BACKGROUND_COLOR[1],
-                    UI_SELECTED_BACKGROUND_COLOR[2]
+                    config.theme.selected.background[0],
+                    config.theme.selected.background[1],
+                    config.theme.selected.background[2]
                 ),
                 get_color_qml_string(
-                    UI_SELECTED_TEXT_COLOR[0], UI_SELECTED_TEXT_COLOR[1],
-                    UI_SELECTED_TEXT_COLOR[2]
+                    config.theme.selected.foreground[0],
+                    config.theme.selected.foreground[1],
+                    config.theme.selected.foreground[2]
                 )
             );
     }

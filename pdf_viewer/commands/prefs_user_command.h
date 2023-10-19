@@ -14,7 +14,7 @@ class PrefsUserCommand : public Command {
         std::optional<fs::path> pref_file_path =
             widget.config_manager->get_or_create_user_config_file();
         if (pref_file_path) {
-            open_file(pref_file_path.value().generic_wstring());
+            open_file(pref_file_path.value().generic_string());
         }
     }
 };

@@ -1,4 +1,8 @@
 #include "database.h"
+#include "checksum.h"
+#include "config.h"
+
+#include <algorithm>
 #include <sstream>
 #include <cassert>
 #include <utility>
@@ -14,27 +18,22 @@
 #include <qjsonobject.h>
 #include <qjsonvalue.h>
 
-#include "checksum.h"
-
-extern bool DEBUG;
-extern float HIGHLIGHT_DELETE_THRESHOLD;
-
-std::wstring esc(const std::wstring& inp) {
-    char* data = sqlite3_mprintf("%q", utf8_encode(inp).c_str());
-    std::wstring escaped_string = utf8_decode(data);
+std::string esc(const std::string& inp) {
+    char* data = sqlite3_mprintf("%q", inp.c_str());
+    std::string escaped_string = data;
     sqlite3_free(data);
     return escaped_string;
 }
 
-std::wstring esc(const std::string& inp) { return esc(utf8_decode(inp)); }
-
-static int
-null_callback(void* notused, int argc, char** argv, char** col_name) {
+static int null_callback(
+    void* notused, int argc, char** argv, char** col_name
+) {
     return 0;
 }
 
-static int
-opened_book_callback(void* res_vector, int argc, char** argv, char** col_name) {
+static int opened_book_callback(
+    void* res_vector, int argc, char** argv, char** col_name
+) {
     std::vector<OpenedBookState>* res =
         (std::vector<OpenedBookState>*)res_vector;
 
@@ -51,21 +50,23 @@ opened_book_callback(void* res_vector, int argc, char** argv, char** col_name) {
     return 0;
 }
 
-static int
-prev_doc_callback(void* res_vector, int argc, char** argv, char** col_name) {
-    std::vector<std::wstring>* res = (std::vector<std::wstring>*)res_vector;
+static int prev_doc_callback(
+    void* res_vector, int argc, char** argv, char** col_name
+) {
+    std::vector<std::string>* res = (std::vector<std::string>*)res_vector;
 
     if (argc != 1) {
         std::cerr << "Error in file " << __FILE__ << " "
                   << "Line: " << __LINE__ << std::endl;
     }
 
-    res->push_back(utf8_decode(argv[0]));
+    res->push_back(argv[0]);
     return 0;
 }
 
-static int
-mark_select_callback(void* res_vector, int argc, char** argv, char** col_name) {
+static int mark_select_callback(
+    void* res_vector, int argc, char** argv, char** col_name
+) {
 
     std::vector<Mark>* res = (std::vector<Mark>*)res_vector;
     assert(argc == 2);
@@ -102,7 +103,7 @@ static int global_bookmark_select_callback(
     assert(argc == 3);
 
     std::string path = argv[0];
-    std::wstring desc = utf8_decode(argv[1]);
+    std::string desc = argv[1];
     float offset_y = atof(argv[2]);
 
     BookMark bm;
@@ -121,7 +122,7 @@ static int global_highlight_select_callback(
     assert(argc == 7);
 
     std::string path = argv[0];
-    std::wstring desc = utf8_decode(argv[1]);
+    std::string desc = argv[1];
     char type = argv[2][0];
     float begin_x = atof(argv[3]);
     float begin_y = atof(argv[4]);
@@ -147,23 +148,10 @@ static int bookmark_select_callback(
     std::vector<BookMark>* res = (std::vector<BookMark>*)res_vector;
     assert(argc == 2);
 
-    std::wstring desc = utf8_decode(argv[0]);
+    std::string desc = argv[0];
     float offset_y = atof(argv[1]);
 
     res->push_back({offset_y, desc});
-    return 0;
-}
-
-static int wstring_select_callback(
-    void* res_vector, int argc, char** argv, char** col_name
-) {
-
-    std::vector<std::wstring>* res = (std::vector<std::wstring>*)res_vector;
-    assert(argc == 1);
-
-    std::wstring desc = utf8_decode(argv[0]);
-
-    res->push_back(desc);
     return 0;
 }
 
@@ -180,16 +168,16 @@ static int string_select_callback(
     return 0;
 }
 
-static int wstring_pair_select_callback(
+static int string_pair_select_callback(
     void* res_vector, int argc, char** argv, char** col_name
 ) {
 
-    std::vector<std::pair<std::wstring, std::wstring>>* res =
-        (std::vector<std::pair<std::wstring, std::wstring>>*)res_vector;
+    std::vector<std::pair<std::string, std::string>>* res =
+        (std::vector<std::pair<std::string, std::string>>*)res_vector;
     assert(argc == 2);
 
-    std::wstring first = utf8_decode(argv[0]);
-    std::wstring second = utf8_decode(argv[1]);
+    std::string first = argv[0];
+    std::string second = argv[1];
 
     res->push_back(std::make_pair(first, second));
     return 0;
@@ -202,7 +190,7 @@ static int highlight_select_callback(
     std::vector<Highlight>* res = (std::vector<Highlight>*)res_vector;
     assert(argc == 6);
 
-    std::wstring desc = utf8_decode(argv[0]);
+    std::string desc = argv[0];
     float begin_x = atof(argv[1]);
     float begin_y = atof(argv[2]);
     float end_x = atof(argv[3]);
@@ -219,8 +207,9 @@ static int highlight_select_callback(
     return 0;
 }
 
-static int
-link_select_callback(void* res_vector, int argc, char** argv, char** col_name) {
+static int link_select_callback(
+    void* res_vector, int argc, char** argv, char** col_name
+) {
 
     std::vector<Portal>* res = (std::vector<Portal>*)res_vector;
     assert(argc == 5);
@@ -263,7 +252,7 @@ link_select_callback(void* res_vector, int argc, char** argv, char** col_name) {
 // }
 //
 // template<>
-// std::wstring parse_single<std::wstring>(char* inp) {
+// std::string parse_single<std::string>(char* inp) {
 //	return utf8_decode(std::string(inp));
 // }
 //
@@ -280,14 +269,14 @@ link_select_callback(void* res_vector, int argc, char** argv, char** col_name) {
 // template <size_t i, typename T, typename... Types>
 // std::tuple<T, Types...> unpack_helper(void* res_vector, int argc, char**
 // argv, char** col_name) { 	return
-//std::tuple_cat(std::tuple<T>(parse_single<T>(argv[i])), unpack_helper<i + 1,
-//Types...>(res_vector, argc, argv, col_name));
+// std::tuple_cat(std::tuple<T>(parse_single<T>(argv[i])), unpack_helper<i + 1,
+// Types...>(res_vector, argc, argv, col_name));
 // }
 //
 // template<typename... Types>
 // std::tuple<Types...> unpack(void* res_vector, int argc, char** argv, char**
 // col_name) { 	auto item = unpack_helper<0, Types...>(res_vector, argc, argv,
-//col_name);
+// col_name);
 //	(static_cast<std::vector<std::tuple<Types...>>*>(res_vector))->push_back(item);
 // }
 
@@ -315,11 +304,11 @@ bool handle_error(int error_code, char* error_message) {
 }
 
 bool DatabaseManager::open(
-    const std::wstring& local_db_file_path,
-    const std::wstring& global_db_file_path
+    const std::string& local_db_file_path,
+    const std::string& global_db_file_path
 ) {
 
-    std::string local_database_file_path_utf8 = utf8_encode(local_db_file_path);
+    std::string local_database_file_path_utf8 = local_db_file_path;
     int local_rc =
         sqlite3_open(local_database_file_path_utf8.c_str(), &local_db);
 
@@ -332,8 +321,7 @@ bool DatabaseManager::open(
     }
 
     if (local_db_file_path != global_db_file_path) {
-        std::string global_database_file_path_utf8 =
-            utf8_encode(global_db_file_path);
+        std::string global_database_file_path_utf8 = global_db_file_path;
         int global_rc =
             sqlite3_open(global_database_file_path_utf8.c_str(), &global_db);
 
@@ -453,20 +441,20 @@ bool DatabaseManager::create_links_table() {
 // float offset_x, float offset_y) {
 //	const char* insert_books_sql = ""\
 //		"INSERT INTO opened_books (PATH, zoom_level, offset_x, offset_y,
-//last_access_time) VALUES ";
+// last_access_time) VALUES ";
 //
-//	std::wstringstream ss;
+//	std::stringstream ss;
 //	ss << insert_books_sql << "'" << esc(path) << "', " << zoom_level << ",
 //" << offset_x << ", " << offset_y << ", datetime('now');";
 //
 //	char* error_message = nullptr;
 //	int error_code = sqlite3_exec(global_db, utf8_encode(ss.str()).c_str(),
-//null_callback, 0, &error_message); 	return handle_error( 		error_code,
-//		error_message);
+// null_callback, 0, &error_message); 	return handle_error(
+// error_code, 		error_message);
 // }
 
 bool DatabaseManager::insert_document_hash(
-    const std::wstring& path, const std::string& checksum
+    const std::string& path, const std::string& checksum
 ) {
 
     const char* delete_doc_sql = ""
@@ -476,23 +464,23 @@ bool DatabaseManager::insert_document_hash(
         ""
         "INSERT INTO document_hash (path, hash) VALUES (";
 
-    std::wstringstream insert_ss;
+    std::stringstream insert_ss;
     insert_ss << insert_doc_hash_sql << "'" << esc(path) << "', '"
               << esc(checksum) << "');";
 
-    std::wstringstream delete_ss;
+    std::stringstream delete_ss;
     delete_ss << delete_doc_sql << "'" << esc(path) << "';";
 
     char* delete_error_message = nullptr;
     int delete_error_code = sqlite3_exec(
-        local_db, utf8_encode(delete_ss.str()).c_str(), null_callback, 0,
+        local_db, delete_ss.str().c_str(), null_callback, 0,
         &delete_error_message
     );
     handle_error(delete_error_code, delete_error_message);
 
     char* insert_error_message = nullptr;
     int insert_error_code = sqlite3_exec(
-        local_db, utf8_encode(insert_ss.str()).c_str(), null_callback, 0,
+        local_db, insert_ss.str().c_str(), null_callback, 0,
         &insert_error_message
     );
     return handle_error(insert_error_code, insert_error_message);
@@ -502,7 +490,7 @@ bool DatabaseManager::update_book(
     const std::string& path, float zoom_level, float offset_x, float offset_y
 ) {
 
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "insert or replace into opened_books(path, zoom_level, offset_x, "
           "offset_y, last_access_time) values ('"
        << esc(path) << "', " << zoom_level << ", " << offset_x << ", "
@@ -510,8 +498,7 @@ bool DatabaseManager::update_book(
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), null_callback, 0,
-        &error_message
+        global_db, ss.str().c_str(), null_callback, 0, &error_message
     );
     return handle_error(error_code, error_message);
 }
@@ -521,51 +508,48 @@ bool DatabaseManager::insert_mark(
 ) {
 
     // todo: probably should escape symbol too
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "INSERT INTO marks (document_path, symbol, offset_y) VALUES ('"
        << esc(document_path) << "', '" << symbol << "', " << offset_y << ");";
     char* error_message = nullptr;
 
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), null_callback, 0,
-        &error_message
+        global_db, ss.str().c_str(), null_callback, 0, &error_message
     );
     return handle_error(error_code, error_message);
 }
 
 bool DatabaseManager::delete_mark_with_symbol(char symbol) {
 
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "DELETE FROM marks where symbol='" << symbol << "';";
     char* error_message = nullptr;
 
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), null_callback, 0,
-        &error_message
+        global_db, ss.str().c_str(), null_callback, 0, &error_message
     );
     return handle_error(error_code, error_message);
 }
 
 bool DatabaseManager::insert_bookmark(
-    const std::string& document_path, const std::wstring& desc, float offset_y
+    const std::string& document_path, const std::string& desc, float offset_y
 ) {
 
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "INSERT INTO bookmarks (document_path, desc, offset_y) VALUES ('"
        << esc(document_path) << "', '" << esc(desc) << "', " << offset_y
        << ");";
     char* error_message = nullptr;
 
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), null_callback, 0,
-        &error_message
+        global_db, ss.str().c_str(), null_callback, 0, &error_message
     );
     return handle_error(error_code, error_message);
 }
 
 bool DatabaseManager::insert_highlight(
     const std::string& document_path,
-    const std::wstring& desc,
+    const std::string& desc,
     float begin_x,
     float begin_y,
     float end_x,
@@ -573,7 +557,7 @@ bool DatabaseManager::insert_highlight(
     char type
 ) {
 
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "INSERT INTO highlights (document_path, desc, type, begin_x, "
           "begin_y, end_x, end_y) VALUES ('"
        << esc(document_path) << "', '" << esc(desc) << "', '" << type << "' , "
@@ -582,8 +566,7 @@ bool DatabaseManager::insert_highlight(
     char* error_message = nullptr;
 
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), null_callback, 0,
-        &error_message
+        global_db, ss.str().c_str(), null_callback, 0, &error_message
     );
     return handle_error(error_code, error_message);
 }
@@ -597,7 +580,7 @@ bool DatabaseManager::insert_portal(
     float src_offset_y
 ) {
 
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "INSERT INTO links (src_document, dst_document, src_offset_y, "
           "dst_offset_x, dst_offset_y, dst_zoom_level) VALUES ('"
        << esc(src_document_path) << "', '" << esc(dst_document_path) << "', "
@@ -606,8 +589,7 @@ bool DatabaseManager::insert_portal(
     char* error_message = nullptr;
 
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), null_callback, 0,
-        &error_message
+        global_db, ss.str().c_str(), null_callback, 0, &error_message
     );
     return handle_error(error_code, error_message);
 }
@@ -620,7 +602,7 @@ bool DatabaseManager::update_portal(
     float src_offset_y
 ) {
 
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "UPDATE links SET dst_offset_x=" << dst_offset_x
        << ", dst_offset_y=" << dst_offset_y
        << ", dst_zoom_level=" << dst_zoom_level << " WHERE src_document='"
@@ -629,8 +611,7 @@ bool DatabaseManager::update_portal(
     char* error_message = nullptr;
 
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), null_callback, 0,
-        &error_message
+        global_db, ss.str().c_str(), null_callback, 0, &error_message
     );
     return handle_error(error_code, error_message);
 }
@@ -639,14 +620,13 @@ bool DatabaseManager::delete_link(
     const std::string& src_document_path, float src_offset_y
 ) {
 
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "DELETE FROM links where src_document='" << esc(src_document_path)
        << "'AND abs(src_offset_y-(" << src_offset_y << ")) < 0.01;";
     char* error_message = nullptr;
 
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), null_callback, 0,
-        &error_message
+        global_db, ss.str().c_str(), null_callback, 0, &error_message
     );
     return handle_error(error_code, error_message);
 }
@@ -655,15 +635,14 @@ bool DatabaseManager::delete_bookmark(
     const std::string& src_document_path, float src_offset_y
 ) {
 
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "DELETE FROM bookmarks where document_path='"
        << esc(src_document_path) << "'AND abs(offset_y-(" << src_offset_y
        << ")) < 0.01;";
     char* error_message = nullptr;
 
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), null_callback, 0,
-        &error_message
+        global_db, ss.str().c_str(), null_callback, 0, &error_message
     );
     return handle_error(error_code, error_message);
 }
@@ -675,10 +654,11 @@ bool DatabaseManager::delete_highlight(
     float end_x,
     float end_y
 ) {
+    const Config& config = Config::instance();
 
-    std::wstringstream ss;
-    std::wstring threshold =
-        QString::number(HIGHLIGHT_DELETE_THRESHOLD).toStdWString();
+    std::stringstream ss;
+    std::string threshold =
+        QString::number(config.HIGHLIGHT_DELETE_THRESHOLD).toStdString();
     ss << std::setprecision(10)
        << "DELETE FROM highlights where document_path='"
        << esc(src_document_path) << "'AND abs(begin_x-(" << begin_x << ")) < "
@@ -687,13 +667,12 @@ bool DatabaseManager::delete_highlight(
        << " AND abs(end_y-(" << end_y << ")) < " << threshold;
     char* error_message = nullptr;
 
-    if (DEBUG) {
-        std::wcout << ss.str() << L"\n";
+    if (config.application.debug) {
+        std::cout << ss.str() << "\n";
     }
 
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), null_callback, 0,
-        &error_message
+        global_db, ss.str().c_str(), null_callback, 0, &error_message
     );
     return handle_error(error_code, error_message);
 }
@@ -702,14 +681,13 @@ bool DatabaseManager::update_mark(
     const std::string& document_path, char symbol, float offset_y
 ) {
 
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "UPDATE marks set offset_y=" << offset_y << " where document_path='"
        << esc(document_path) << "' AND symbol='" << symbol << "';";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), null_callback, 0,
-        &error_message
+        global_db, ss.str().c_str(), null_callback, 0, &error_message
     );
     return handle_error(error_code, error_message);
 }
@@ -717,75 +695,64 @@ bool DatabaseManager::update_mark(
 bool DatabaseManager::select_opened_book(
     const std::string& book_path, std::vector<OpenedBookState>& out_result
 ) {
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "select zoom_level, offset_x, offset_y from opened_books where path='"
        << esc(book_path) << "'";
     char* error_message = nullptr;
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), opened_book_callback,
-        &out_result, &error_message
-    );
-    return handle_error(error_code, error_message);
-}
-
-// bool delete_mark_with_symbol(sqlite3* db, char symbol) {
-//
-//	std::wstringstream ss;
-//	ss << "DELETE FROM marks where symbol='" << symbol << "';";
-//	char* error_message = nullptr;
-//
-//	return handle_error(
-//		sqlite3_exec(db, utf8_encode(ss.str()).c_str(), null_callback, 0,
-//&error_message), 		error_message);
-// }
-
-bool DatabaseManager::delete_opened_book(const std::string& book_path) {
-    std::wstringstream ss;
-    ss << "DELETE FROM opened_books where path='" << esc(book_path) << "'";
-    char* error_message = nullptr;
-    int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), null_callback, 0,
+        global_db, ss.str().c_str(), opened_book_callback, &out_result,
         &error_message
     );
     return handle_error(error_code, error_message);
 }
 
+bool DatabaseManager::delete_opened_book(const std::string& book_path) {
+    std::stringstream ss;
+    ss << "DELETE FROM opened_books where path='" << esc(book_path) << "'";
+    char* error_message = nullptr;
+    int error_code = sqlite3_exec(
+        global_db, ss.str().c_str(), null_callback, 0, &error_message
+    );
+    return handle_error(error_code, error_message);
+}
+
 bool DatabaseManager::select_opened_books_path_values(
-    std::vector<std::wstring>& out_result
+    std::vector<std::string>& out_result
 ) {
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "SELECT path FROM opened_books order by datetime(last_access_time) "
           "desc;";
     char* error_message = nullptr;
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), prev_doc_callback,
-        &out_result, &error_message
+        global_db, ss.str().c_str(), prev_doc_callback, &out_result,
+        &error_message
     );
     return handle_error(error_code, error_message);
 }
 
 // bool
-// DatabaseManager::select_opened_books_hashes_and_names(std::vector<std::pair<std::wstring,
-// std::wstring>> &out_result) { 	std::vector<std::wstring> hashes;
+// DatabaseManager::select_opened_books_hashes_and_names(std::vector<std::pair<std::string,
+// std::string>> &out_result) { 	std::vector<std::string> hashes;
 //	select_opened_books_path_values(hashes);
 //	for (const auto& hash : hashes) {
-//		std::vector<std::wstring> paths;
+//		std::vector<std::string> paths;
 //		get_path_from_hash(utf8_encode(hash), paths);
 //		if (paths.size() > 0) {
 //			out_result.push_back(std::make_pair(hash,
-//paths.back()));
+// paths.back()));
 //		}
 //	}
 //	return true;
 //	//this->select_
 //	//this->sele
-//		//std::wstringstream ss;
+//		//std::stringstream ss;
 //		//ss << "SELECT opened_books.path, document_hash.path FROM
-//opened_books, document_hash where opened_books.path=document_hash.hash order
-//by datetime(opened_books.last_access_time) desc;";
+// opened_books, document_hash where opened_books.path=document_hash.hash order
+// by datetime(opened_books.last_access_time) desc;";
 //		//char* error_message = nullptr;
-//		//int error_code = sqlite3_exec(db, utf8_encode(ss.str()).c_str(),
-//wstring_pair_select_callback, &out_result, &error_message);
+//		//int error_code = sqlite3_exec(db,
+// utf8_encode(ss.str()).c_str(), string_pair_select_callback, &out_result,
+// &error_message);
 //		//return handle_error(
 //		//	error_code,
 //		//	error_message);
@@ -794,14 +761,14 @@ bool DatabaseManager::select_opened_books_path_values(
 bool DatabaseManager::select_mark(
     const std::string& book_path, std::vector<Mark>& out_result
 ) {
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "select symbol, offset_y from marks where document_path='"
        << esc(book_path) << "';";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), mark_select_callback,
-        &out_result, &error_message
+        global_db, ss.str().c_str(), mark_select_callback, &out_result,
+        &error_message
     );
     return handle_error(error_code, error_message);
 }
@@ -809,14 +776,14 @@ bool DatabaseManager::select_mark(
 bool DatabaseManager::select_global_mark(
     char symbol, std::vector<std::pair<std::string, float>>& out_result
 ) {
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "select document_path, offset_y from marks where symbol='" << symbol
        << "';";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), global_mark_select_callback,
-        &out_result, &error_message
+        global_db, ss.str().c_str(), global_mark_select_callback, &out_result,
+        &error_message
     );
     return handle_error(error_code, error_message);
 }
@@ -824,57 +791,57 @@ bool DatabaseManager::select_global_mark(
 bool DatabaseManager::select_bookmark(
     const std::string& book_path, std::vector<BookMark>& out_result
 ) {
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "select desc, offset_y from bookmarks where document_path='"
        << esc(book_path) << "';";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), bookmark_select_callback,
-        &out_result, &error_message
+        global_db, ss.str().c_str(), bookmark_select_callback, &out_result,
+        &error_message
     );
     return handle_error(error_code, error_message);
 }
 
 bool DatabaseManager::get_path_from_hash(
-    const std::string& checksum, std::vector<std::wstring>& out_paths
+    const std::string& checksum, std::vector<std::string>& out_paths
 ) {
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "select path from document_hash where hash='" << esc(checksum)
        << "';";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(
-        local_db, utf8_encode(ss.str()).c_str(), wstring_select_callback,
-        &out_paths, &error_message
+        local_db, ss.str().c_str(), string_select_callback, &out_paths,
+        &error_message
     );
     return handle_error(error_code, error_message);
 }
 
 bool DatabaseManager::get_hash_from_path(
-    const std::string& path, std::vector<std::wstring>& out_checksum
+    const std::string& path, std::vector<std::string>& out_checksum
 ) {
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "select hash from document_hash where path='" << esc(path) << "';";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(
-        local_db, utf8_encode(ss.str()).c_str(), wstring_select_callback,
-        &out_checksum, &error_message
+        local_db, ss.str().c_str(), string_select_callback, &out_checksum,
+        &error_message
     );
     return handle_error(error_code, error_message);
 }
 
 bool DatabaseManager::get_prev_path_hash_pairs(
-    std::vector<std::pair<std::wstring, std::wstring>>& out_pairs
+    std::vector<std::pair<std::string, std::string>>& out_pairs
 ) {
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "select path, hash from document_hash;";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(
-        local_db, utf8_encode(ss.str()).c_str(), wstring_pair_select_callback,
-        &out_pairs, &error_message
+        local_db, ss.str().c_str(), string_pair_select_callback, &out_pairs,
+        &error_message
     );
     return handle_error(error_code, error_message);
 }
@@ -882,15 +849,15 @@ bool DatabaseManager::get_prev_path_hash_pairs(
 bool DatabaseManager::select_highlight(
     const std::string& book_path, std::vector<Highlight>& out_result
 ) {
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "select desc, begin_x, begin_y, end_x, end_y, type from highlights "
           "where document_path='"
        << esc(book_path) << "';";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), highlight_select_callback,
-        &out_result, &error_message
+        global_db, ss.str().c_str(), highlight_select_callback, &out_result,
+        &error_message
     );
     return handle_error(error_code, error_message);
 }
@@ -898,15 +865,15 @@ bool DatabaseManager::select_highlight(
 bool DatabaseManager::select_highlight_with_type(
     const std::string& book_path, char type, std::vector<Highlight>& out_result
 ) {
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "select desc, begin_x, begin_y, end_x, end_y, type from highlights "
           "where document_path='"
        << esc(book_path) << "' AND type='" << type << "';";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), highlight_select_callback,
-        &out_result, &error_message
+        global_db, ss.str().c_str(), highlight_select_callback, &out_result,
+        &error_message
     );
     return handle_error(error_code, error_message);
 }
@@ -914,14 +881,14 @@ bool DatabaseManager::select_highlight_with_type(
 bool DatabaseManager::global_select_highlight(
     std::vector<std::pair<std::string, Highlight>>& out_result
 ) {
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "select document_path, desc, type, begin_x, begin_y, end_x, end_y "
           "from highlights;";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(),
-        global_highlight_select_callback, &out_result, &error_message
+        global_db, ss.str().c_str(), global_highlight_select_callback,
+        &out_result, &error_message
     );
     return handle_error(error_code, error_message);
 }
@@ -929,13 +896,13 @@ bool DatabaseManager::global_select_highlight(
 bool DatabaseManager::global_select_bookmark(
     std::vector<std::pair<std::string, BookMark>>& out_result
 ) {
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "select document_path, desc, offset_y from bookmarks;";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(),
-        global_bookmark_select_callback, &out_result, &error_message
+        global_db, ss.str().c_str(), global_bookmark_select_callback,
+        &out_result, &error_message
     );
     return handle_error(error_code, error_message);
 }
@@ -943,15 +910,15 @@ bool DatabaseManager::global_select_bookmark(
 bool DatabaseManager::select_links(
     const std::string& src_document_path, std::vector<Portal>& out_result
 ) {
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "select dst_document, src_offset_y, dst_offset_x, dst_offset_y, "
           "dst_zoom_level from links where src_document='"
        << esc(src_document_path) << "';";
 
     char* error_message = nullptr;
     int error_code = sqlite3_exec(
-        global_db, utf8_encode(ss.str()).c_str(), link_select_callback,
-        &out_result, &error_message
+        global_db, ss.str().c_str(), link_select_callback, &out_result,
+        &error_message
     );
     return handle_error(error_code, error_message);
 }
@@ -967,68 +934,68 @@ void DatabaseManager::create_tables() {
 
 bool update_string_value(
     sqlite3* db,
-    const std::wstring& table_name,
-    const std::wstring& field_name,
-    const std::wstring& old_value,
-    const std::wstring& new_value
+    const std::string& table_name,
+    const std::string& field_name,
+    const std::string& old_value,
+    const std::string& new_value
 ) {
 
-    std::wstringstream ss;
+    std::stringstream ss;
     ss << "UPDATE " << table_name << " set " << field_name << "='"
        << esc(new_value) << "' where " << field_name << "='" << esc(old_value)
        << "';";
 
     char* error_message = nullptr;
-    int error_code = sqlite3_exec(
-        db, utf8_encode(ss.str()).c_str(), null_callback, 0, &error_message
-    );
+    int error_code =
+        sqlite3_exec(db, ss.str().c_str(), null_callback, 0, &error_message);
     return handle_error(error_code, error_message);
 }
+
 bool update_mark_path(
-    sqlite3* db, const std::wstring& path, const std::wstring& new_path
+    sqlite3* db, const std::string& path, const std::string& new_path
 ) {
-    return update_string_value(db, L"marks", L"document_path", path, new_path);
+    return update_string_value(db, "marks", "document_path", path, new_path);
 }
 
 bool update_opened_book_path(
-    sqlite3* db, const std::wstring& path, const std::wstring& new_path
+    sqlite3* db, const std::string& path, const std::string& new_path
 ) {
-    return update_string_value(db, L"opened_books", L"path", path, new_path);
+    return update_string_value(db, "opened_books", "path", path, new_path);
 }
 
 bool update_bookmark_path(
-    sqlite3* db, const std::wstring& path, const std::wstring& new_path
+    sqlite3* db, const std::string& path, const std::string& new_path
 ) {
     return update_string_value(
-        db, L"bookmarks", L"document_path", path, new_path
+        db, "bookmarks", "document_path", path, new_path
     );
 }
 
 bool update_highlight_path(
-    sqlite3* db, const std::wstring& path, const std::wstring& new_path
+    sqlite3* db, const std::string& path, const std::string& new_path
 ) {
     return update_string_value(
-        db, L"highlights", L"document_path", path, new_path
+        db, "highlights", "document_path", path, new_path
     );
 }
 
 bool update_portal_path(
-    sqlite3* db, const std::wstring& path, const std::wstring& new_path
+    sqlite3* db, const std::string& path, const std::string& new_path
 ) {
-    return update_string_value(db, L"links", L"src_document", path, new_path) &&
-           update_string_value(db, L"links", L"dst_document", path, new_path);
+    return update_string_value(db, "links", "src_document", path, new_path) &&
+           update_string_value(db, "links", "dst_document", path, new_path);
 }
 
 void DatabaseManager::upgrade_database_hashes() {
     CachedChecksummer checksummer({});
 
-    std::vector<std::wstring> prev_doc_paths;
+    std::vector<std::string> prev_doc_paths;
     select_opened_books_path_values(prev_doc_paths);
 
     for (const auto& doc_path : prev_doc_paths) {
         std::string checksum = checksummer.get_checksum(doc_path);
         if (checksum.size() > 0) {
-            std::wstring uchecksum = utf8_decode(checksum);
+            std::string uchecksum = checksum;
             insert_document_hash(doc_path, checksum);
 
             // update_mark_path(local_db, doc_path, uchecksum);
@@ -1041,8 +1008,8 @@ void DatabaseManager::upgrade_database_hashes() {
 }
 
 void DatabaseManager::split_database(
-    const std::wstring& local_database_path,
-    const std::wstring& global_database_path,
+    const std::string& local_database_path,
+    const std::string& global_database_path,
     bool was_using_hashes
 ) {
 
@@ -1051,7 +1018,7 @@ void DatabaseManager::split_database(
 
     // ---------------------- EXPORT PREVIOUS DATABASE
     // ----------------------------
-    std::vector<std::pair<std::wstring, std::wstring>> path_hash;
+    std::vector<std::pair<std::string, std::string>> path_hash;
     get_prev_path_hash_pairs(path_hash);
     std::vector<std::pair<std::string, OpenedBookState>> opened_book_states;
     std::vector<std::pair<std::string, Mark>> marks;
@@ -1059,19 +1026,19 @@ void DatabaseManager::split_database(
     std::vector<std::pair<std::string, Highlight>> highlights;
     std::vector<std::pair<std::string, Portal>> portals;
 
-    std::unordered_map<std::wstring, std::wstring> path_to_hash;
+    std::unordered_map<std::string, std::string> path_to_hash;
 
     for (const auto& [path, hash] : path_hash) {
         path_to_hash[path] = hash;
     }
 
     for (const auto& [path, hash_] : path_hash) {
-        std::string hash = utf8_encode(hash_);
+        std::string hash = hash_;
         std::string key;
         if (was_using_hashes) {
             key = hash;
         } else {
-            key = utf8_encode(path);
+            key = path;
         }
         std::vector<OpenedBookState> current_book_state;
         std::vector<Mark> current_marks;
@@ -1104,13 +1071,12 @@ void DatabaseManager::split_database(
         select_links(key, current_portals);
         for (auto portal : current_portals) {
             if (!was_using_hashes) {
-                if (path_to_hash.find(utf8_decode(portal.dst.document_checksum)
-                    ) == path_to_hash.end()) {
+                if (path_to_hash.find(portal.dst.document_checksum) ==
+                    path_to_hash.end()) {
                     continue;
                 } else {
-                    portal.dst.document_checksum = utf8_encode(
-                        path_to_hash[utf8_decode(portal.dst.document_checksum)]
-                    );
+                    portal.dst.document_checksum =
+                        path_to_hash[portal.dst.document_checksum];
                 }
             }
 
@@ -1129,7 +1095,7 @@ void DatabaseManager::split_database(
     // ---------------------- IMPORT PREVIOUS DATA ----------------------------
     create_tables();
     for (const auto& [path, hash] : path_hash) {
-        insert_document_hash(path, utf8_encode(hash));
+        insert_document_hash(path, hash);
     }
 
     for (const auto& [hash, book_state] : opened_book_states) {
@@ -1185,12 +1151,12 @@ std::vector<T> load_from_json_array(const QJsonArray& item_list) {
 }
 
 void DatabaseManager::export_json(
-    std::wstring json_file_path, CachedChecksummer* checksummer
+    std::string json_file_path, CachedChecksummer* checksummer
 ) {
 
     std::set<std::string> seen_checksums;
 
-    std::vector<std::wstring> prev_doc_checksums;
+    std::vector<std::string> prev_doc_checksums;
 
     select_opened_books_path_values(prev_doc_checksums);
 
@@ -1198,8 +1164,8 @@ void DatabaseManager::export_json(
 
     for (size_t i = 0; i < prev_doc_checksums.size(); i++) {
 
-        const auto& document_checksum = utf8_encode(prev_doc_checksums[i]);
-        std::optional<std::wstring> path =
+        const auto& document_checksum = prev_doc_checksums[i];
+        std::optional<std::string> path =
             checksummer->get_path(document_checksum);
 
         if ((!path) || (document_checksum.size() == 0) ||
@@ -1235,7 +1201,7 @@ void DatabaseManager::export_json(
         book_object["offset_y"] = opened_book_state.offset_y;
         book_object["zoom_level"] = opened_book_state.zoom_level;
         book_object["checksum"] = QString::fromStdString(document_checksum);
-        book_object["path"] = QString::fromStdWString(path.value());
+        book_object["path"] = QString::fromStdString(path.value());
         book_object["bookmarks"] = json_bookmarks;
         book_object["marks"] = json_marks;
         book_object["highlights"] = json_highlights;
@@ -1251,7 +1217,7 @@ void DatabaseManager::export_json(
 
     QJsonDocument json_document(exported_json);
 
-    QFile output_file(QString::fromStdWString(json_file_path));
+    QFile output_file(QString::fromStdString(json_file_path));
     output_file.open(QFile::WriteOnly);
     output_file.write(json_document.toJson());
     output_file.close();
@@ -1278,10 +1244,10 @@ std::vector<T> get_new_elements(
 }
 
 void DatabaseManager::import_json(
-    std::wstring json_file_path, CachedChecksummer* checksummer
+    std::string json_file_path, CachedChecksummer* checksummer
 ) {
 
-    QFile json_file(QString::fromStdWString(json_file_path));
+    QFile json_file(QString::fromStdString(json_file_path));
     json_file.open(QFile::ReadOnly);
     QJsonDocument json_document = QJsonDocument().fromJson(json_file.readAll());
     json_file.close();
@@ -1298,15 +1264,15 @@ void DatabaseManager::import_json(
 
         std::string checksum =
             current_json_doc["checksum"].toString().toStdString();
-        // std::wstring path =
-        // current_json_doc["path"].toString().toStdWString();
+        // std::string path =
+        // current_json_doc["path"].toString().toStdString();
         float offset_x = current_json_doc["offset_x"].toDouble();
         float offset_y = current_json_doc["offset_y"].toDouble();
         float zoom_level = current_json_doc["zoom_level"].toDouble();
 
-        auto bookmarks = std::move(load_from_json_array<BookMark>(
+        auto bookmarks = load_from_json_array<BookMark>(
             current_json_doc["bookmarks"].toArray()
-        ));
+        );
         auto marks =
             load_from_json_array<Mark>(current_json_doc["marks"].toArray());
         auto highlights = load_from_json_array<Highlight>(
@@ -1333,7 +1299,7 @@ void DatabaseManager::import_json(
         std::vector<Portal> new_portals =
             get_new_elements(prev_portals, portals);
 
-        std::optional<std::wstring> path = checksummer->get_path(checksum);
+        std::optional<std::string> path = checksummer->get_path(checksum);
 
         if (path) {
             // update_book(db, path.value(), zoom_level, offset_x, offset_y);
@@ -1366,44 +1332,39 @@ void DatabaseManager::import_json(
 std::string create_select_query(
     std::string table_name,
     std::vector<std::string> selections,
-    std::unordered_map<
-        std::string,
-        std::variant<std::wstring, std::string, int, char, float>> values
+    std::unordered_map<std::string, std::variant<std::string, int, char, float>>
+        values
 ) {
-    std::wstringstream ss;
+    std::stringstream ss;
 
-    ss << L"SELECT ";
+    ss << "SELECT ";
     for (size_t i = 0; i < selections.size(); i++) {
-        ss << utf8_decode(selections[i]);
+        ss << selections[i];
         if ((size_t)i < (selections.size() - 1)) {
             ss << ", ";
         }
     }
-    ss << " FROM " << utf8_decode(table_name) << " WHERE ";
+    ss << " FROM " << table_name << " WHERE ";
 
     int index = 0;
     for (const auto& [key, value] : values) {
 
-        std::wstring ukey = utf8_decode(key);
-
-        if (std::holds_alternative<std::wstring>(value)) {
-            ss << ukey << L"='" << esc(std::get<std::wstring>(value)) << L"'";
-        }
+        std::string ukey = key;
 
         if (std::holds_alternative<std::string>(value)) {
-            ss << ukey << L"='" << esc(std::get<std::string>(value)) << L"'";
+            ss << ukey << "='" << esc(std::get<std::string>(value)) << "'";
         }
 
         if (std::holds_alternative<char>(value)) {
-            ss << ukey << L"='" << std::get<char>(value) << L"'";
+            ss << ukey << "='" << std::get<char>(value) << "'";
         }
 
         if (std::holds_alternative<int>(value)) {
-            ss << ukey << L"=" << std::get<int>(value) << L"";
+            ss << ukey << "=" << std::get<int>(value) << "";
         }
 
         if (std::holds_alternative<float>(value)) {
-            ss << ukey << L"=" << std::get<float>(value) << L"";
+            ss << ukey << "=" << std::get<float>(value) << "";
         }
 
         index++;
@@ -1411,19 +1372,19 @@ std::string create_select_query(
             ss << ", ";
         }
     }
-    ss << L";";
-    return utf8_encode(ss.str());
+    ss << ";";
+    return ss.str();
 }
 
 void DatabaseManager::ensure_database_compatibility(
-    const std::wstring& local_db_file_path,
-    const std::wstring& global_db_file_path
+    const std::string& local_db_file_path,
+    const std::string& global_db_file_path
 ) {
     create_tables();
 
     // if the database is still using absolute paths instead of checksums,
     // update all paths to checksums
-    std::vector<std::pair<std::wstring, std::wstring>> prev_path_hash_pairs;
+    std::vector<std::pair<std::string, std::string>> prev_path_hash_pairs;
     get_prev_path_hash_pairs(prev_path_hash_pairs);
     bool was_using_hashes = true;
 

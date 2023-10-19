@@ -13,13 +13,14 @@ std::string compute_checksum(
 
 class CachedChecksummer {
   private:
-    std::unordered_map<std::wstring, std::string> cached_checksums;
-    std::unordered_map<std::string, std::vector<std::wstring>> cached_paths;
+    std::unordered_map<std::string, std::string> cached_checksums;
+    std::unordered_map<std::string, std::vector<std::string>> cached_paths;
 
   public:
-    CachedChecksummer(const std::vector<std::pair<std::wstring, std::wstring>>*
-                          loaded_checksums);
-    std::string get_checksum(std::wstring file_path);
-    std::optional<std::string> get_checksum_fast(std::wstring file_path);
-    std::optional<std::wstring> get_path(std::string checksum);
+    CachedChecksummer(
+        const std::vector<std::pair<std::string, std::string>>* loaded_checksums
+    );
+    std::string get_checksum(std::string file_path);
+    std::optional<std::string> get_checksum_fast(std::string file_path);
+    std::optional<std::string> get_path(std::string checksum);
 };

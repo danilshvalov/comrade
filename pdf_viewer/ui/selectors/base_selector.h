@@ -20,7 +20,7 @@ class BaseSelector : public QWidget {
   public:
     std::optional<QModelIndex> get_selected_index();
 
-    virtual std::wstring get_selected_text() { return L""; }
+    virtual std::string get_selected_text() { return ""; }
 
     bool eventFilter(QObject* obj, QEvent* event) override;
 
