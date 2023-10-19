@@ -1,5 +1,6 @@
 #include "config.h"
 #include "utils.h"
+
 #include <cassert>
 #include <map>
 #include <ostream>
@@ -851,7 +852,7 @@ void Config::configure_paths() {
     user_config_paths.push_back(mac_standard_config_path / "prefs_user.config");
 #endif
 
-#ifdef Q_OS_LINUX
+#if defined(Q_OS_LINUX) || defined(Q_OS_MACOS)
     QStringList all_config_paths =
         QStandardPaths::standardLocations(QStandardPaths::AppConfigLocation);
     for (int i = all_config_paths.size() - 1; i >= 0; i--) {
